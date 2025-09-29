@@ -1,5 +1,4 @@
-
-import  { useEffect, useState, useRef, use } from "react";
+import { useEffect, useState, useRef } from "react";
 import "../../responsive.css";
 import playerSprite from "../Sprites/player.png";
 import gameBackround from "../Sprites/backgroun-cartoon-top-view-2D.png";
@@ -11,6 +10,7 @@ import reloadAbility from "../Sprites/reload-ability.png";
 import flashAbility from "../Sprites/flash-ability.png";
 import teleportAbility from "../Sprites/teleport-ability.png";
 import abilityBackground from "../Sprites/ability-background.png";
+import scoreBackground from "../Sprites/score-background.png";
 
 
 export default function GameCanvas() {
@@ -26,6 +26,8 @@ export default function GameCanvas() {
 
     // Abilities
         const abilityBackgroundImageRef = useRef(null);
+    // score
+        const scoreBackgroundImageRef = useRef(null);
 
 
         // Teleport ability
@@ -528,6 +530,18 @@ export default function GameCanvas() {
         };
         reloadAbilityImage.onerror = () => {
             console.error('Failed to load ability sprite');
+        };
+    }, []);
+
+    // score background
+    useEffect(() => {
+        const scoreBackgroundImage = new Image();
+        scoreBackgroundImage.src = scoreBackground; // Use the imported sprite
+        scoreBackgroundImage.onload = () => {
+            scoreBackgroundImageRef.current = scoreBackgroundImage;
+        };
+        scoreBackgroundImage.onerror = () => {
+            console.error('Failed to load score background sprite');
         };
     }, []);
 
@@ -1135,14 +1149,35 @@ export default function GameCanvas() {
             })
         })
 
-        // Responsive text sizing
-        const fontSize = Math.min(window.innerWidth / 40, 24); // Scale font size based on screen width
-        const margin = Math.min(window.innerWidth * 0.015, 15); // Responsive margin
+        // Responsive text sizing - improved formula
+const fontSize = Math.min(window.innerWidth / 40, 24); // Better scaling for readability
+const margin = Math.min(window.innerWidth * 0.015, 2); // More proportional margin
 
-        ctx.fillStyle = "black";
-        ctx.font = `${fontSize}px 'Orbitron', monospace`;
-        ctx.fillText(`Score: ${score.current}`, margin, fontSize + margin);
-        ctx.fillText(`Difficulty: ${difficulty.current}`, margin, (fontSize * 2) + margin);
+
+// score background image - make it fully responsive
+if (scoreBackgroundImageRef.current) {
+    // Calculate responsive dimensions based on screen size
+    const scoreBgWidth = Math.min(window.innerWidth / 3.5, 400); // More reasonable max width
+    const scoreBgHeight = Math.min(window.innerHeight / 3, 400); // Better proportional height
+    
+    // Position with responsive margins
+    const bgX = margin;
+    const bgY = margin - 35;
+    
+    ctx.drawImage(scoreBackgroundImageRef.current, bgX, bgY, scoreBgWidth, scoreBgHeight);
+}
+
+// Fix font usage and make text fully responsive
+ctx.fillStyle = "white";
+ctx.font = `${fontSize}px 'MedievalSharp', cursive`; // Use the font that's actually loaded
+
+// Calculate text positioning relative to background size
+const textMarginX = margin + (Math.min(window.innerWidth / 3.5, 400) * 0.35); // 35% inside background
+const textMarginY = margin + (Math.min(window.innerHeight / 3, 400) * 0.33); // Start at 45% of background height
+
+// Responsive text positioning
+ctx.fillText(`Score: ${score.current}`, textMarginX, textMarginY);
+ctx.fillText(`Difficulty: ${difficulty.current}`, textMarginX, textMarginY + (fontSize * 1.5));
 
 
        
@@ -1361,7 +1396,7 @@ export default function GameCanvas() {
             }
             else {
                 ctx.fillStyle = "white";
-                ctx.font = `${Math.min(baseAbilitySize / 2, 23)}px "MedievalSharp", cursive`;
+                ctx.font = `${Math.min(baseAbilitySize / 2, 23)}px 'Rajdhani', sans-serif`;
                 // Center the letter horizontally and position it below the ability icon
                 const letterX = abilityX + (baseAbilitySize * 0.4); // Center horizontally
                 const letterY = abilityY + baseAbilitySize + (baseAbilitySize * 0.3); // Position below icon
@@ -1403,7 +1438,6 @@ export default function GameCanvas() {
 
     useEffect(() => {
         if (loose){
-            alert("You loose!");
             window.location.reload();
         }
     }, [loose]);
