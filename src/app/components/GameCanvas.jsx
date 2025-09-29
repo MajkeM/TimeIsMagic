@@ -1,5 +1,6 @@
 
 import  { useEffect, useState, useRef, use } from "react";
+import "../../responsive.css";
 import playerSprite from "../Sprites/player.png";
 import gameBackround from "../Sprites/backgroun-cartoon-top-view-2D.png";
 import goblinSprite from "../Sprites/goblinSprite.png";
@@ -9,11 +10,24 @@ import stoneSprite from "../Sprites/stoneSprite.png";
 import reloadAbility from "../Sprites/reload-ability.png";
 import flashAbility from "../Sprites/flash-ability.png";
 import teleportAbility from "../Sprites/teleport-ability.png";
+import abilityBackground from "../Sprites/ability-background.png";
 
 
 export default function GameCanvas() {
 
+    // canvas 
+        // ability icons 
+            const ICON_SIZE = 100;
+            const ICON_MARGIN = 80;
+        // ability backgrounds
+            const ABILITY_BACKGROUND_SIZE = 1000;
+            const ABILITY_BACKGROUND_MARGIN = -25;
+
+
     // Abilities
+        const abilityBackgroundImageRef = useRef(null);
+
+
         // Teleport ability
         const TELEPORT_COOLDOWN = 10000;
         const TELEPORT_ABILITY = true;
@@ -235,9 +249,8 @@ export default function GameCanvas() {
                 const newY = playerRef.current.y + dirY * flash_distance;
                 
                 // Boundary checking to keep player on screen
-                const canvas = canvasRef.current;
-                playerRef.current.x = Math.max(0, Math.min(newX, canvas.width - playerRef.current.width));
-                playerRef.current.y = Math.max(0, Math.min(newY, canvas.height - playerRef.current.height));
+                playerRef.current.x = Math.max(0, Math.min(newX, window.innerWidth - playerRef.current.width));
+                playerRef.current.y = Math.max(0, Math.min(newY, window.innerHeight - playerRef.current.height));
                 
                 // Start cooldown
                 flashAbilityOnCooldown.current = true;
@@ -435,6 +448,18 @@ export default function GameCanvas() {
         };
     }, []);
 
+    // load ability background image
+    useEffect(() => {
+        const abilityBackgroundImage = new Image();
+        abilityBackgroundImage.src = abilityBackground; // Use the imported sprite
+        abilityBackgroundImage.onload = () => {
+            abilityBackgroundImageRef.current = abilityBackgroundImage;
+        };
+        abilityBackgroundImage.onerror = () => {
+            console.error('Failed to load ability background sprite');
+        };
+    }, []);
+
 
     // load flash ability image
     useEffect(() => {
@@ -536,12 +561,41 @@ export default function GameCanvas() {
 
     let animationFrameId;
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    // Function to setup responsive canvas
+    const setupCanvas = () => {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        
+        // Set canvas size to fill viewport
+        canvas.width = window.innerWidth * dpr;
+        canvas.height = window.innerHeight * dpr;
+        
+        // Scale canvas back down using CSS
+        canvas.style.width = window.innerWidth + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+        
+        // Scale the drawing context so everything draws at the correct size
+        ctx.scale(dpr, dpr);
+    };
+
+    // Initial setup
+    setupCanvas();
+    
+    // Handle window resize
+    const handleResize = () => {
+        setupCanvas();
+        // Keep player centered on resize
+        if (playerRef.current) {
+            playerRef.current.x = (window.innerWidth - playerRef.current.width) / 2;
+            playerRef.current.y = (window.innerHeight - playerRef.current.height) / 2;
+        }
+    };
+    
+    window.addEventListener('resize', handleResize);
 
     playerRef.current ={
-        x: canvas.width / 2,
-        y: canvas.height / 2,
+        x: (window.innerWidth - 180) / 2,
+        y: (window.innerHeight - 180) / 2,
         width: 180,
         height: 180,
         color: "blue",
@@ -585,7 +639,7 @@ export default function GameCanvas() {
         
         // Draw background image if loaded
         if (gameImageBackgroundRef.current) {
-            ctx.drawImage(gameImageBackgroundRef.current, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(gameImageBackgroundRef.current, 0, 0, window.innerWidth, window.innerHeight);
         }
         
         // Calculate rotation angle towards mouse cursor
@@ -669,10 +723,10 @@ export default function GameCanvas() {
             let x, y;
 
             switch (side) {
-                case 0: /* top */ x = Math.random() * canvas.width; y = 0; break;
-                case 1: /* right */ x = canvas.width; y = Math.random() * canvas.height; break;
-                case 2: /* bottom */ x = Math.random() * canvas.width; y = canvas.height; break;
-                case 3: /* left */ x = 0; y = Math.random() * canvas.height; break;
+                case 0: /* top */ x = Math.random() * window.innerWidth; y = 0; break;
+                case 1: /* right */ x = window.innerWidth; y = Math.random() * window.innerHeight; break;
+                case 2: /* bottom */ x = Math.random() * window.innerWidth; y = window.innerHeight; break;
+                case 3: /* left */ x = 0; y = Math.random() * window.innerHeight; break;
             }
             trippleShootEnemyRef.current.push({
                 x: x, y: y, width: 100, height: 100, color: "purple",
@@ -691,10 +745,10 @@ export default function GameCanvas() {
                 let x, y;
 
                 switch (side) {
-                    case 0: /* top */ x = Math.random() * canvas.width; y = 0; break;
-                    case 1: /* right */ x = canvas.width; y = Math.random() * canvas.height; break;
-                    case 2: /* bottom */ x = Math.random() * canvas.width; y = canvas.height; break;
-                    case 3: /* left */ x = 0; y = Math.random() * canvas.height; break;
+                    case 0: /* top */ x = Math.random() * window.innerWidth; y = 0; break;
+                    case 1: /* right */ x = window.innerWidth; y = Math.random() * window.innerHeight; break;
+                    case 2: /* bottom */ x = Math.random() * window.innerWidth; y = window.innerHeight; break;
+                    case 3: /* left */ x = 0; y = Math.random() * window.innerHeight; break;
                 }
                 basicEnemyRef.current.push({
                     x: x, y: y, width: 200, height: 150, color: "red",
@@ -719,7 +773,7 @@ export default function GameCanvas() {
             }
         }
         if (keys.current["ArrowRight"] || keys.current["d"]){
-            if (playerRef.current.x + playerRef.current.width < canvas.width - 22){
+            if (playerRef.current.x + playerRef.current.width < window.innerWidth - 22){
                 playerRef.current.x += playerRef.current.speed;
 
             }
@@ -774,7 +828,7 @@ export default function GameCanvas() {
 
         // Remove bullets that are out of bounds
         bullets.current = bullets.current.filter((bullet) => {
-            return bullet.x >= 0 && bullet.x <= canvas.width && bullet.y >= 0 && bullet.y <= canvas.height;
+            return bullet.x >= 0 && bullet.x <= window.innerWidth && bullet.y >= 0 && bullet.y <= window.innerHeight;
         })
 
         // Draw basic enemies
@@ -879,7 +933,7 @@ export default function GameCanvas() {
 
         // Remove enemies that are out of bounds (just in case)
         basicEnemyRef.current = basicEnemyRef.current.filter((enemy) => {
-            return enemy.x + enemy.width >= 0 && enemy.x <= canvas.width && enemy.y + enemy.height >= 0 && enemy.y <= canvas.height;
+            return enemy.x + enemy.width >= 0 && enemy.x <= window.innerWidth && enemy.y + enemy.height >= 0 && enemy.y <= window.innerHeight;
         })
 
 
@@ -942,7 +996,7 @@ export default function GameCanvas() {
         
         // Remove basic enemy bullets that are out of bounds
         basicEnemyBulletsRef.current = basicEnemyBulletsRef.current.filter((bullet) => {
-            return bullet.x >= 0 && bullet.x <= canvas.width && bullet.y >= 0 && bullet.y <= canvas.height;
+            return bullet.x >= 0 && bullet.x <= window.innerWidth && bullet.y >= 0 && bullet.y <= window.innerHeight;
         });
 
 
@@ -978,7 +1032,7 @@ export default function GameCanvas() {
 
         // Remove tripple shoot enemy bullets that are out of bounds
         trippleShootEnemyBulletsRef.current = trippleShootEnemyBulletsRef.current.filter((bullet) => {
-            return bullet.x >= 0 && bullet.x <= canvas.width && bullet.y >= 0 && bullet.y <= canvas.height;
+            return bullet.x >= 0 && bullet.x <= window.innerWidth && bullet.y >= 0 && bullet.y <= window.innerHeight;
         });
 
 
@@ -1081,10 +1135,14 @@ export default function GameCanvas() {
             })
         })
 
+        // Responsive text sizing
+        const fontSize = Math.min(window.innerWidth / 40, 24); // Scale font size based on screen width
+        const margin = Math.min(window.innerWidth * 0.015, 15); // Responsive margin
+
         ctx.fillStyle = "black";
-        ctx.font = "24px Arial";
-        ctx.fillText(`Score: ${score.current}`, 10, 30);
-        ctx.fillText(`Difficulty: ${difficulty.current}`, 10, 60);
+        ctx.font = `${fontSize}px 'Orbitron', monospace`;
+        ctx.fillText(`Score: ${score.current}`, margin, fontSize + margin);
+        ctx.fillText(`Difficulty: ${difficulty.current}`, margin, (fontSize * 2) + margin);
 
 
        
@@ -1114,18 +1172,38 @@ export default function GameCanvas() {
             ctx.restore();
         }
 
+        // Responsive ability system - calculate sizes and positions
+        const baseAbilitySize = Math.min(window.innerWidth / 20, 80); // Base size for abilities
+        const abilitySpacing = baseAbilitySize * 0.25; // Increased spacing between abilities
+        const abilityMargin = Math.min(window.innerWidth * 0.025, 35); // Increased margin inside 
+        // background
+    
+
+        // Calculate ability background size to fit all abilities
+        const totalAbilities = 3; // reload, flash, teleport
+        const backgroundWidth = (baseAbilitySize * totalAbilities) + (abilitySpacing * (totalAbilities - 1)) + (abilityMargin * 4) + 80;
+        const backgroundHeight = baseAbilitySize + (abilityMargin * 2) + 30; // Extra space for cooldown bars and padding
+        
+        // Position ability background
+        const ability_backgroundX = window.innerWidth - backgroundWidth - abilityMargin + 20;
+        const ability_backgroundY = window.innerHeight - backgroundHeight - abilityMargin + 20;
+
+        // display ability background image behind abilities
+        if (abilityBackgroundImageRef.current) {
+            ctx.drawImage(abilityBackgroundImageRef.current, ability_backgroundX, ability_backgroundY, backgroundWidth, backgroundHeight);
+        }
+
         // show at bottom right reload ability image and progress bar if ability is reloading
         if (abilityReloadRef.current && RELOAD_ABILITY) {
-            const abilitySize = canvas.width / 15;
-            const abilityX = canvas.width - abilitySize - 600;
-            const abilityY = canvas.height - abilitySize - 100;
+            const abilityX = ability_backgroundX + abilityMargin + 70;
+            const abilityY = ability_backgroundY + abilityMargin;
             
             // Draw ability icon with opacity based on cooldown
             ctx.save();
             if (abilityOnCooldown.current) {
                 ctx.globalAlpha = 0.5; // Dim the icon when on cooldown
             }
-            ctx.drawImage(abilityReloadRef.current, abilityX, abilityY, abilitySize, abilitySize);
+            ctx.drawImage(abilityReloadRef.current, abilityX, abilityY, baseAbilitySize, baseAbilitySize);
             ctx.restore();
             
             // Draw cooldown progress bar if ability is on cooldown
@@ -1134,10 +1212,10 @@ export default function GameCanvas() {
                 const cooldownProgress = Math.min(elapsed / RELOADTIME_ABILITY_BOOST_COOLDOWN, 1);
                 
                 // Horizontal cooldown progress bar (below ability icon)
-                const cooldownBarWidth = abilitySize; // Same width as ability icon
+                const cooldownBarWidth = baseAbilitySize; // Same width as ability icon
                 const cooldownBarHeight = 15; // Height for horizontal bar
                 const cooldownBarX = abilityX; // Same X as ability icon
-                const cooldownBarY = abilityY + abilitySize + 8; // Below the ability icon
+                const cooldownBarY = abilityY + baseAbilitySize + 8; // Below the ability icon
                 
                 ctx.save();
                 
@@ -1162,22 +1240,30 @@ export default function GameCanvas() {
                 
                 ctx.restore();
             }
+            else {
+                ctx.fillStyle = "white";
+                ctx.font = `${Math.min(baseAbilitySize / 2, 23)}px 'Rajdhani', sans-serif`;
+                // Center the letter horizontally and position it below the ability icon
+                const letterX = abilityX + (baseAbilitySize * 0.4); // Center horizontally
+                const letterY = abilityY + baseAbilitySize + (baseAbilitySize * 0.3); // Position below icon
+                ctx.fillText("R", letterX, letterY);
+            }
         }
+        
 
 
         // show at bottom right flash image and cooldown progress bar if ability is reloading
 
         if (flashAbilityRef.current && FLASH_ABILITY) {
-            const abilitySize = canvas.width / 15;
-            const abilityX = canvas.width - abilitySize - 480;
-            const abilityY = canvas.height - abilitySize - 100;
+            const abilityX = ability_backgroundX + abilityMargin + (baseAbilitySize + abilitySpacing) + 70;
+            const abilityY = ability_backgroundY + abilityMargin;
             
             // Draw ability icon with opacity based on cooldown
             ctx.save();
             if (flashAbilityOnCooldown.current) {
                 ctx.globalAlpha = 0.5; // Dim the icon when on cooldown
             }
-            ctx.drawImage(flashAbilityRef.current, abilityX, abilityY, abilitySize, abilitySize);
+            ctx.drawImage(flashAbilityRef.current, abilityX, abilityY, baseAbilitySize, baseAbilitySize);
             ctx.restore();
             
             // Draw cooldown progress bar if ability is on cooldown
@@ -1186,10 +1272,10 @@ export default function GameCanvas() {
                 const cooldownProgress = Math.min(elapsed / FLASH_COOLDOWN, 1);
                 
                 // Horizontal cooldown progress bar (below ability icon)
-                const cooldownBarWidth = abilitySize; // Same width as ability icon
+                const cooldownBarWidth = baseAbilitySize; // Same width as ability icon
                 const cooldownBarHeight = 15; // Height for horizontal bar
                 const cooldownBarX = abilityX; // Same X as ability icon
-                const cooldownBarY = abilityY + abilitySize + 8; // Below the ability icon
+                const cooldownBarY = abilityY + baseAbilitySize + 8; // Below the ability icon
                 
                 ctx.save();
                 
@@ -1214,22 +1300,30 @@ export default function GameCanvas() {
                 
                 ctx.restore();
             }
+            else {
+                ctx.fillStyle = "white";
+                ctx.font = `${Math.min(baseAbilitySize / 2, 23)}px 'Rajdhani', sans-serif`;
+                // Center the letter horizontally and position it below the ability icon
+                const letterX = abilityX + (baseAbilitySize * 0.4); // Center horizontally
+                const letterY = abilityY + baseAbilitySize + (baseAbilitySize * 0.3); // Position below icon
+                ctx.fillText("F", letterX, letterY);
+            }
         }
 
 
         // show at bottom right teleport image and cooldown progress bar if ability is reloading
         if (teleportAbilityRef.current && TELEPORT_ABILITY) {
-            const abilitySize = canvas.width / 15;
-            const abilityX = canvas.width - abilitySize - 360;
-            const abilityY = canvas.height - abilitySize - 100;
+            // Draw teleport ability icon
+            const abilityX = ability_backgroundX + abilityMargin + (baseAbilitySize + abilitySpacing) * 2 + 70;
+            const abilityY = ability_backgroundY + abilityMargin;
             
-            // Draw ability icon with opacity based on cooldown
-            ctx.save();
-            if (teleportAbilityOnCooldown.current) {
-                ctx.globalAlpha = 0.5; // Dim the icon when on cooldown
-            }
-            ctx.drawImage(teleportAbilityRef.current, abilityX, abilityY, abilitySize, abilitySize);
-            ctx.restore();
+            ctx.drawImage(
+                teleportAbilityRef.current, 
+                abilityX, 
+                abilityY, 
+                baseAbilitySize, 
+                baseAbilitySize
+            );
             
             // Draw cooldown progress bar if ability is on cooldown
             if (teleportAbilityOnCooldown.current) {
@@ -1237,10 +1331,10 @@ export default function GameCanvas() {
                 const cooldownProgress = Math.min(elapsed / TELEPORT_COOLDOWN, 1);
                 
                 // Horizontal cooldown progress bar (below ability icon)
-                const cooldownBarWidth = abilitySize; // Same width as ability icon
+                const cooldownBarWidth = baseAbilitySize; // Same width as ability icon
                 const cooldownBarHeight = 15; // Height for horizontal bar
                 const cooldownBarX = abilityX; // Same X as ability icon
-                const cooldownBarY = abilityY + abilitySize + 8; // Below the ability icon
+                const cooldownBarY = abilityY + baseAbilitySize + 8; // Below the ability icon
                 
                 ctx.save();
                 
@@ -1265,10 +1359,18 @@ export default function GameCanvas() {
                 
                 ctx.restore();
             }
+            else {
+                ctx.fillStyle = "white";
+                ctx.font = `${Math.min(baseAbilitySize / 2, 23)}px "MedievalSharp", cursive`;
+                // Center the letter horizontally and position it below the ability icon
+                const letterX = abilityX + (baseAbilitySize * 0.4); // Center horizontally
+                const letterY = abilityY + baseAbilitySize + (baseAbilitySize * 0.3); // Position below icon
+                ctx.fillText("T", letterX, letterY);
+            }
         }
 
         
-       
+
 
         if (!loose){
             animationFrameId = requestAnimationFrame(gameLoop);
@@ -1281,7 +1383,7 @@ export default function GameCanvas() {
 
     return () => {
         cancelAnimationFrame(animationFrameId);
-
+        window.removeEventListener('resize', handleResize);
     };
 
     },[]);
