@@ -15,6 +15,13 @@ export default function App() {
   const [F_ability, setF_Ability] = useState("flash");
   const [T_ability, setT_Ability] = useState("teleport");
 
+
+  const[character, setCharacter] = useState("wizard");
+  
+
+  const handleCharacterChange = (event) => {
+    setCharacter(event.target.value);
+  }
   const handleAbilityChange = (event) => {
     const { name, value } = event.target;
     if (name === "R") {
@@ -35,8 +42,8 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/game" element={<GameCanvas showCollision={showCollision} R_ability={R_ability} F_ability={F_ability} T_ability={T_ability} />} />
-        <Route path="/loadout" element={<Loadout handleAbilityChange={handleAbilityChange} />} />
+        <Route path="/game" element={<GameCanvas showCollision={showCollision} R_ability={R_ability} F_ability={F_ability} T_ability={T_ability} character={character} />} />
+        <Route path="/loadout" element={<Loadout handleAbilityChange={handleAbilityChange} R_ability={R_ability} F_ability={F_ability} T_ability={T_ability} character={character} handleCharacterChange={handleCharacterChange} />} />
         <Route path="/settings" element={<Settings toggleCollision={toggleCollision} />} />
         <Route path="/credits" element={<Credits />} />
       </Routes>

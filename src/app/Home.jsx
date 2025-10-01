@@ -18,7 +18,9 @@ export default function Home() {
                 <h3>Choose your loadout here and collect points to unlock new abilities</h3>
                 <Link to="/loadout">Go to Loadout</Link>
 
-                <p className="version">Current verison of the game: 0.2</p>
+                <p className="version">Current version of the game: 0.4</p>
+                <p>new abilities and characters were added</p>
+                <p>leveling system comming soon</p>
             </div>
         </div>
     )
