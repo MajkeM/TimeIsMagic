@@ -10,6 +10,7 @@ import reloadAbility from "../Sprites/reload-ability.png";
 import flashAbility from "../Sprites/flash-ability.png";
 import teleportAbility from "../Sprites/teleport-ability.png";
 import splashAbility from "../Sprites/splash-ability.png";
+import speedAbility from "../Sprites/speed-ability.png";
 import abilityBackground from "../Sprites/ability-background.png";
 import scoreBackground from "../Sprites/score-background.png";
 
@@ -75,6 +76,17 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
         const splashAbilityOnCooldown = useRef(false);
         const splashAbilityCooldownStartTime = useRef(0);
 
+        // Speed ability
+        const SPEED_COOLDOWN = 15000;
+        const SPEED_DURATION = 8000;
+        const SPEED_PLAYER_MULTIPLIER = 2.5; // Player becomes 2.5x faster
+        const SPEED_ENEMY_MULTIPLIER = 0.3; // Enemies become 30% of original speed
+        const speedAbilityRef = useRef(null);
+        const speedAbilityOnCooldown = useRef(false);
+        const speedAbilityCooldownStartTime = useRef(0);
+        const speedAbilityActive = useRef(false);
+        const speedAbilityStartTime = useRef(0);
+
     // Ability configuration helper
     const getAbilityConfig = () => {
         return {
@@ -86,7 +98,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             F: {
                 ability: F_ability,
                 key: 'f', 
-                available: F_ability === 'flash'
+                available: F_ability === 'flash' || F_ability === 'speed'
             },
             T: {
                 ability: T_ability,
@@ -110,24 +122,44 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
 
     const TRIPPLESHOOT_ENEMY_BULLET_ANGLE = 0.6 // in radians, 0.2 = 11.46 degrees
 
-    const PLAYER_SPEED = 3;
+    const PLAYER_SPEED = 6;
     const PLAYER_SPEED_SLOW = 1;
-    const PLAYER_BULLET_SPEED = 15;
+    const PLAYER_BULLET_SPEED = 30;
     const PLAYER_BULLET_SPEED_SLOW = 1;
     const PLAYER_COLLISION_RADIUS = 40; // Collision radius for player (180x180 sprite)
     
-    const BASIC_ENEMY_SPEED = 1.5;
-    const BASIC_ENEMY_BULLET_SPEED = 10;
+    const BASIC_ENEMY_SPEED = 4;
+    const BASIC_ENEMY_BULLET_SPEED = 20;
     const BASIC_ENEMY_SPEED_SLOW = 1;
     const BASIC_ENEMY_BULLET_SPEED_SLOW = 1.5;
 
     const GOBLIN_BULLET_SIZE = 125; // Size of goblin bullet sprite (width and height) - zmenšeno z 120
     const GOBLIN_BULLET_RADIUS = 20; // Collision radius for goblin bullets - zmenšeno z 25
 
-    const TRIPPLESHOOT_ENEMY_SPEED = 1.5;
-    const TRIPPLESHOOT_ENEMY_BULLET_SPEED = 10;
+    const TRIPPLESHOOT_ENEMY_SPEED = 3.5;
+    const TRIPPLESHOOT_ENEMY_BULLET_SPEED = 30;
     const TRIPPLESHOOT_ENEMY_SPEED_SLOW = 1;
     const TRIPPLESHOOT_ENEMY_BULLET_SPEED_SLOW = 1.5;
+
+    // Responsive speed system
+    // Base reference: 1920x1080 (common desktop resolution)
+    const BASE_WIDTH = 1920;
+    const BASE_HEIGHT = 1080;
+    
+    // Calculate responsive speed multiplier based on screen size
+    const getResponsiveSpeedMultiplier = () => {
+        const currentWidth = window.innerWidth;
+        const currentHeight = window.innerHeight;
+        
+        // Calculate diagonal ratio for more accurate scaling
+        const baseDiagonal = Math.sqrt(BASE_WIDTH * BASE_WIDTH + BASE_HEIGHT * BASE_HEIGHT);
+        const currentDiagonal = Math.sqrt(currentWidth * currentWidth + currentHeight * currentHeight);
+        const diagonalRatio = currentDiagonal / baseDiagonal;
+        
+        // Apply some smoothing to prevent extreme speed changes
+        // Clamp between 0.5x and 2x speed for reasonable gameplay
+        return Math.max(0.5, Math.min(2.0, diagonalRatio));
+    };
 
 
 
@@ -269,32 +301,50 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 }, TELEPORT_COOLDOWN);
             }
 
-            // F Ability handler (flash)
-            if (key === "f" && abilityConfig.F.available && !flashAbilityOnCooldown.current) {
-                const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
-                const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
-                
-                const dx = mousemove.current.x - playerCenterX;
-                const dy = mousemove.current.y - playerCenterY;
-                const length = Math.sqrt(dx * dx + dy * dy);
-                
-                if (length > 0) { // Avoid division by zero
-                    const dirX = dx / length;
-                    const dirY = dy / length;
+            // F Ability handler (flash or speed)
+            if (key === "f" && abilityConfig.F.available) {
+                if (F_ability === 'flash' && !flashAbilityOnCooldown.current) {
+                    const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+                    const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
                     
-                    const newX = playerRef.current.x + dirX * flash_distance;
-                    const newY = playerRef.current.y + dirY * flash_distance;
+                    const dx = mousemove.current.x - playerCenterX;
+                    const dy = mousemove.current.y - playerCenterY;
+                    const length = Math.sqrt(dx * dx + dy * dy);
                     
-                    playerRef.current.x = Math.max(0, Math.min(newX, window.innerWidth - playerRef.current.width));
-                    playerRef.current.y = Math.max(0, Math.min(newY, window.innerHeight - playerRef.current.height));
+                    if (length > 0) { // Avoid division by zero
+                        const dirX = dx / length;
+                        const dirY = dy / length;
+                        
+                        const newX = playerRef.current.x + dirX * flash_distance;
+                        const newY = playerRef.current.y + dirY * flash_distance;
+                        
+                        playerRef.current.x = Math.max(0, Math.min(newX, window.innerWidth - playerRef.current.width));
+                        playerRef.current.y = Math.max(0, Math.min(newY, window.innerHeight - playerRef.current.height));
+                    }
+                    
+                    flashAbilityOnCooldown.current = true;
+                    flashAbilityCooldownStartTime.current = currentTime;
+                    
+                    setTimeout(() => {
+                        flashAbilityOnCooldown.current = false;
+                    }, FLASH_COOLDOWN);
+                } else if (F_ability === 'speed' && !speedAbilityOnCooldown.current) {
+                    // Speed ability - increase player speed and decrease enemy speeds
+                    speedAbilityActive.current = true;
+                    speedAbilityStartTime.current = currentTime;
+                    speedAbilityOnCooldown.current = true;
+                    speedAbilityCooldownStartTime.current = currentTime;
+                    
+                    // Reset speeds after duration
+                    setTimeout(() => {
+                        speedAbilityActive.current = false;
+                    }, SPEED_DURATION);
+                    
+                    // Reset cooldown
+                    setTimeout(() => {
+                        speedAbilityOnCooldown.current = false;
+                    }, SPEED_COOLDOWN);
                 }
-                
-                flashAbilityOnCooldown.current = true;
-                flashAbilityCooldownStartTime.current = currentTime;
-                
-                setTimeout(() => {
-                    flashAbilityOnCooldown.current = false;
-                }, FLASH_COOLDOWN);
             }
         };
 
@@ -527,6 +577,18 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
         };
         splashAbilityImage.onerror = () => {
             console.error('Failed to load splash ability sprite');
+        };
+    }, []);
+
+    // load speed ability image
+    useEffect(() => {
+        const speedAbilityImage = new Image();
+        speedAbilityImage.src = speedAbility; // Use the imported sprite
+        speedAbilityImage.onload = () => {
+            speedAbilityRef.current = speedAbilityImage;
+        };
+        speedAbilityImage.onerror = () => {
+            console.error('Failed to load speed ability sprite');
         };
     }, []);
 
@@ -829,20 +891,45 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
         previousPosition.current = {x: playerRef.current.x, y: playerRef.current.y};
 
         // Adjust game speed based on player movement (Time is Magic mechanic)
+        // But respect speed ability when it's active
+        const responsiveMultiplier = getResponsiveSpeedMultiplier();
+        
         if (moving.current) {
-            playerRef.current.speed = PLAYER_SPEED;
-            bulletSpeed.current = PLAYER_BULLET_SPEED;
-            basicEnemySpeed.current = BASIC_ENEMY_SPEED;
-            enemyBulletSpeed.current = BASIC_ENEMY_BULLET_SPEED;
-            trippleShootEnemySpeed.current = TRIPPLESHOOT_ENEMY_SPEED;
-            trippleShootEnemyBulletSpeed.current = TRIPPLESHOOT_ENEMY_BULLET_SPEED;
+            if (speedAbilityActive.current) {
+                // Speed ability is active - use boosted speeds with responsive scaling
+                playerRef.current.speed = PLAYER_SPEED * SPEED_PLAYER_MULTIPLIER * responsiveMultiplier;
+                bulletSpeed.current = PLAYER_BULLET_SPEED * responsiveMultiplier;
+                basicEnemySpeed.current = BASIC_ENEMY_SPEED * SPEED_ENEMY_MULTIPLIER * responsiveMultiplier;
+                enemyBulletSpeed.current = BASIC_ENEMY_BULLET_SPEED * SPEED_ENEMY_MULTIPLIER * responsiveMultiplier;
+                trippleShootEnemySpeed.current = TRIPPLESHOOT_ENEMY_SPEED * SPEED_ENEMY_MULTIPLIER * responsiveMultiplier;
+                trippleShootEnemyBulletSpeed.current = TRIPPLESHOOT_ENEMY_BULLET_SPEED * SPEED_ENEMY_MULTIPLIER * responsiveMultiplier;
+            } else {
+                // Normal speeds when moving with responsive scaling
+                playerRef.current.speed = PLAYER_SPEED * responsiveMultiplier;
+                bulletSpeed.current = PLAYER_BULLET_SPEED * responsiveMultiplier;
+                basicEnemySpeed.current = BASIC_ENEMY_SPEED * responsiveMultiplier;
+                enemyBulletSpeed.current = BASIC_ENEMY_BULLET_SPEED * responsiveMultiplier;
+                trippleShootEnemySpeed.current = TRIPPLESHOOT_ENEMY_SPEED * responsiveMultiplier;
+                trippleShootEnemyBulletSpeed.current = TRIPPLESHOOT_ENEMY_BULLET_SPEED * responsiveMultiplier;
+            }
         } else {
-            playerRef.current.speed = PLAYER_SPEED_SLOW;
-            bulletSpeed.current = PLAYER_BULLET_SPEED_SLOW;
-            basicEnemySpeed.current = BASIC_ENEMY_SPEED_SLOW;
-            enemyBulletSpeed.current = BASIC_ENEMY_BULLET_SPEED_SLOW;
-            trippleShootEnemySpeed.current = TRIPPLESHOOT_ENEMY_SPEED_SLOW;
-            trippleShootEnemyBulletSpeed.current = TRIPPLESHOOT_ENEMY_BULLET_SPEED_SLOW;
+            if (speedAbilityActive.current) {
+                // Speed ability is active even when not moving with responsive scaling
+                playerRef.current.speed = PLAYER_SPEED_SLOW * SPEED_PLAYER_MULTIPLIER * responsiveMultiplier;
+                bulletSpeed.current = PLAYER_BULLET_SPEED_SLOW * responsiveMultiplier;
+                basicEnemySpeed.current = BASIC_ENEMY_SPEED_SLOW * SPEED_ENEMY_MULTIPLIER * responsiveMultiplier;
+                enemyBulletSpeed.current = BASIC_ENEMY_BULLET_SPEED_SLOW * SPEED_ENEMY_MULTIPLIER * responsiveMultiplier;
+                trippleShootEnemySpeed.current = TRIPPLESHOOT_ENEMY_SPEED_SLOW * SPEED_ENEMY_MULTIPLIER * responsiveMultiplier;
+                trippleShootEnemyBulletSpeed.current = TRIPPLESHOOT_ENEMY_BULLET_SPEED_SLOW * SPEED_ENEMY_MULTIPLIER * responsiveMultiplier;
+            } else {
+                // Slow speeds when not moving (normal Time is Magic behavior) with responsive scaling
+                playerRef.current.speed = PLAYER_SPEED_SLOW * responsiveMultiplier;
+                bulletSpeed.current = PLAYER_BULLET_SPEED_SLOW * responsiveMultiplier;
+                basicEnemySpeed.current = BASIC_ENEMY_SPEED_SLOW * responsiveMultiplier;
+                enemyBulletSpeed.current = BASIC_ENEMY_BULLET_SPEED_SLOW * responsiveMultiplier;
+                trippleShootEnemySpeed.current = TRIPPLESHOOT_ENEMY_SPEED_SLOW * responsiveMultiplier;
+                trippleShootEnemyBulletSpeed.current = TRIPPLESHOOT_ENEMY_BULLET_SPEED_SLOW * responsiveMultiplier;
+            }
         }
 
 
@@ -1282,6 +1369,13 @@ ctx.fillText(`Difficulty: ${difficulty.current}`, textMarginX, textMarginY + (fo
                         cooldownDuration = FLASH_COOLDOWN;
                         abilityName = 'F';
                         break;
+                    case 'speed':
+                        abilityRef = speedAbilityRef.current;
+                        isOnCooldown = speedAbilityOnCooldown.current;
+                        cooldownStartTime = speedAbilityCooldownStartTime.current;
+                        cooldownDuration = SPEED_COOLDOWN;
+                        abilityName = 'F';
+                        break;
                     case 'teleport':
                         abilityRef = teleportAbilityRef.current;
                         isOnCooldown = teleportAbilityOnCooldown.current;
@@ -1401,7 +1495,7 @@ ctx.fillText(`Difficulty: ${difficulty.current}`, textMarginX, textMarginY + (fo
             }}>
                 <h1 style={{ fontSize: '48px', marginBottom: '20px' }}>You Lost!</h1>
                 <p style={{ fontSize: '24px', marginBottom: '30px' }}>Final Score: {score.current}</p>
-                <Link to="/"> Home</Link>
+                <Link to="/loadout"> Back</Link>
             </div>
         )}
         </div>

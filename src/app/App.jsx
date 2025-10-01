@@ -11,9 +11,9 @@ import Credits from "./Credits";
 export default function App() {
 
   const [showCollision, setShowCollision] = useState(false);
-  const [R_ability, setR_Ability] = useState(null);
-  const [F_ability, setF_Ability] = useState(null);
-  const [T_ability, setT_Ability] = useState(null);
+  const [R_ability, setR_Ability] = useState("reload");
+  const [F_ability, setF_Ability] = useState("flash");
+  const [T_ability, setT_Ability] = useState("teleport");
 
   const handleAbilityChange = (event) => {
     const { name, value } = event.target;
