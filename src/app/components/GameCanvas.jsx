@@ -9,13 +9,14 @@ import stoneSprite from "../Sprites/stoneSprite.png";
 import reloadAbility from "../Sprites/reload-ability.png";
 import flashAbility from "../Sprites/flash-ability.png";
 import teleportAbility from "../Sprites/teleport-ability.png";
+import splashAbility from "../Sprites/splash-ability.png";
 import abilityBackground from "../Sprites/ability-background.png";
 import scoreBackground from "../Sprites/score-background.png";
 
 import { Link } from "react-router-dom";
 
 
-export default function GameCanvas({showCollision}) {
+export default function GameCanvas({showCollision, R_ability, F_ability, T_ability}) {
 
     // canvas 
         // ability icons 
@@ -66,6 +67,34 @@ export default function GameCanvas({showCollision}) {
         const flashAbilityCooldownStartTime = useRef(0);
         const flash_distance = 200;
         const flashTimeRef = useRef(FLASH_COOLDOWN);
+
+        // Splash ability
+        const SPLASH_COOLDOWN = 8000;
+        const SPLASH_DAMAGE_RADIUS = 150;
+        const splashAbilityRef = useRef(null);
+        const splashAbilityOnCooldown = useRef(false);
+        const splashAbilityCooldownStartTime = useRef(0);
+
+    // Ability configuration helper
+    const getAbilityConfig = () => {
+        return {
+            R: {
+                ability: R_ability,
+                key: 'r',
+                available: R_ability === 'reload' || R_ability === 'splash'
+            },
+            F: {
+                ability: F_ability,
+                key: 'f', 
+                available: F_ability === 'flash'
+            },
+            T: {
+                ability: T_ability,
+                key: 't',
+                available: T_ability === 'teleport'
+            }
+        };
+    };
 
     // end abilities
 
@@ -160,24 +189,58 @@ export default function GameCanvas({showCollision}) {
         const handleKeyDown = (e) => {
             const key = e.key.toLowerCase(); // Normalize key to lowercase
             const currentTime = performance.now();
+            const abilityConfig = getAbilityConfig();
 
-            // Reload Ability ('r')
-            if (key === "r" && RELOAD_ABILITY && !abilityOnCooldown.current) {
-                reloadTimeRef.current = RELOADTIME_ABILITY_BOOST;
-                abilityOnCooldown.current = true;
-                abilityCooldownStartTime.current = currentTime;
+            // R Ability handler (reload or splash)
+            if (key === "r" && abilityConfig.R.available) {
+                if (R_ability === 'reload' && !abilityOnCooldown.current) {
+                    reloadTimeRef.current = RELOADTIME_ABILITY_BOOST;
+                    abilityOnCooldown.current = true;
+                    abilityCooldownStartTime.current = currentTime;
 
-                setTimeout(() => {
-                    reloadTimeRef.current = RELOADTIME;
-                }, RELOADTIME_ABILITY_BOOST_DURATION);
-                
-                setTimeout(() => {
-                    abilityOnCooldown.current = false;
-                }, RELOADTIME_ABILITY_BOOST_COOLDOWN);
+                    setTimeout(() => {
+                        reloadTimeRef.current = RELOADTIME;
+                    }, RELOADTIME_ABILITY_BOOST_DURATION);
+                    
+                    setTimeout(() => {
+                        abilityOnCooldown.current = false;
+                    }, RELOADTIME_ABILITY_BOOST_COOLDOWN);
+                } else if (R_ability === 'splash' && !splashAbilityOnCooldown.current) {
+                    // Splash ability - spawn 15 bullets in different directions from player position
+                    const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+                    const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+                    
+                    // Create 15 bullets in a circle pattern
+                    const bulletCount = 15;
+                    const angleStep = (2 * Math.PI) / bulletCount; // 360 degrees divided by 15 bullets
+                    
+                    for (let i = 0; i < bulletCount; i++) {
+                        const angle = i * angleStep;
+                        const dirX = Math.cos(angle);
+                        const dirY = Math.sin(angle);
+                        
+                        bullets.current.push({
+                            x: playerCenterX - 50, // Offset to center the bullet sprite
+                            y: playerCenterY - 50, // Offset to center the bullet sprite
+                            dirX: dirX,
+                            dirY: dirY,
+                            angle: angle,
+                            width: 20,
+                            height: 20
+                        });
+                    }
+                    
+                    splashAbilityOnCooldown.current = true;
+                    splashAbilityCooldownStartTime.current = currentTime;
+                    
+                    setTimeout(() => {
+                        splashAbilityOnCooldown.current = false;
+                    }, SPLASH_COOLDOWN);
+                }
             }
 
-            // Teleport/Kill Ability ('t')
-            if (key === "t" && TELEPORT_ABILITY && !teleportAbilityOnCooldown.current) {
+            // T Ability handler (teleport)
+            if (key === "t" && abilityConfig.T.available && !teleportAbilityOnCooldown.current) {
                 teleportAbilityActive.current = true;
                 teleportAbilityStartTime.current = currentTime;
                 teleportAbilityOnCooldown.current = true;
@@ -206,8 +269,8 @@ export default function GameCanvas({showCollision}) {
                 }, TELEPORT_COOLDOWN);
             }
 
-            // Flash Ability ('f')
-            if (key === "f" && FLASH_ABILITY && !flashAbilityOnCooldown.current) {
+            // F Ability handler (flash)
+            if (key === "f" && abilityConfig.F.available && !flashAbilityOnCooldown.current) {
                 const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
                 const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
                 
@@ -452,6 +515,18 @@ export default function GameCanvas({showCollision}) {
         };
         teleportAbilityImage.onerror = () => {
             console.error('Failed to load teleport ability sprite');
+        };
+    }, []);
+
+    // load splash ability image
+    useEffect(() => {
+        const splashAbilityImage = new Image();
+        splashAbilityImage.src = splashAbility; // Use the imported sprite
+        splashAbilityImage.onload = () => {
+            splashAbilityRef.current = splashAbilityImage;
+        };
+        splashAbilityImage.onerror = () => {
+            console.error('Failed to load splash ability sprite');
         };
     }, []);
 
@@ -1155,196 +1230,122 @@ ctx.fillText(`Difficulty: ${difficulty.current}`, textMarginX, textMarginY + (fo
         const abilitySpacing = baseAbilitySize * 0.25; // Increased spacing between abilities
         const abilityMargin = Math.min(window.innerWidth * 0.025, 35); // Increased margin inside 
         // background
-    
 
-        // Calculate ability background size to fit all abilities
-        const totalAbilities = 3; // reload, flash, teleport
-        const backgroundWidth = (baseAbilitySize * totalAbilities) + (abilitySpacing * (totalAbilities - 1)) + (abilityMargin * 4) + 80;
-        const backgroundHeight = baseAbilitySize + (abilityMargin * 2) + 30; // Extra space for cooldown bars and padding
+        // Dynamic ability configuration
+        const abilityConfig = getAbilityConfig();
+        const activeAbilities = Object.entries(abilityConfig).filter(([key, config]) => config.available);
         
-        // Position ability background
-        const ability_backgroundX = window.innerWidth - backgroundWidth - abilityMargin + 20;
-        const ability_backgroundY = window.innerHeight - backgroundHeight - abilityMargin + 20;
-
-        // display ability background image behind abilities
-        if (abilityBackgroundImageRef.current) {
-            ctx.drawImage(abilityBackgroundImageRef.current, ability_backgroundX, ability_backgroundY, backgroundWidth, backgroundHeight);
-        }
-
-        // show at bottom right reload ability image and progress bar if ability is reloading
-        if (abilityReloadRef.current && RELOAD_ABILITY) {
-            const abilityX = ability_backgroundX + abilityMargin + 70;
-            const abilityY = ability_backgroundY + abilityMargin;
-            
-            // Draw ability icon with opacity based on cooldown
-            ctx.save();
-            if (abilityOnCooldown.current) {
-                ctx.globalAlpha = 0.5; // Dim the icon when on cooldown
-            }
-            ctx.drawImage(abilityReloadRef.current, abilityX, abilityY, baseAbilitySize, baseAbilitySize);
-            ctx.restore();
-            
-            // Draw cooldown progress bar if ability is on cooldown
-            if (abilityOnCooldown.current) {
-                const elapsed = currentTime - abilityCooldownStartTime.current;
-                const cooldownProgress = Math.min(elapsed / RELOADTIME_ABILITY_BOOST_COOLDOWN, 1);
-                
-                // Horizontal cooldown progress bar (below ability icon)
-                const cooldownBarWidth = baseAbilitySize; // Same width as ability icon
-                const cooldownBarHeight = 15; // Height for horizontal bar
-                const cooldownBarX = abilityX; // Same X as ability icon
-                const cooldownBarY = abilityY + baseAbilitySize + 8; // Below the ability icon
-                
-                ctx.save();
-                
-                // Background (darker for contrast)
-                ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
-                drawRoundedRect(ctx, cooldownBarX, cooldownBarY, cooldownBarWidth, cooldownBarHeight, 5);
-                ctx.fill();
-                
-                // Progress (brighter red) - fills from left to right
-                ctx.fillStyle = "rgba(255, 50, 50, 0.9)"; // Brighter red for cooldown
-                const progressWidth = (cooldownBarWidth - 4) * cooldownProgress; // Progress width
-                if (progressWidth > 0) {
-                    drawRoundedRect(ctx, cooldownBarX + 2, cooldownBarY + 2, progressWidth, cooldownBarHeight - 4, 3);
-                    ctx.fill();
-                }
-                
-                // Add border for better definition
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
-                ctx.lineWidth = 1;
-                drawRoundedRect(ctx, cooldownBarX, cooldownBarY, cooldownBarWidth, cooldownBarHeight, 5);
-                ctx.stroke();
-                
-                ctx.restore();
-            }
-            else {
-                ctx.fillStyle = "white";
-                ctx.font = `${Math.min(baseAbilitySize / 2, 23)}px 'Rajdhani', sans-serif`;
-                // Center the letter horizontally and position it below the ability icon
-                const letterX = abilityX + (baseAbilitySize * 0.4); // Center horizontally
-                const letterY = abilityY + baseAbilitySize + (baseAbilitySize * 0.3); // Position below icon
-                ctx.fillText("R", letterX, letterY);
-            }
-        }
+        // Calculate ability background size to fit active abilities only
+        const totalAbilities = activeAbilities.length;
+        const backgroundWidth = totalAbilities > 0 ? 
+            (baseAbilitySize * totalAbilities) + (abilitySpacing * (totalAbilities - 1)) + (abilityMargin * 4) + 80 : 0;
+        const backgroundHeight = totalAbilities > 0 ? 
+            baseAbilitySize + (abilityMargin * 2) + 30 : 0; // Extra space for cooldown bars and padding
         
+        if (totalAbilities > 0) {
+            // Position ability background
+            const ability_backgroundX = window.innerWidth - backgroundWidth - abilityMargin + 20;
+            const ability_backgroundY = window.innerHeight - backgroundHeight - abilityMargin + 20;
 
-
-        // show at bottom right flash image and cooldown progress bar if ability is reloading
-
-        if (flashAbilityRef.current && FLASH_ABILITY) {
-            const abilityX = ability_backgroundX + abilityMargin + (baseAbilitySize + abilitySpacing) + 70;
-            const abilityY = ability_backgroundY + abilityMargin;
-            
-            // Draw ability icon with opacity based on cooldown
-            ctx.save();
-            if (flashAbilityOnCooldown.current) {
-                ctx.globalAlpha = 0.5; // Dim the icon when on cooldown
+            // display ability background image behind abilities
+            if (abilityBackgroundImageRef.current) {
+                ctx.drawImage(abilityBackgroundImageRef.current, ability_backgroundX, ability_backgroundY, backgroundWidth, backgroundHeight);
             }
-            ctx.drawImage(flashAbilityRef.current, abilityX, abilityY, baseAbilitySize, baseAbilitySize);
-            ctx.restore();
-            
-            // Draw cooldown progress bar if ability is on cooldown
-            if (flashAbilityOnCooldown.current) {
-                const elapsed = currentTime - flashAbilityCooldownStartTime.current;
-                const cooldownProgress = Math.min(elapsed / FLASH_COOLDOWN, 1);
+
+            // Render each active ability dynamically
+            activeAbilities.forEach(([keyBinding, config], index) => {
+                const abilityX = ability_backgroundX + abilityMargin + (baseAbilitySize + abilitySpacing) * index + 70;
+                const abilityY = ability_backgroundY + abilityMargin;
                 
-                // Horizontal cooldown progress bar (below ability icon)
-                const cooldownBarWidth = baseAbilitySize; // Same width as ability icon
-                const cooldownBarHeight = 15; // Height for horizontal bar
-                const cooldownBarX = abilityX; // Same X as ability icon
-                const cooldownBarY = abilityY + baseAbilitySize + 8; // Below the ability icon
+                // Get ability data based on the selected ability
+                let abilityRef, isOnCooldown, cooldownStartTime, cooldownDuration, abilityName;
                 
-                ctx.save();
-                
-                // Background (darker for contrast)
-                ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
-                drawRoundedRect(ctx, cooldownBarX, cooldownBarY, cooldownBarWidth, cooldownBarHeight, 5);
-                ctx.fill();
-                
-                // Progress (brighter red) - fills from left to right
-                ctx.fillStyle = "rgba(255, 50, 50, 0.9)"; // Brighter red for cooldown
-                const progressWidth = (cooldownBarWidth - 4) * cooldownProgress; // Progress width
-                if (progressWidth > 0) {
-                    drawRoundedRect(ctx, cooldownBarX + 2, cooldownBarY + 2, progressWidth, cooldownBarHeight - 4, 3);
-                    ctx.fill();
+                switch (config.ability) {
+                    case 'reload':
+                        abilityRef = abilityReloadRef.current;
+                        isOnCooldown = abilityOnCooldown.current;
+                        cooldownStartTime = abilityCooldownStartTime.current;
+                        cooldownDuration = RELOADTIME_ABILITY_BOOST_COOLDOWN;
+                        abilityName = 'R';
+                        break;
+                    case 'splash':
+                        abilityRef = splashAbilityRef.current;
+                        isOnCooldown = splashAbilityOnCooldown.current;
+                        cooldownStartTime = splashAbilityCooldownStartTime.current;
+                        cooldownDuration = SPLASH_COOLDOWN;
+                        abilityName = 'R';
+                        break;
+                    case 'flash':
+                        abilityRef = flashAbilityRef.current;
+                        isOnCooldown = flashAbilityOnCooldown.current;
+                        cooldownStartTime = flashAbilityCooldownStartTime.current;
+                        cooldownDuration = FLASH_COOLDOWN;
+                        abilityName = 'F';
+                        break;
+                    case 'teleport':
+                        abilityRef = teleportAbilityRef.current;
+                        isOnCooldown = teleportAbilityOnCooldown.current;
+                        cooldownStartTime = teleportAbilityCooldownStartTime.current;
+                        cooldownDuration = TELEPORT_COOLDOWN;
+                        abilityName = 'T';
+                        break;
+                    default:
+                        return; // Skip unknown abilities
                 }
                 
-                // Add border for better definition
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
-                ctx.lineWidth = 1;
-                drawRoundedRect(ctx, cooldownBarX, cooldownBarY, cooldownBarWidth, cooldownBarHeight, 5);
-                ctx.stroke();
+                if (!abilityRef) return; // Skip if image not loaded
                 
-                ctx.restore();
-            }
-            else {
-                ctx.fillStyle = "white";
-                ctx.font = `${Math.min(baseAbilitySize / 2, 23)}px 'Rajdhani', sans-serif`;
-                // Center the letter horizontally and position it below the ability icon
-                const letterX = abilityX + (baseAbilitySize * 0.4); // Center horizontally
-                const letterY = abilityY + baseAbilitySize + (baseAbilitySize * 0.3); // Position below icon
-                ctx.fillText("F", letterX, letterY);
-            }
-        }
-
-
-        // show at bottom right teleport image and cooldown progress bar if ability is reloading
-        if (teleportAbilityRef.current && TELEPORT_ABILITY) {
-            // Draw teleport ability icon
-            const abilityX = ability_backgroundX + abilityMargin + (baseAbilitySize + abilitySpacing) * 2 + 70;
-            const abilityY = ability_backgroundY + abilityMargin;
-            
-            ctx.drawImage(
-                teleportAbilityRef.current, 
-                abilityX, 
-                abilityY, 
-                baseAbilitySize, 
-                baseAbilitySize
-            );
-            
-            // Draw cooldown progress bar if ability is on cooldown
-            if (teleportAbilityOnCooldown.current) {
-                const elapsed = currentTime - teleportAbilityCooldownStartTime.current;
-                const cooldownProgress = Math.min(elapsed / TELEPORT_COOLDOWN, 1);
-                
-                // Horizontal cooldown progress bar (below ability icon)
-                const cooldownBarWidth = baseAbilitySize; // Same width as ability icon
-                const cooldownBarHeight = 15; // Height for horizontal bar
-                const cooldownBarX = abilityX; // Same X as ability icon
-                const cooldownBarY = abilityY + baseAbilitySize + 8; // Below the ability icon
-                
+                // Draw ability icon with opacity based on cooldown
                 ctx.save();
-                
-                // Background (darker for contrast)
-                ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
-                drawRoundedRect(ctx, cooldownBarX, cooldownBarY, cooldownBarWidth, cooldownBarHeight, 5);
-                ctx.fill();
-                
-                // Progress (brighter red) - fills from left to right
-                ctx.fillStyle = "rgba(255, 50, 50, 0.9)"; // Brighter red for cooldown
-                const progressWidth = (cooldownBarWidth - 4) * cooldownProgress; // Progress width
-                if (progressWidth > 0) {
-                    drawRoundedRect(ctx, cooldownBarX + 2, cooldownBarY + 2, progressWidth, cooldownBarHeight - 4, 3);
-                    ctx.fill();
+                if (isOnCooldown) {
+                    ctx.globalAlpha = 0.5; // Dim the icon when on cooldown
                 }
-                
-                // Add border for better definition
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
-                ctx.lineWidth = 1;
-                drawRoundedRect(ctx, cooldownBarX, cooldownBarY, cooldownBarWidth, cooldownBarHeight, 5);
-                ctx.stroke();
-                
+                ctx.drawImage(abilityRef, abilityX, abilityY, baseAbilitySize, baseAbilitySize);
                 ctx.restore();
-            }
-            else {
-                ctx.fillStyle = "white";
-                ctx.font = `${Math.min(baseAbilitySize / 2, 23)}px 'Rajdhani', sans-serif`;
-                // Center the letter horizontally and position it below the ability icon
-                const letterX = abilityX + (baseAbilitySize * 0.4); // Center horizontally
-                const letterY = abilityY + baseAbilitySize + (baseAbilitySize * 0.3); // Position below icon
-                ctx.fillText("T", letterX, letterY);
-            }
+                
+                // Draw cooldown progress bar if ability is on cooldown
+                if (isOnCooldown) {
+                    const elapsed = currentTime - cooldownStartTime;
+                    const cooldownProgress = Math.min(elapsed / cooldownDuration, 1);
+                    
+                    // Horizontal cooldown progress bar (below ability icon)
+                    const cooldownBarWidth = baseAbilitySize; // Same width as ability icon
+                    const cooldownBarHeight = 15; // Height for horizontal bar
+                    const cooldownBarX = abilityX; // Same X as ability icon
+                    const cooldownBarY = abilityY + baseAbilitySize + 8; // Below the ability icon
+                    
+                    ctx.save();
+                    
+                    // Background (darker for contrast)
+                    ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+                    drawRoundedRect(ctx, cooldownBarX, cooldownBarY, cooldownBarWidth, cooldownBarHeight, 5);
+                    ctx.fill();
+                    
+                    // Progress (brighter red) - fills from left to right
+                    ctx.fillStyle = "rgba(255, 50, 50, 0.9)"; // Brighter red for cooldown
+                    const progressWidth = (cooldownBarWidth - 4) * cooldownProgress; // Progress width
+                    if (progressWidth > 0) {
+                        drawRoundedRect(ctx, cooldownBarX + 2, cooldownBarY + 2, progressWidth, cooldownBarHeight - 4, 3);
+                        ctx.fill();
+                    }
+                    
+                    // Add border for better definition
+                    ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+                    ctx.lineWidth = 1;
+                    drawRoundedRect(ctx, cooldownBarX, cooldownBarY, cooldownBarWidth, cooldownBarHeight, 5);
+                    ctx.stroke();
+                    
+                    ctx.restore();
+                } else {
+                    // Draw key binding letter when not on cooldown
+                    ctx.fillStyle = "white";
+                    ctx.font = `${Math.min(baseAbilitySize / 2, 23)}px 'Rajdhani', sans-serif`;
+                    // Center the letter horizontally and position it below the ability icon
+                    const letterX = abilityX + (baseAbilitySize * 0.4); // Center horizontally
+                    const letterY = abilityY + baseAbilitySize + (baseAbilitySize * 0.3); // Position below icon
+                    ctx.fillText(abilityName, letterX, letterY);
+                }
+            });
         }
 
         
