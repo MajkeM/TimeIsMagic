@@ -1,0 +1,128 @@
+@import url('https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    background: url('./Sprites/home-background.png') no-repeat center center fixed;
+    background-size: cover;
+    font-family: Arial, sans-serif;
+}
+
+.home-content {
+    border-radius: 10px;
+    text-align: center;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    margin-top: 5vh;
+    min-height: 60vh;
+    border: 4px solid rgb(66, 66, 66);
+    height: auto;
+    width: auto;
+    max-width: 90vw;
+    margin: 10vh auto;
+    padding: 20px;
+    font-family: "MedievalSharp", cursive;
+    background: url('./Sprites/navbar-background.png') no-repeat center center;
+}
+.version {
+    font-size: clamp(10px, 2vw, 20px);
+    margin-top: 20%;
+    color: lightgray;
+}
+.home-content h1 {
+    font-size: clamp(24px, 7vw,60px);
+    margin-bottom: 20px;
+}
+
+.nav-bar {
+    background: url('./Sprites/navbar-background.png') no-repeat center center;
+    width: 60%;
+    margin: 5vh auto 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    backdrop-filter: blur(10px);
+    height: auto;
+    max-height: 12vh;
+    border: 4px solid rgb(66, 66, 66);
+    
+    border-radius: 10px;
+}
+
+
+.home-content h3 {
+    margin-top: 5vh;
+}
+
+.home-content a {
+    color: yellow;
+    text-decoration: none;
+    font-weight: bold;
+    backdrop-filter: blur(10px);
+    border: 1px solid black;
+    border-radius:10px ;
+    padding: 10px 20px;
+    transition: background-color 0.3s;
+    display: inline-block;
+    margin-top: 2vh;
+
+}
+.home-content a:hover {
+    background-color: rgba(40, 28, 28, 0.9);
+}
+
+.nav-bar a {
+    color: white;
+    text-decoration: none;
+     font-family: "MedievalSharp", cursive;
+     color: yellow;
+    font-size: clamp(10px, 2vw, 24px);
+    letter-spacing: 2px;
+    transform: scale(1.0);
+    transition: transform 0.2s;
+}
+.nav-bar a:hover {
+    transform: scale(1.2);
+}
+.play-button img {
+    width: auto;
+    height: auto;
+    max-width: 10vw;
+    cursor: pointer;
+    transform: scale(1);
+    transition: transform 0.2s;
+}
+
+.play-button {
+    border: none;
+    background-color: transparent;
+}
+
+.play-button img:hover {
+    transform: scale(1.05);
+}
+
+/* New styles for settings and credits and loadout page*/
+.settings-content, .credits-content, .loadout-content {
+    border-radius: 10px;
+    text-align: center;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    margin-top: 5vh;
+    min-height: 60vh;
+    border: 4px solid rgb(66, 66, 66);
+    height: auto;
+    width: auto;
+    max-width: 90vw;
+    margin: 10vh auto;
+    padding: 20px;
+    font-family: "MedievalSharp", cursive;
+    background: url('./Sprites/navbar-background.png') no-repeat center center;
+}

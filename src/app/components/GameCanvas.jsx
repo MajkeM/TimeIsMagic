@@ -12,8 +12,10 @@ import teleportAbility from "../Sprites/teleport-ability.png";
 import abilityBackground from "../Sprites/ability-background.png";
 import scoreBackground from "../Sprites/score-background.png";
 
+import { Link } from "react-router-dom";
 
-export default function GameCanvas() {
+
+export default function GameCanvas({showCollision}) {
 
     // canvas 
         // ability icons 
@@ -150,129 +152,95 @@ export default function GameCanvas() {
     const lastTrippleShootEnemySpawnTime = useRef(0);
     const stoneImageRef = useRef(null);
 
-
-
-
+    // Use ref for loose state so gameLoop can see updates immediately
+    const looseRef = useRef(false);
     const [loose, setLoose] = useState(false);
 
     useEffect(() => {
         const handleKeyDown = (e) => {
-            if (((e.key === "r" || e.key === "R") && RELOAD_ABILITY) && !abilityOnCooldown.current){
-                // Aktivovat ability boost
+            const key = e.key.toLowerCase(); // Normalize key to lowercase
+            const currentTime = performance.now();
+
+            // Reload Ability ('r')
+            if (key === "r" && RELOAD_ABILITY && !abilityOnCooldown.current) {
                 reloadTimeRef.current = RELOADTIME_ABILITY_BOOST;
                 abilityOnCooldown.current = true;
-                abilityCooldownStartTime.current = performance.now(); // Start cooldown timer
-                
-                console.log("Reload boost activated!"); // Debug
+                abilityCooldownStartTime.current = currentTime;
 
-                // Vrátit na normální reload time po duration
                 setTimeout(() => {
                     reloadTimeRef.current = RELOADTIME;
-                    console.log("Reload boost ended"); // Debug
                 }, RELOADTIME_ABILITY_BOOST_DURATION);
                 
-                // Reset cooldown
                 setTimeout(() => {
                     abilityOnCooldown.current = false;
-                    console.log("Ability ready again"); // Debug
                 }, RELOADTIME_ABILITY_BOOST_COOLDOWN);
             }
-        }
 
-        window.addEventListener("keydown", handleKeyDown);
-        
-        return () => {
-            window.removeEventListener("keydown", handleKeyDown);
-        };
-    }, []);
-
-    // when player presses T key, enemies will dissapear on in around TELEPORT_DISTANCE distance from cursor. So it kills enemies around cursor
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if ((e.key === "t" || e.key === "T") && TELEPORT_ABILITY && !teleportAbilityOnCooldown.current) {
-                // Activate teleport ability visual indicator
+            // Teleport/Kill Ability ('t')
+            if (key === "t" && TELEPORT_ABILITY && !teleportAbilityOnCooldown.current) {
                 teleportAbilityActive.current = true;
-                teleportAbilityStartTime.current = performance.now();
+                teleportAbilityStartTime.current = currentTime;
                 teleportAbilityOnCooldown.current = true;
-                teleportAbilityCooldownStartTime.current = performance.now();
+                teleportAbilityCooldownStartTime.current = currentTime;
                 
-                // Remove enemies within TELEPORT_DISTANCE from mouse cursor
+                const mousePos = mousemove.current;
                 basicEnemyRef.current = basicEnemyRef.current.filter(enemy => {
                     const ex = enemy.x + enemy.width / 2;
-                    const ey = enemy.y + enemy.height / 4; // Hlava - čtvrtina z vrchu
-                    const distance = Math.sqrt((ex - mousemove.current.x) ** 2 + (ey - mousemove.current.y) ** 2);
+                    const ey = enemy.y + enemy.height / 4;
+                    const distance = Math.sqrt((ex - mousePos.x) ** 2 + (ey - mousePos.y) ** 2);
                     return distance > TELEPORT_DISTANCE;
                 });
                 trippleShootEnemyRef.current = trippleShootEnemyRef.current.filter(enemy => {
                     const ex = enemy.x + enemy.width / 2;
-                    const ey = enemy.y + enemy.height / 4; // Hlava - čtvrtina z vrchu
-                    const distance = Math.sqrt((ex - mousemove.current.x) ** 2 + (ey - mousemove.current.y) ** 2);
+                    const ey = enemy.y + enemy.height / 2;
+                    const distance = Math.sqrt((ex - mousePos.x) ** 2 + (ey - mousePos.y) ** 2);
                     return distance > TELEPORT_DISTANCE;
                 });
 
-                console.log("Teleport ability activated!"); // Debug
-
                 setTimeout(() => {
                     teleportAbilityActive.current = false;
-                    console.log("Teleport ability ended"); // Debug
                 }, TELEPORT_DURATION);
 
                 setTimeout(() => {
                     teleportAbilityOnCooldown.current = false;
-                    console.log("Teleport ability ready again"); // Debug
                 }, TELEPORT_COOLDOWN);
             }
-        }
 
-        window.addEventListener("keydown", handleKeyDown);
-        
-        return () => {
-            window.removeEventListener("keydown", handleKeyDown);
-        };
-    })
-
-
-    // when player presses F key, teleport in the direction of mouse cursor
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if ((e.key === "f" || e.key === "F") && FLASH_ABILITY && !flashAbilityOnCooldown.current) {
-                // Calculate from player center to mouse cursor
+            // Flash Ability ('f')
+            if (key === "f" && FLASH_ABILITY && !flashAbilityOnCooldown.current) {
                 const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
                 const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
                 
                 const dx = mousemove.current.x - playerCenterX;
                 const dy = mousemove.current.y - playerCenterY;
                 const length = Math.sqrt(dx * dx + dy * dy);
-                const dirX = dx / length;
-                const dirY = dy / length;
                 
-                // Calculate new position
-                const newX = playerRef.current.x + dirX * flash_distance;
-                const newY = playerRef.current.y + dirY * flash_distance;
+                if (length > 0) { // Avoid division by zero
+                    const dirX = dx / length;
+                    const dirY = dy / length;
+                    
+                    const newX = playerRef.current.x + dirX * flash_distance;
+                    const newY = playerRef.current.y + dirY * flash_distance;
+                    
+                    playerRef.current.x = Math.max(0, Math.min(newX, window.innerWidth - playerRef.current.width));
+                    playerRef.current.y = Math.max(0, Math.min(newY, window.innerHeight - playerRef.current.height));
+                }
                 
-                // Boundary checking to keep player on screen
-                playerRef.current.x = Math.max(0, Math.min(newX, window.innerWidth - playerRef.current.width));
-                playerRef.current.y = Math.max(0, Math.min(newY, window.innerHeight - playerRef.current.height));
-                
-                // Start cooldown
                 flashAbilityOnCooldown.current = true;
-                flashAbilityCooldownStartTime.current = performance.now();
+                flashAbilityCooldownStartTime.current = currentTime;
                 
-                console.log("Flash ability activated!"); // Debug
-                
-                // Reset cooldown
                 setTimeout(() => {
                     flashAbilityOnCooldown.current = false;
-                    console.log("Flash ability ready again"); // Debug
                 }, FLASH_COOLDOWN);
             }
-        }
+        };
+
         window.addEventListener("keydown", handleKeyDown);
         
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
         };
-    }, []);
+    }, []); // Empty dependency array ensures this runs only once
 
     
     // tripple shoot enemy bullets (shoots every 5 seconds)
@@ -620,32 +588,12 @@ export default function GameCanvas() {
     const gameLoop = () => {
         const currentTime = performance.now();
 
-        // Helper function for circular collision detection with head positioning
-        const circularCollision = (obj1, obj2, obj1Radius = null, obj2Radius = null, obj1IsEnemy = false) => {
-            let obj1CenterX, obj1CenterY;
-            
-            if (obj1IsEnemy) {
-                // Pro nepřítele - umístit collision na hlavu
-                obj1CenterX = obj1.x + obj1.width / 2;
-                obj1CenterY = obj1.y + obj1.height / 4; // Hlava v horní čtvrtinw
-            } else {
-                // Pro hráče a bullets - normální střed
-                obj1CenterX = obj1.x + obj1.width / 2;
-                obj1CenterY = obj1.y + obj1.height / 2;
-            }
-            
-            const obj2CenterX = obj2.x + (obj2.width || 20) / 2;
-            const obj2CenterY = obj2.y + (obj2.height || 20) / 2;
-            
-            const radius1 = obj1Radius || 20;
-            const radius2 = obj2Radius || Math.min(obj2.width || 20, obj2.height || 20) / 2;
-            
-            const distance = Math.sqrt(
-                Math.pow(obj1CenterX - obj2CenterX, 2) + 
-                Math.pow(obj1CenterY - obj2CenterY, 2)
-            );
-            
-            return distance < (radius1 + radius2);
+        // Helper function for circular collision detection - OPTIMIZED
+        const circularCollision = (x1, y1, r1, x2, y2, r2) => {
+            const dx = x1 - x2;
+            const dy = y1 - y2;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            return distance < r1 + r2;
         };
 
         
@@ -694,13 +642,15 @@ export default function GameCanvas() {
         }
 
         // Draw player collision boundary (debug visualization)
-        const playerRadius = PLAYER_COLLISION_RADIUS; // Use constant for consistency
-        
-        ctx.strokeStyle = "rgba(0, 255, 0, 0.5)"; // Semi-transparent green
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(playerCenterX, playerCenterY, playerRadius, 0, 2 * Math.PI);
-        ctx.stroke();
+        if (showCollision) {
+            const playerRadius = PLAYER_COLLISION_RADIUS; // Use constant for consistency
+            
+            ctx.strokeStyle = "rgba(0, 255, 0, 0.5)"; // Semi-transparent green
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(playerCenterX, playerCenterY, playerRadius, 0, 2 * Math.PI);
+            ctx.stroke();
+        }
 
         // Draw purple teleport range circle when teleport ability is active
         if (teleportAbilityActive.current) {
@@ -828,16 +778,18 @@ export default function GameCanvas() {
             }
 
             // Draw bullet collision boundary (debug visualization) - proporcionálně se sprite
-            const bulletSize = 100; // Stejná velikost jako sprite
-            const bulletCenterX = bullet.x + bulletSize/2; // Střed podle velikosti sprite (30/2)
-            const bulletCenterY = bullet.y + bulletSize/2; // Střed podle velikosti sprite (30/2)  
-            const bulletRadius = 15; // Větší collision radius pro větší sprite
-            
-            ctx.strokeStyle = "rgba(255, 255, 0, 0.6)"; // Semi-transparent yellow
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(bulletCenterX, bulletCenterY, bulletRadius, 0, 2 * Math.PI);
-            ctx.stroke();
+            if (showCollision) {
+                const bulletSize = 100; // Stejná velikost jako sprite
+                const bulletCenterX = bullet.x + bulletSize/2; // Střed podle velikosti sprite (30/2)
+                const bulletCenterY = bullet.y + bulletSize/2; // Střed podle velikosti sprite (30/2)  
+                const bulletRadius = 15; // Větší collision radius pro větší sprite
+                
+                ctx.strokeStyle = "rgba(255, 255, 0, 0.6)"; // Semi-transparent yellow
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(bulletCenterX, bulletCenterY, bulletRadius, 0, 2 * Math.PI);
+                ctx.stroke();
+            }
         })
 
         // Remove bullets that are out of bounds
@@ -858,6 +810,7 @@ export default function GameCanvas() {
             enemy.y += dirY * basicEnemySpeed.current;
 
             // Calculate collision position on goblin's head instead of center
+
             const enemyCenterX = enemy.x + enemy.width / 2;  // Střed horizontálně
             const enemyCenterY = enemy.y + enemy.height / 4; // Hlava - čtvrtina z vrchu
             const enemyRotationAngle = Math.atan2(dy, dx);
@@ -883,20 +836,21 @@ export default function GameCanvas() {
             }
 
             // Draw enemy collision boundary (debug visualization) - positioned on head  
-            const enemyRadius = 50; // Větší radius pro hlavu goblina (200x150 sprite)
-            ctx.strokeStyle = "rgba(255, 0, 0, 0.4)"; // Semi-transparent red
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(enemyCenterX, enemyCenterY, enemyRadius, 0, 2 * Math.PI);
-            ctx.stroke();
+            if (showCollision) {
+                const enemyRadius = 50; // Větší radius pro hlavu goblina (200x150 sprite)
+                ctx.strokeStyle = "rgba(255, 0, 0, 0.4)"; // Semi-transparent red
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(enemyCenterX, enemyCenterY, enemyRadius, 0, 2 * Math.PI);
+                ctx.stroke();
 
-            // DEBUG: Zobrazit také střed sprite pro porovnání
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.3)"; // Bílý kruh pro střed
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.arc(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 5, 0, 2 * Math.PI);
-            ctx.stroke();
-
+                // DEBUG: Zobrazit také střed sprite pro porovnání
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.3)"; // Bílý kruh pro střed
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 5, 0, 2 * Math.PI);
+                ctx.stroke();
+            }
         })
 
         // draw tripple shoot enemies
@@ -937,12 +891,14 @@ export default function GameCanvas() {
             ctx.restore();
 
             // Draw enemy collision boundary (debug visualization) - smaller than the image
-            const enemyRadius = 25; // Menší radius než obrázek (původně 25)
-            ctx.strokeStyle = "rgba(128, 0, 128, 0.4)"; // Semi-transparent purple
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(enemyCenterX, enemyCenterY, enemyRadius, 0, 2 * Math.PI);
-            ctx.stroke();
+            if (showCollision) {
+                const enemyRadius = 25; // Menší radius než obrázek (původně 25)
+                ctx.strokeStyle = "rgba(128, 0, 128, 0.4)"; // Semi-transparent purple
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(enemyCenterX, enemyCenterY, enemyRadius, 0, 2 * Math.PI);
+                ctx.stroke();
+            }
         });
 
         // Remove enemies that are out of bounds (just in case)
@@ -964,15 +920,17 @@ export default function GameCanvas() {
             }
             
             // Draw bullet collision boundary (debug visualization)
-            const bulletCenterX = bullet.x; // bullet center at bullet position
-            const bulletCenterY = bullet.y;
-            const bulletRadius = GOBLIN_BULLET_RADIUS; // Use constant for collision radius
-            
-            ctx.strokeStyle = "rgba(255, 0, 0, 0.3)"; // Semi-transparent red
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.arc(bulletCenterX, bulletCenterY, bulletRadius, 0, 2 * Math.PI);
-            ctx.stroke();
+            if (showCollision) {
+                const bulletCenterX = bullet.x; // bullet center at bullet position
+                const bulletCenterY = bullet.y;
+                const bulletRadius = GOBLIN_BULLET_RADIUS; // Use constant for collision radius
+                
+                ctx.strokeStyle = "rgba(255, 0, 0, 0.3)"; // Semi-transparent red
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(bulletCenterX, bulletCenterY, bulletRadius, 0, 2 * Math.PI);
+                ctx.stroke();
+            }
         })
 
 
@@ -997,15 +955,17 @@ export default function GameCanvas() {
             }
             
             // Draw bullet collision boundary (debug visualization)
-            const bulletCenterX = bullet.x;
-            const bulletCenterY = bullet.y;
-            const bulletRadius = 20; // Collision radius pro triple shoot bullets
-            
-            ctx.strokeStyle = "rgba(0, 0, 255, 0.3)"; // Semi-transparent blue
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.arc(bulletCenterX, bulletCenterY, bulletRadius, 0, 2 * Math.PI);
-            ctx.stroke();
+            if (showCollision) {
+                const bulletCenterX = bullet.x;
+                const bulletCenterY = bullet.y;
+                const bulletRadius = 20; // Collision radius pro triple shoot bullets
+                
+                ctx.strokeStyle = "rgba(0, 0, 255, 0.3)"; // Semi-transparent blue
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(bulletCenterX, bulletCenterY, bulletRadius, 0, 2 * Math.PI);
+                ctx.stroke();
+            }
         });
         
         // Remove basic enemy bullets that are out of bounds
@@ -1016,12 +976,12 @@ export default function GameCanvas() {
 
         // collision beetwen player and tripple shoot enemy bullets (using circular collision)
         trippleShootEnemyBulletsRef.current.forEach((bullet, index) => {
-            const bulletObj = { x: bullet.x, y: bullet.y, width: 20, height: 20 }; // Triple shoot bullet size
-            const playerRadius = PLAYER_COLLISION_RADIUS; // Use constant
-            const bulletRadius = 10; // Triple shoot bullet radius
+            const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+            const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
             
-            if (circularCollision(playerRef.current, bulletObj, playerRadius, bulletRadius)) {
+            if (circularCollision(playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS, bullet.x, bullet.y, 10)) {
                 trippleShootEnemyBulletsRef.current.splice(index, 1);
+                looseRef.current = true;
                 setLoose(true);
             }
         });
@@ -1029,12 +989,12 @@ export default function GameCanvas() {
         // coliision beetwen tripple shoot enemy and player bullets (using circular collision)
         bullets.current.forEach((bullet, bIndex) => {
             trippleShootEnemyRef.current.forEach((enemy, eIndex) => {
-                // Create bullet object for circular collision
-                const bulletObj = { x: bullet.x, y: bullet.y, width: 30, height: 30 }; // Stejná velikost jako sprite
-                const enemyRadius = 15; // Same smaller radius as visual debug
-                const bulletRadius = 15; // Větší radius pro větší sprite
+                const enemyCenterX = enemy.x + enemy.width / 2;
+                const enemyCenterY = enemy.y + enemy.height / 2;
+                const bulletCenterX = bullet.x + 15; // Center of 30x30 sprite
+                const bulletCenterY = bullet.y + 15;
                 
-                if (circularCollision(enemy, bulletObj, enemyRadius, bulletRadius)) {
+                if (circularCollision(enemyCenterX, enemyCenterY, 15, bulletCenterX, bulletCenterY, 15)) {
                     // Remove both bullet and enemy on collision
                     bullets.current.splice(bIndex, 1);
                     trippleShootEnemyRef.current.splice(eIndex, 1);
@@ -1044,67 +1004,40 @@ export default function GameCanvas() {
             })
         });
 
-        // Remove tripple shoot enemy bullets that are out of bounds
-        trippleShootEnemyBulletsRef.current = trippleShootEnemyBulletsRef.current.filter((bullet) => {
-            return bullet.x >= 0 && bullet.x <= window.innerWidth && bullet.y >= 0 && bullet.y <= window.innerHeight;
-        });
-
-
-        // MAIN GAME function - if player is not moving, enemy and bullets move very slowly
-        if (!moving.current){
-            basicEnemySpeed.current = BASIC_ENEMY_SPEED_SLOW;
-            bulletSpeed.current = PLAYER_BULLET_SPEED_SLOW;
-            enemyBulletSpeed.current = BASIC_ENEMY_BULLET_SPEED_SLOW;
-            trippleShootEnemyBulletSpeed.current = TRIPPLESHOOT_ENEMY_BULLET_SPEED_SLOW;
-            trippleShootEnemySpeed.current = TRIPPLESHOOT_ENEMY_SPEED_SLOW;
-
-        }
-        else {
-            basicEnemySpeed.current = BASIC_ENEMY_SPEED;
-            bulletSpeed.current = PLAYER_BULLET_SPEED;
-            enemyBulletSpeed.current = BASIC_ENEMY_BULLET_SPEED;
-            trippleShootEnemyBulletSpeed.current = TRIPPLESHOOT_ENEMY_BULLET_SPEED;
-            trippleShootEnemySpeed.current = TRIPPLESHOOT_ENEMY_SPEED;
-
-        }
-
-        // "The worst think in games, I dont want to do that" . COLLISIONS
-
         // Collisions between player and basic enemies (goblin collision)
         basicEnemyRef.current.forEach((enemy, index) => {
-            const enemyRadius = 50; // Stejný radius jako vizualizace (hlava goblina)
-            const playerRadius = PLAYER_COLLISION_RADIUS; // Use constant
+            const enemyHeadX = enemy.x + enemy.width / 2;
+            const enemyHeadY = enemy.y + enemy.height / 4;
+            const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+            const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
             
-            if (circularCollision(enemy, playerRef.current, enemyRadius, playerRadius, true)) { // true = enemy (hlava positioning) - enemy je obj1
+            if (circularCollision(enemyHeadX, enemyHeadY, 50, playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS)) {
+                looseRef.current = true;
                 setLoose(true);
             }
         });
 
         // Collisions between player and triple shoot enemies
         trippleShootEnemyRef.current.forEach((enemy, index) => {
-            const enemyRadius = 15; // Stejný radius jako vizualizace
-            const playerRadius = PLAYER_COLLISION_RADIUS; // Use constant
+            const enemyCenterX = enemy.x + enemy.width / 2;
+            const enemyCenterY = enemy.y + enemy.height / 2;
+            const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+            const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
             
-            if (circularCollision(playerRef.current, enemy, playerRadius, enemyRadius)) {
+            if (circularCollision(playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS, enemyCenterX, enemyCenterY, 15)) {
+                looseRef.current = true;
                 setLoose(true);
             }
         });
 
         // Collisions between player and basic enemy bullets (using circular collision)
         basicEnemyBulletsRef.current.forEach((bullet, index) => {
-            // Since bullet.x, bullet.y is the CENTER of the goblin bullet sprite,
-            // we need to create bulletObj with top-left corner for consistent collision detection
-            const bulletObj = { 
-                x: bullet.x - GOBLIN_BULLET_SIZE/2, 
-                y: bullet.y - GOBLIN_BULLET_SIZE/2, 
-                width: GOBLIN_BULLET_SIZE, 
-                height: GOBLIN_BULLET_SIZE 
-            };
-            const playerRadius = PLAYER_COLLISION_RADIUS; // Use constant
-            const bulletRadius = GOBLIN_BULLET_RADIUS; // Use constant for collision radius
+            const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+            const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
             
-            if (circularCollision(playerRef.current, bulletObj, playerRadius, bulletRadius)) {
+            if (circularCollision(playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS, bullet.x, bullet.y, GOBLIN_BULLET_RADIUS)) {
                 basicEnemyBulletsRef.current.splice(index, 1);
+                looseRef.current = true;
                 setLoose(true);
             }
         })
@@ -1114,11 +1047,12 @@ export default function GameCanvas() {
                 // Collisions between player bullets and basic enemies (head collision)
         bullets.current.forEach((bullet, bIndex) => {
             basicEnemyRef.current.forEach((enemy, eIndex) => {
-                const bulletObj = { x: bullet.x, y: bullet.y, width: 30, height: 30 }; // Stejná velikost jako sprite
-                const enemyRadius = 40; // Stejný radius jako vizualizace
-                const bulletRadius = 15; // Větší radius pro větší sprite
+                const enemyHeadX = enemy.x + enemy.width / 2;
+                const enemyHeadY = enemy.y + enemy.height / 4;
+                const bulletCenterX = bullet.x + 15;
+                const bulletCenterY = bullet.y + 15;
                 
-                if (circularCollision(enemy, bulletObj, enemyRadius, bulletRadius, true)) { // true = enemy
+                if (circularCollision(enemyHeadX, enemyHeadY, 40, bulletCenterX, bulletCenterY, 15)) {
                     bullets.current.splice(bIndex, 1);
                     basicEnemyRef.current.splice(eIndex, 1);
                     score.current += 10;
@@ -1130,18 +1064,10 @@ export default function GameCanvas() {
         // collison beetwen enemy bullet and bullet (using circular collision)
         basicEnemyBulletsRef.current.forEach((eBullet, ebIndex) => {
             bullets.current.forEach((bullet, bIndex) => {
-                // Fix goblin bullet positioning - bullet.x/y is center, need top-left for collision
-                const eBulletObj = { 
-                    x: eBullet.x - GOBLIN_BULLET_SIZE/2, 
-                    y: eBullet.y - GOBLIN_BULLET_SIZE/2, 
-                    width: GOBLIN_BULLET_SIZE, 
-                    height: GOBLIN_BULLET_SIZE 
-                };
-                const bulletObj = { x: bullet.x, y: bullet.y, width: 30, height: 30 }; // Player bullet size
-                const eBulletRadius = GOBLIN_BULLET_RADIUS; // Use constant for goblin bullet radius
-                const bulletRadius = 15; // Player bullet radius
+                const bulletCenterX = bullet.x + 15;
+                const bulletCenterY = bullet.y + 15;
                 
-                if (circularCollision(eBulletObj, bulletObj, eBulletRadius, bulletRadius)) {
+                if (circularCollision(eBullet.x, eBullet.y, GOBLIN_BULLET_RADIUS, bulletCenterX, bulletCenterY, 15)) {
                     // Remove both enemy bullet and player bullet on collision
                     basicEnemyBulletsRef.current.splice(ebIndex, 1);
                     bullets.current.splice(bIndex, 1);
@@ -1407,7 +1333,7 @@ ctx.fillText(`Difficulty: ${difficulty.current}`, textMarginX, textMarginY + (fo
         
 
 
-        if (!loose){
+        if (!looseRef.current){
             animationFrameId = requestAnimationFrame(gameLoop);
 
         }
@@ -1436,15 +1362,30 @@ ctx.fillText(`Difficulty: ${difficulty.current}`, textMarginX, textMarginY + (fo
   ctx.closePath();
 }
 
-    useEffect(() => {
-        if (loose){
-            window.location.reload();
-        }
-    }, [loose]);
+    
 
     return (
         <div>
         <canvas ref={canvasRef} />
+        {loose && (
+            <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                padding: '40px',
+                borderRadius: '15px',
+                textAlign: 'center',
+                color: 'white',
+                zIndex: 10,
+                fontFamily: "'MedievalSharp', cursive"
+            }}>
+                <h1 style={{ fontSize: '48px', marginBottom: '20px' }}>You Lost!</h1>
+                <p style={{ fontSize: '24px', marginBottom: '30px' }}>Final Score: {score.current}</p>
+                <Link to="/"> Home</Link>
+            </div>
+        )}
         </div>
     );
 }
