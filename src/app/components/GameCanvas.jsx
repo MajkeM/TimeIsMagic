@@ -753,6 +753,23 @@ export default function GameCanvas({showCollision}) {
 
         previousPosition.current = {x: playerRef.current.x, y: playerRef.current.y};
 
+        // Adjust game speed based on player movement (Time is Magic mechanic)
+        if (moving.current) {
+            playerRef.current.speed = PLAYER_SPEED;
+            bulletSpeed.current = PLAYER_BULLET_SPEED;
+            basicEnemySpeed.current = BASIC_ENEMY_SPEED;
+            enemyBulletSpeed.current = BASIC_ENEMY_BULLET_SPEED;
+            trippleShootEnemySpeed.current = TRIPPLESHOOT_ENEMY_SPEED;
+            trippleShootEnemyBulletSpeed.current = TRIPPLESHOOT_ENEMY_BULLET_SPEED;
+        } else {
+            playerRef.current.speed = PLAYER_SPEED_SLOW;
+            bulletSpeed.current = PLAYER_BULLET_SPEED_SLOW;
+            basicEnemySpeed.current = BASIC_ENEMY_SPEED_SLOW;
+            enemyBulletSpeed.current = BASIC_ENEMY_BULLET_SPEED_SLOW;
+            trippleShootEnemySpeed.current = TRIPPLESHOOT_ENEMY_SPEED_SLOW;
+            trippleShootEnemyBulletSpeed.current = TRIPPLESHOOT_ENEMY_BULLET_SPEED_SLOW;
+        }
+
 
 
 
