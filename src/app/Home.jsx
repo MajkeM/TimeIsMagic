@@ -3,13 +3,15 @@ import React from "react";
 import {  BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import playButtonImage from "./Sprites/play-button-image.png"; // Import the image
 import Navbar from "./components/Navbar";
+import UserGoldLevelBar from "./components/UserGoldLevelBar";
 import "./globals.css";
 
-export default function Home() {
+export default function Home({gold, level, exp}) {
     return (
         <div className = "home-page">
             {/* link to game */}
             <Navbar />
+            <UserGoldLevelBar gold={gold} level={level} exp={exp} />
             <div className="home-content">
                 <h1>Welcome to Time Is Magic!</h1>
                 <p>Your adventure begins here. Click the play button to start your journey.</p> 

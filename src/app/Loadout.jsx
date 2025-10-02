@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import "./globals.css";
 import Navbar from "./components/Navbar";
+import UserGoldLevelBar from "./components/UserGoldLevelBar";
 
 import reloadAbility from "./Sprites/reload-ability.png"; 
 import flashAbility from "./Sprites/flash-ability.png";
@@ -18,7 +19,7 @@ import mageSprite from "./Sprites/runeMagePlayer.png";
 import archerSprite from "./Sprites/archerPlayer.png";
 
 
-export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ability, character, handleCharacterChange}) {
+export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ability, character, handleCharacterChange, gold, level, exp}) {
 
     useEffect(() => {
         // Set the radio buttons based on the current abilities
@@ -45,14 +46,16 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
     return (
         <div className="loadout-page">
             <Navbar />
+            <UserGoldLevelBar gold={gold} level={level} exp={exp} />
             <div className="loadout-content">
                 <h1>Loadout Page</h1>
                 <p>Choose your loadout here and collect points to unlock new abilities.</p>
 
                 <div>
                     <h2>Abilities</h2>
+                    <p>R abilities</p>
                     <div className = "R abilities">
-                        <p>R abilities</p>
+                        
                         <span className="ability-option">
                             <input type="radio" name="R" value="reload" onChange={handleAbilityChange} />
                             <label htmlFor ="R">Reload <img className="ability-icon" src={reloadAbility} alt="Reload Ability" /></label>
@@ -66,9 +69,9 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
                             <label htmlFor ="R">Gravity Well <img className="ability-icon" src={gravitywellAbility} alt="Gravity Well Ability" /></label>
                         </span>
                     </div>
-
+                    <p>F abilities</p>
                      <div className = "F abilities">
-                        <p>F abilities</p>
+                        
                          <span className="ability-option">
                             <input type="radio" defaultChecked name="F" value="flash" onChange={handleAbilityChange} />
                             <label htmlFor ="F">Flash <img className="ability-icon" src={flashAbility} alt="Flash Ability" /></label>
@@ -83,8 +86,9 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
                         </span>
                        
                     </div>
+                    <p>T abilities</p>
                      <div className = "T abilities">
-                        <p>T abilities</p>
+                        
                         <span className="ability-option">
                             <input type="radio" defaultChecked name="T" value="teleport" onChange={handleAbilityChange} />
                             <label htmlFor ="T">Teleport enemies <img className="ability-icon" src={teleportAbility} alt="Teleport Ability" /></label>

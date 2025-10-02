@@ -7,15 +7,15 @@ export default function Navbar() {
 
     return (
         <nav className ="nav-bar">
-                        <Link to="/"> Home </Link>
-                        <Link to="/loadout">Loadout</Link>
+                        <Link className="side-link" to="/"> Home </Link>
+                        <Link className="side-link" to="/loadout">Loadout</Link>
                         <button className="play-button">
                             <Link to="/game">
                                 <img src={playButtonImage} alt="Play" />
                             </Link>
                         </button>
-                        <Link to="/settings">Settings</Link>
-                        <Link to="/credits">Credits</Link>
+                        <Link className="side-link" to="/settings">Settings</Link>
+                        <Link className="side-link" to="/credits">Credits</Link>
                     </nav>
     )
 }

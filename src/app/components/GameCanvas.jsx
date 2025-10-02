@@ -247,13 +247,18 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     const TRIPPLESHOOT_ENEMY_SPEED_SLOW = 1;
     const TRIPPLESHOOT_ENEMY_BULLET_SPEED_SLOW = 1.5;
 
-    // Responsive speed system
+    // Responsive speed system - DISABLED for consistent gameplay across all resolutions
     // Base reference: 1920x1080 (common desktop resolution)
     const BASE_WIDTH = 1920;
     const BASE_HEIGHT = 1080;
     
     // Calculate responsive speed multiplier based on screen size
     const getResponsiveSpeedMultiplier = () => {
+        // FIXED: Always return 1.0 for consistent speed across all screen sizes
+        // This ensures players on notebooks have the same speed as players on large monitors
+        return 1.0;
+        
+        /* OLD RESPONSIVE CODE - COMMENTED OUT FOR CONSISTENT GAMEPLAY
         const currentWidth = window.innerWidth;
         const currentHeight = window.innerHeight;
         
@@ -265,6 +270,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
         // Apply some smoothing to prevent extreme speed changes
         // Clamp between 0.5x and 2x speed for reasonable gameplay
         return Math.max(0.5, Math.min(2.0, diagonalRatio));
+        */
     };
 
 
@@ -1901,11 +1907,15 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
 
         // Update player position based on keys pressed
         if (keys.current["ArrowUp"] || keys.current["w"]){
-            playerRef.current.y -= playerRef.current.speed;
-
+            if (playerRef.current.y > 0){
+                playerRef.current.y -= playerRef.current.speed;
+            }
         }
         if (keys.current["ArrowDown"] || keys.current["s"]){
-            playerRef.current.y += playerRef.current.speed;
+
+            if (playerRef.current.y +playerRef.current.height < window.innerHeight) {
+                playerRef.current.y += playerRef.current.speed;
+            }
 
         }
         if (keys.current["ArrowLeft"] || keys.current["a"]){

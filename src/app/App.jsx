@@ -15,6 +15,10 @@ export default function App() {
   const [F_ability, setF_Ability] = useState("flash");
   const [T_ability, setT_Ability] = useState("teleport");
 
+  const [gold, setGold] = useState(0);
+  const [level, setLevel] = useState(1);
+  const [exp, setExp] = useState(10);
+
 
   const[character, setCharacter] = useState("wizard");
   
@@ -41,11 +45,11 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Home gold={gold} level={level} exp={exp} />} />
         <Route path="/game" element={<GameCanvas showCollision={showCollision} R_ability={R_ability} F_ability={F_ability} T_ability={T_ability} character={character} />} />
-        <Route path="/loadout" element={<Loadout handleAbilityChange={handleAbilityChange} R_ability={R_ability} F_ability={F_ability} T_ability={T_ability} character={character} handleCharacterChange={handleCharacterChange} />} />
-        <Route path="/settings" element={<Settings toggleCollision={toggleCollision} />} />
-        <Route path="/credits" element={<Credits />} />
+        <Route path="/loadout" element={<Loadout handleAbilityChange={handleAbilityChange} R_ability={R_ability} F_ability={F_ability} T_ability={T_ability} character={character} handleCharacterChange={handleCharacterChange} gold={gold} level={level} exp={exp} />} />
+        <Route path="/settings" element={<Settings toggleCollision={toggleCollision} gold={gold} level={level} exp={exp} />} />
+        <Route path="/credits" element={<Credits gold={gold} level={level} exp={exp} />} />
       </Routes>
     </BrowserRouter>
   );
