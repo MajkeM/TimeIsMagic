@@ -1,10 +1,13 @@
-import { initDatabase } from '../../../lib/database.js';
+import { initDatabase } from "../../../lib/database.js";
 
 export async function POST(request) {
   try {
     await initDatabase();
-    return Response.json({ message: 'Database initialized successfully' });
+    return Response.json({ message: "Database initialized successfully" });
   } catch (error) {
-    return Response.json({ error: 'Database initialization failed' }, { status: 500 });
+    return Response.json(
+      { error: "Database initialization failed" },
+      { status: 500 }
+    );
   }
 }
