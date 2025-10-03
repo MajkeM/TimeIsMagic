@@ -1,7 +1,7 @@
 import { createRoot } from "react-dom/client";
 import GameCanvas from "./components/GameCanvas";
 import {  BrowserRouter, Routes, Route } from "react-router-dom";
-import {useState, useRef, useEffect} from "react";
+import {useState, useRef, useEffect, useCallback} from "react";
 import Home from "./Home";
 import Loadout from "./Loadout";
 import Settings from "./Settings";
@@ -146,20 +146,40 @@ export default function App() {
 
   // Initialize availability on first load and level changes
   useEffect(() => {
-    updateAvailabilityBasedOnLevel(level);
+    // Update character availability directly in useEffect to avoid circular dependencies
+    setCharacterAvailability(prev => {
+      const newCharacterAvailability = {};
+      Object.keys(levelRequirements.characters).forEach(char => {
+        newCharacterAvailability[char] = 
+          prev[char] || level >= levelRequirements.characters[char];
+      });
+      
+      // Only update if there's a change
+      const hasChanges = Object.keys(newCharacterAvailability).some(
+        char => newCharacterAvailability[char] !== prev[char]
+      );
+      
+      if (hasChanges) {
+        saveToStorage('characterAvailability', newCharacterAvailability);
+        return newCharacterAvailability;
+      }
+      
+      return prev;
+    });
   }, [level]);
 
-  // Update character availability when level changes
-  const updateAvailabilityBasedOnLevel = (newLevel) => {
-    // Update character availability
-    const newCharacterAvailability = {};
-    Object.keys(levelRequirements.characters).forEach(char => {
-      newCharacterAvailability[char] = 
-        characterAvailability[char] || newLevel >= levelRequirements.characters[char];
+  // Update character availability when level changes (for external calls)
+  const updateAvailabilityBasedOnLevel = useCallback((newLevel) => {
+    setCharacterAvailability(prev => {
+      const newCharacterAvailability = {};
+      Object.keys(levelRequirements.characters).forEach(char => {
+        newCharacterAvailability[char] = 
+          prev[char] || newLevel >= levelRequirements.characters[char];
+      });
+      saveToStorage('characterAvailability', newCharacterAvailability);
+      return newCharacterAvailability;
     });
-    setCharacterAvailability(newCharacterAvailability);
-    saveToStorage('characterAvailability', newCharacterAvailability);
-  };
+  }, []);
 
   // change ability avaibility state for ability that was unlocked
   const handleAbilityChangeAvailability = (abilityType, abilityName) => {
@@ -249,10 +269,45 @@ export default function App() {
   }
 
   const addLevel = () => {
-    setLevel((prevLevel) => prevLevel + 1);
+    setLevel((prevLevel) => {
+      const newLevel = prevLevel + 1;
+      saveToStorage('level', newLevel);
+      updateAvailabilityBasedOnLevel(newLevel);
+      return newLevel;
+    });
   }
 
-  
+  // Add error boundary for safer navigation
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    const handleError = (error) => {
+      console.error('App error:', error);
+      setHasError(true);
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleError);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleError);
+    };
+  }, []);
+
+  if (hasError) {
+    return (
+      <div style={{ padding: '20px', textAlign: 'center' }}>
+        <h2>Something went wrong!</h2>
+        <button onClick={() => {
+          setHasError(false);
+          window.location.reload();
+        }}>
+          Reload App
+        </button>
+      </div>
+    );
+  }
 
   return (
     <BrowserRouter>
@@ -260,27 +315,72 @@ export default function App() {
 
         <Route 
         path="/" 
-        element={<Home gold={gold} level={level} exp={exp} />} 
+        element={<Home gold={gold || 0} level={level || 1} exp={exp || 0} />} 
         />
 
         <Route 
         path="/game" 
-        element={<GameCanvas showCollision={showCollision} R_ability={R_ability} F_ability={F_ability} T_ability={T_ability} character={character} addGold={addGold} addExp={addExp} gold={gold} level={level} exp={exp} resetXp={resetXp} addLevel={addLevel} />}
+        element={<GameCanvas 
+          showCollision={showCollision} 
+          R_ability={R_ability || 'reload'} 
+          F_ability={F_ability || 'flash'} 
+          T_ability={T_ability || 'teleport'} 
+          character={character || 'wizard'} 
+          addGold={addGold} 
+          addExp={addExp} 
+          gold={gold || 0} 
+          level={level || 1} 
+          exp={exp || 0} 
+          resetXp={resetXp} 
+          addLevel={addLevel} 
+        />}
         />
 
         <Route 
         path="/loadout" 
-        element={<Loadout handleAbilityChange={handleAbilityChange} R_ability={R_ability} F_ability={F_ability} T_ability={T_ability} character={character} handleCharacterChange={handleCharacterChange} gold={gold} level={level} exp={exp} resetXp={resetXp} addLevel={addLevel} handleGoldChange={handleGoldChange} checkEnoghGoldandUnlock={checkEnoghGoldandUnlock} abilityAvailability={abilityAvailability} handleAbilityChangeAvailability={handleAbilityChangeAvailability} characterAvailability={characterAvailability} levelRequirements={levelRequirements} abilityCosts={abilityCosts} />} 
+        element={<Loadout 
+          handleAbilityChange={handleAbilityChange} 
+          R_ability={R_ability || 'reload'} 
+          F_ability={F_ability || 'flash'} 
+          T_ability={T_ability || 'teleport'} 
+          character={character || 'wizard'} 
+          handleCharacterChange={handleCharacterChange} 
+          gold={gold || 0} 
+          level={level || 1} 
+          exp={exp || 0} 
+          resetXp={resetXp} 
+          addLevel={addLevel} 
+          handleGoldChange={handleGoldChange} 
+          checkEnoghGoldandUnlock={checkEnoghGoldandUnlock} 
+          abilityAvailability={abilityAvailability || {}} 
+          handleAbilityChangeAvailability={handleAbilityChangeAvailability} 
+          characterAvailability={characterAvailability || {}} 
+          levelRequirements={levelRequirements || {}} 
+          abilityCosts={abilityCosts || {}} 
+        />} 
         />
 
         <Route 
         path="/settings" 
-        element={<Settings toggleCollision={toggleCollision} gold={gold} level={level} exp={exp} resetXp={resetXp} addLevel={addLevel} />}
+        element={<Settings 
+          toggleCollision={toggleCollision} 
+          gold={gold || 0} 
+          level={level || 1} 
+          exp={exp || 0} 
+          resetXp={resetXp} 
+          addLevel={addLevel} 
+        />}
         />
 
         <Route 
         path="/credits" 
-        element={<Credits gold={gold} level={level} exp={exp} resetXp={resetXp} addLevel={addLevel} />} 
+        element={<Credits 
+          gold={gold || 0} 
+          level={level || 1} 
+          exp={exp || 0} 
+          resetXp={resetXp} 
+          addLevel={addLevel} 
+        />} 
         />
 
       </Routes>
