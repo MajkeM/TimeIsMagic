@@ -1,29 +1,32 @@
-import { Client } from 'pg';
+import { Client } from "pg";
 
 export default async function handler(req, res) {
   if (req.method === "GET" || req.method === "POST") {
     let client;
     try {
-      const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
-      
+      const connectionString =
+        process.env.DATABASE_URL || process.env.POSTGRES_URL;
+
       if (!connectionString) {
-        throw new Error('No database connection string found');
+        throw new Error("No database connection string found");
       }
 
       // Vytvoříme PostgreSQL klienta
       client = new Client({
         connectionString,
         ssl: {
-          rejectUnauthorized: false
-        }
+          rejectUnauthorized: false,
+        },
       });
 
       // Připojíme se k databázi
       await client.connect();
-      
+
       // Test jednoduchého dotazu
-      const testResult = await client.query('SELECT 1 as test, NOW() as current_time');
-      
+      const testResult = await client.query(
+        "SELECT 1 as test, NOW() as current_time"
+      );
+
       // Pokud test funguje, vytvoříme tabulky
       await client.query(`
         CREATE TABLE IF NOT EXISTS users (
@@ -50,7 +53,7 @@ export default async function handler(req, res) {
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
       `);
-      
+
       return res.status(200).json({
         success: true,
         message: "Database initialized successfully! Tables created.",
