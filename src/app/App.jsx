@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
 import GameCanvas from "./components/GameCanvas";
-import {  BrowserRouter, Routes, Route } from "react-router-dom";
+import {  BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import {useState, useRef, useEffect, useCallback} from "react";
 import Home from "./Home";
 import Loadout from "./Loadout";
@@ -89,6 +89,31 @@ function AuthenticatedApp() {
       loadGameData();
     }
   }, [user]);
+
+  // Funkce pro reload dat z databáze (pro použití po hře)
+  const reloadGameData = async () => {
+    console.log('Reloading game data from database...');
+    const data = await loadFromDatabase({
+      gold: 0,
+      level: 1,
+      exp: 0,
+      characters: { selected: 'wizard' },
+      abilities: {},
+      settings: {}
+    });
+    
+    const parsedData = {
+      gold: data.score || 0,
+      level: data.level || 1,
+      exp: data.exp || 0,
+      characters: JSON.parse(data.abilities || '{}').characters || { selected: 'wizard' },
+      abilities: JSON.parse(data.abilities || '{}').abilities || {},
+      settings: JSON.parse(data.settings || '{}')
+    };
+    
+    console.log('Reloaded data:', parsedData);
+    setGameData(parsedData);
+  };
 
   // Funkce pro uložení dat do databáze
   const saveGameData = async (newData) => {
@@ -451,6 +476,7 @@ function AuthenticatedApp() {
           exp={exp || 0} 
           resetXp={resetXp} 
           addLevel={addLevel} 
+          reloadGameData={reloadGameData}
         />}
         />
 

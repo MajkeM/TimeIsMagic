@@ -4,28 +4,17 @@ import { useEffect, useState } from "react";
 
 export default function UserGoldLevelBar({gold, level, exp, resetXp, addLevel}) {
     // Calculate the percentage of the level bar to fill based on exp
-    const LevelPercentage = Math.min((exp / 100) * 100, 100); // Assuming 100 exp is needed 
-    const [xpNeeded, setXpNeeded] = useState(100);
+    // Exp is cumulative, so we need to calculate progress within current level
+    const expInCurrentLevel = exp % 100; // Remaining exp in current level (0-99)
+    const LevelPercentage = Math.min((expInCurrentLevel / 100) * 100, 100);
 
-    // Calculate the remaining exp needed for the next level
-    const remainingExp = xpNeeded - exp;
+    // Calculate the remaining exp needed for the next level  
+    const remainingExp = 100 - expInCurrentLevel; // Exp needed for next level
 
+    // Just log the current exp, don't modify it
     useEffect(() => {
-        // when exp changes, log remaining exp needed for next level 
-        // if exp >= xpNeeded, log "Level Up!"
-        if (exp >= xpNeeded) {
-            console.log("Level Up!");
-            resetXp();
-            setXpNeeded((prev) => prev + 20);
-            addLevel();
-        } else {
-            console.log(`Remaining EXP for next level: ${remainingExp}`);
-
-        }
-
-        
-
-    }, [exp]);
+        console.log(`UserGoldLevelBar - Current EXP: ${exp}, Remaining for next level: ${remainingExp}`);
+    }, [exp, remainingExp]);
 
     return (
         <div className="user-gold-level-bar">

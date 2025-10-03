@@ -43,7 +43,7 @@ import soldierSprite from "./../Sprites/soldierSprite.png"; // Temporary sprite 
 import { Link } from "react-router-dom";
 
 
-export default function GameCanvas({showCollision, R_ability, F_ability, T_ability, character, addGold, addExp, exp, level, gold}) {
+export default function GameCanvas({showCollision, R_ability, F_ability, T_ability, character, addGold, addExp, exp, level, gold, reloadGameData}) {
 
     // Initialize game loading
     const { isLoading, progress, message, setIsLoading } = useLoading(loadingSteps.game);
@@ -5689,10 +5689,19 @@ ctx.fillText(`Difficulty: ${difficulty.current}`, textMarginX, textMarginY + (fo
                 console.log('Game ended! Score:', score.current);
                 console.log('Gold to add:', goldToAdd);
                 console.log('Exp to add:', expToAdd);
-                addGold(goldToAdd);
-                addExp(expToAdd);
+                
+                // Add rewards and reload data for UI update
+                Promise.all([addGold(goldToAdd), addExp(expToAdd)])
+                  .then(() => {
+                    console.log('Rewards given successfully');
+                    // Reload data after rewards are saved to database
+                    if (reloadGameData) {
+                      setTimeout(() => reloadGameData(), 1000); // Small delay to ensure DB write is complete
+                    }
+                  })
+                  .catch(error => console.error('Error giving rewards:', error));
+                
                 rewardsGivenRef.current = true; // Mark rewards as given
-                console.log('Rewards given successfully');
             }
         }
     }
