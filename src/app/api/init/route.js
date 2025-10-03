@@ -1,4 +1,4 @@
-import { initDatabase } from '@/lib/database';
+import { initDatabase } from '../../../lib/database.js';
 
 export async function POST(request) {
   try {

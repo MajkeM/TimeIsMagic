@@ -1,4 +1,4 @@
-import { registerUser } from '@/lib/database';
+import { registerUser } from '../../../../lib/database.js';
 
 export async function POST(request) {
   try {

@@ -3,6 +3,7 @@
 ## 🚀 Jak dokončit nastavení databáze
 
 ### 1. Získání databázových údajů z Vercelu
+
 1. Jděte do [Vercel Dashboard](https://vercel.com/dashboard)
 2. Vyberte váš projekt
 3. Klikněte na **Storage** tab
@@ -11,6 +12,7 @@
 6. Zkopírujte všechny environment variables
 
 ### 2. Aktualizace .env.local souboru
+
 Nahraďte prázdné hodnoty ve `.env.local` skutečnými údaji z Vercelu:
 
 ```env
@@ -20,6 +22,7 @@ POSTGRES_PRISMA_URL="postgresql://username:password@host:port/database"
 ```
 
 ### 3. Inicializace databáze
+
 Po nastavení .env.local spusťte:
 
 ```bash
@@ -34,6 +37,7 @@ curl -X POST http://localhost:1111/api/init
 ```
 
 ### 4. Test systému
+
 1. Otevřete aplikaci v prohlížeči
 2. Měli byste vidět login/register formulář
 3. Zaregistrujte se jako nový uživatel
@@ -41,6 +45,7 @@ curl -X POST http://localhost:1111/api/init
 5. Váš progress se nyní ukládá do databáze!
 
 ### 5. Deployment na Vercel
+
 ```bash
 # Push do GitHub
 git add .
@@ -59,23 +64,28 @@ git push
 ```
 
 ### 6. Po deploymetu na produkci
+
 Inicializujte databázi na produkci:
+
 ```bash
 curl -X POST https://your-app.vercel.app/api/init
 ```
 
 ## 🎮 Co se změnilo
+
 - ✅ **Auth systém**: Login/Register
-- ✅ **Databáze**: Postgres místo localStorage  
+- ✅ **Databáze**: Postgres místo localStorage
 - ✅ **User accounts**: Každý má svůj progress
 - ✅ **JWT tokeny**: Bezpečná autentizace
 - ✅ **API routes**: /api/auth/login, /api/auth/register, /api/progress
 
 ## 🔄 Migrace dat
+
 Stávající localStorage data zůstanou, ale nová data se ukládají do databáze.
 Pokud chcete migrovat existující data, kontaktujte vývojáře.
 
 ## 🆘 Troubleshooting
+
 - **Database connection error**: Zkontrolujte .env.local údaje
 - **Auth not working**: Zkontrolujte JWT_SECRET
 - **Can't login**: Zkuste zavolat /api/init endpoint

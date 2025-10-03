@@ -1,4 +1,4 @@
-import { loginUser } from '@/lib/database';
+import { loginUser } from '../../../../lib/database.js';
 
 export async function POST(request) {
   try {

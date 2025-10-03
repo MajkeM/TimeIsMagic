@@ -8,7 +8,7 @@ import Settings from "./Settings";
 import Credits from "./Credits";
 import LoadingScreen from "./components/LoadingScreen";
 import { useLoading, loadingSteps } from "./hooks/useLoading";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "../contexts/AuthContext.jsx";
 import Auth from "./components/Auth";
 
 // Create wrapper component for authenticated content

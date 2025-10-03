@@ -1,4 +1,4 @@
-import { getUserProgress, saveUserProgress, verifyToken } from '@/lib/database';
+import { getUserProgress, saveUserProgress, verifyToken } from '../../../lib/database.js';
 
 export async function GET(request) {
   try {
