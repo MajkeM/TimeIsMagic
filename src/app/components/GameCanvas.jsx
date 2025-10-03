@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import "../../responsive.css";
+import LoadingScreen from "./LoadingScreen";
+import { useLoading, loadingSteps } from "../hooks/useLoading";
 import playerSprite from "../Sprites/player.png";
 import gameBackround from "../Sprites/backgroun-cartoon-top-view-2D.png";
 import goblinSprite from "../Sprites/goblinSprite.png";
@@ -43,6 +45,9 @@ import { Link } from "react-router-dom";
 
 export default function GameCanvas({showCollision, R_ability, F_ability, T_ability, character, addGold, addExp, exp, level, gold}) {
 
+    // Initialize game loading
+    const { isLoading, progress, message, setIsLoading } = useLoading(loadingSteps.game);
+    
     // canvas 
         // ability icons 
             const ICON_SIZE = 100;
@@ -1345,6 +1350,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     useEffect(() => {
 
         const handleMouseMove = (e) => {
+            if (!canvasRef.current) return;
             const rect = canvasRef.current.getBoundingClientRect();
             mousemove.current.x = e.clientX - rect.left;
             mousemove.current.y = e.clientY - rect.top;
@@ -1794,13 +1800,20 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
 
     // canvas
     useEffect(() => {
+        // Don't start game until loading is complete
+        if (isLoading) return;
+        
         const canvas = canvasRef.current;
+        if (!canvas) return;
+        
         const ctx = canvas.getContext("2d");
 
     let animationFrameId;
 
     // Function to setup responsive canvas
     const setupCanvas = () => {
+        if (!canvas) return;
+        
         const dpr = window.devicePixelRatio || 1;
         const rect = canvas.getBoundingClientRect();
         
@@ -1915,6 +1928,8 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     };
 
     const gameLoop = () => {
+        if (!canvas || !ctx) return;
+        
         const currentTime = performance.now();
 
         // Character configuration for this frame
@@ -3846,10 +3861,15 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             }
 
             // Calculate collision position on goblin's head instead of center
-
             const enemyCenterX = enemy.x + enemy.width / 2;  // Střed horizontálně
             const enemyCenterY = enemy.y + enemy.height / 4; // Hlava - čtvrtina z vrchu
-            const enemyRotationAngle = Math.atan2(dy, dx);
+            
+            // Calculate rotation towards player (independent of movement effects)
+            const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+            const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+            const rotationDx = playerCenterX - enemyCenterX;
+            const rotationDy = playerCenterY - enemyCenterY;
+            const enemyRotationAngle = Math.atan2(rotationDy, rotationDx);
             const enemyRotationOffset = 1.5; // Přímé otočení čelem k hráči
             const finalEnemyRotation = enemyRotationAngle + enemyRotationOffset;
 
@@ -3945,7 +3965,13 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             // Calculate rotation angle towards player (face towards player with feather behind)
             const enemyCenterX = enemy.x + enemy.width / 2;
             const enemyCenterY = enemy.y + enemy.height / 2;
-            const enemyRotationAngle = Math.atan2(dy, dx);
+            
+            // Calculate rotation towards player (independent of movement effects)
+            const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+            const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+            const rotationDx = playerCenterX - enemyCenterX;
+            const rotationDy = playerCenterY - enemyCenterY;
+            const enemyRotationAngle = Math.atan2(rotationDy, rotationDx);
             const enemyRotationOffset = 0; // Přímé otočení čelem k hráči
             const finalEnemyRotation = enemyRotationAngle + enemyRotationOffset;
 
@@ -4111,6 +4137,13 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 // Draw bomber enemy with warning effects
                 ctx.save();
                 
+                // Calculate rotation towards player
+                const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+                const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+                const rotationDx = playerCenterX - enemyCenterX;
+                const rotationDy = playerCenterY - enemyCenterY;
+                const bomberRotationAngle = Math.atan2(rotationDy, rotationDx);
+                
                 // Warning flash effect
                 if (isWarning) {
                     const flashIntensity = Math.sin((performance.now() % 200) / 200 * Math.PI * 2) * 0.5 + 0.5;
@@ -4118,17 +4151,27 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     ctx.shadowBlur = 20 * flashIntensity;
                 }
                 
+                // Apply rotation
+                ctx.translate(enemyCenterX, enemyCenterY);
+                ctx.rotate(bomberRotationAngle);
+                
                 if (bomberImageRef.current) {
                     // Add red tint when warning
                     if (isWarning) {
                         ctx.filter = 'hue-rotate(0deg) saturate(2) brightness(1.2)';
                     }
                     
-                    ctx.drawImage(bomberImageRef.current, enemy.x, enemy.y, enemy.width, enemy.height);
+                    ctx.drawImage(
+                        bomberImageRef.current, 
+                        -enemy.width / 2, 
+                        -enemy.height / 2, 
+                        enemy.width, 
+                        enemy.height
+                    );
                     ctx.filter = 'none';
                 } else {
                     ctx.fillStyle = isWarning ? "red" : enemy.color;
-                    ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                    ctx.fillRect(-enemy.width / 2, -enemy.height / 2, enemy.width, enemy.height);
                 }
                 
                 ctx.restore();
@@ -4211,6 +4254,13 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             // Draw teleporter enemy with special effects
             ctx.save();
             
+            // Calculate rotation towards player
+            const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+            const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+            const rotationDx = playerCenterX - enemyCenterX;
+            const rotationDy = playerCenterY - enemyCenterY;
+            const teleporterRotationAngle = Math.atan2(rotationDy, rotationDx);
+            
             if (enemy.teleporting) {
                 // Teleporting effect - flickering and particles
                 const teleportProgress = (performance.now() - enemy.teleportStartTime) / 200;
@@ -4226,14 +4276,24 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 ctx.shadowBlur = 10;
             }
             
+            // Apply rotation
+            ctx.translate(enemyCenterX, enemyCenterY);
+            ctx.rotate(teleporterRotationAngle);
+            
             if (teleporterImageRef.current) {
                 // Add cyan tint to distinguish from basic enemies
                 ctx.filter = 'hue-rotate(180deg) saturate(1.5) brightness(1.1)';
-                ctx.drawImage(teleporterImageRef.current, enemy.x, enemy.y, enemy.width, enemy.height);
+                ctx.drawImage(
+                    teleporterImageRef.current, 
+                    -enemy.width / 2, 
+                    -enemy.height / 2, 
+                    enemy.width, 
+                    enemy.height
+                );
                 ctx.filter = 'none';
             } else {
                 ctx.fillStyle = enemy.teleporting ? "lightcyan" : enemy.color;
-                ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                ctx.fillRect(-enemy.width / 2, -enemy.height / 2, enemy.width, enemy.height);
             }
             
             ctx.restore();
@@ -5631,7 +5691,7 @@ ctx.fillText(`Difficulty: ${difficulty.current}`, textMarginX, textMarginY + (fo
         window.removeEventListener('resize', handleResize);
     };
 
-    },[]);
+    },[isLoading]);;
     function drawRoundedRect(ctx, x, y, width, height, radius) {
   ctx.beginPath();
   ctx.moveTo(x + radius, y);
@@ -5648,8 +5708,13 @@ ctx.fillText(`Difficulty: ${difficulty.current}`, textMarginX, textMarginY + (fo
 
     
 
+    // Show loading screen while game initializes
+    if (isLoading) {
+        return <LoadingScreen progress={progress} message={message} />;
+    }
+
     return (
-        <div>
+        <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
         <canvas ref={canvasRef} />
         {loose && (
             <div style={{

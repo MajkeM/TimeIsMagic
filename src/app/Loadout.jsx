@@ -2,6 +2,8 @@ import React, { useEffect } from "react";
 import "./globals.css";
 import Navbar from "./components/Navbar";
 import UserGoldLevelBar from "./components/UserGoldLevelBar";
+import PageWrapper from "./components/PageWrapper";
+import { loadingSteps } from "./hooks/useLoading";
 
 import reloadAbility from "./Sprites/reload-ability.png"; 
 import flashAbility from "./Sprites/flash-ability.png";
@@ -131,14 +133,14 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
 
 
     return (
-        <div className="loadout-page">
-            <Navbar />
-            <UserGoldLevelBar gold={gold} level={level} exp={exp} resetXp={resetXp} addLevel={addLevel} />
-            <div className="loadout-content">
-                <h1>Loadout Page</h1>
-                <p>Choose your loadout here and collect points to unlock new abilities.</p>
+        <PageWrapper loadingSteps={loadingSteps.loadout}>
+            <div className="loadout-page">
+                <Navbar />
+                <UserGoldLevelBar gold={gold} level={level} exp={exp} resetXp={resetXp} addLevel={addLevel} />
+                <div className="loadout-content">
+                    <h1>Loadout Page</h1>
+                    <p>Choose your loadout here and collect points to unlock new abilities.</p>
 
-                <div>
                     <h2>Abilities</h2>
                     <p>R abilities</p>
                     <div className = "R abilities">
@@ -527,13 +529,12 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
                     </div>
                 </div>
                 <h2>Characters</h2>
-                <div>
-                    <div className = "character-options">
-                        {/* Wizard - always available */}
-                        <span className="character-option">
-                            <input type="radio" name="character" value="wizard" onChange={handleCharacterChange} disabled={!characterAvailability.wizard} />
-                            <label htmlFor ="character">Wizard <img className="character-icon" src={wizardSprite} alt="Wizard Character" /></label>
-                        </span>
+                <div className = "character-options">
+                    {/* Wizard - always available */}
+                    <span className="character-option">
+                        <input type="radio" name="character" value="wizard" onChange={handleCharacterChange} disabled={!characterAvailability.wizard} />
+                        <label htmlFor ="character">Wizard <img className="character-icon" src={wizardSprite} alt="Wizard Character" /></label>
+                    </span>
 
                         {/* Rapunzel */}
                         <span className="character-option">
@@ -608,7 +609,6 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
                         </span>
                 </div>
             </div>
-        </div>
-        </div>
+        </PageWrapper>
     )
 }

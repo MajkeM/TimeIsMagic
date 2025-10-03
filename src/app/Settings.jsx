@@ -2,6 +2,7 @@ import Navbar from "./components/Navbar";
 import "./globals.css";
 import {useState, useRef, useEffect} from "react";
 import UserGoldLevelBar from "./components/UserGoldLevelBar";
+import PageWrapper from "./components/PageWrapper";
 
 export default function Settings({toggleCollision, gold, level, exp, resetXp, addLevel}) {
     
@@ -33,53 +34,55 @@ export default function Settings({toggleCollision, gold, level, exp, resetXp, ad
     };
 
     return (
-        <div className="settings-page">
-            
-            <Navbar />
-            <UserGoldLevelBar gold={gold} level={level} exp={exp} resetXp={resetXp} addLevel={addLevel} />
-            <div className="settings-content">
-                <h1>Settings Page</h1>
-                <p>Adjust your game settings here.</p>
+        <PageWrapper loadingType="app">
+            <div className="settings-page">
+                
+                <Navbar />
+                <UserGoldLevelBar gold={gold} level={level} exp={exp} resetXp={resetXp} addLevel={addLevel} />
+                <div className="settings-content">
+                    <h1>Settings Page</h1>
+                    <p>Adjust your game settings here.</p>
 
-                <h2>Debug Options</h2>
-                <input type="checkbox" id="showCollision" name="showCollision" onChange={toggleCollision} />
-                <label htmlFor="showCollision"> Show Collision Boxes</label><br />
-                
-                <h2>Data Management</h2>
-                <button 
-                    onClick={resetLocalStorage}
-                    style={{
-                        padding: '10px 20px',
-                        margin: '10px',
-                        backgroundColor: '#ff9500',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer'
-                    }}
-                >
-                    Reset Abilities & Characters (Keep Progress)
-                </button>
-                <br />
-                <button 
-                    onClick={clearAllData}
-                    style={{
-                        padding: '10px 20px',
-                        margin: '10px',
-                        backgroundColor: '#ff0000',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer'
-                    }}
-                >
-                    Clear All Data (DANGER!)
-                </button>
-                
-                <p style={{ fontSize: '12px', color: '#666', marginTop: '20px' }}>
-                    Use these buttons if you encounter localStorage errors or want to reset progress.
-                </p>
+                    <h2>Debug Options</h2>
+                    <input type="checkbox" id="showCollision" name="showCollision" onChange={toggleCollision} />
+                    <label htmlFor="showCollision"> Show Collision Boxes</label><br />
+                    
+                    <h2>Data Management</h2>
+                    <button 
+                        onClick={resetLocalStorage}
+                        style={{
+                            padding: '10px 20px',
+                            margin: '10px',
+                            backgroundColor: '#ff9500',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '5px',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        Reset Abilities & Characters (Keep Progress)
+                    </button>
+                    <br />
+                    <button 
+                        onClick={clearAllData}
+                        style={{
+                            padding: '10px 20px',
+                            margin: '10px',
+                            backgroundColor: '#ff0000',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '5px',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        Clear All Data (DANGER!)
+                    </button>
+                    
+                    <p style={{ fontSize: '12px', color: '#666', marginTop: '20px' }}>
+                        Use these buttons if you encounter localStorage errors or want to reset progress.
+                    </p>
+                </div>
             </div>
-        </div>
+        </PageWrapper>
     );
 }

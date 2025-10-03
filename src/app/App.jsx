@@ -6,9 +6,26 @@ import Home from "./Home";
 import Loadout from "./Loadout";
 import Settings from "./Settings";
 import Credits from "./Credits";
+import LoadingScreen from "./components/LoadingScreen";
+import { useLoading, loadingSteps } from "./hooks/useLoading";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import Auth from "./components/Auth";
 
+// Create wrapper component for authenticated content
+function AuthenticatedApp() {
+  const { isAuthenticated, loading: authLoading, user, logout } = useAuth();
 
-export default function App() {
+  // Show auth screen if not authenticated
+  if (authLoading) {
+    return <LoadingScreen progress={50} message="Checking authentication..." />;
+  }
+
+  if (!isAuthenticated) {
+    return <Auth />;
+  }
+
+  // Initialize loading for the entire app
+  const { isLoading, progress, message } = useLoading(loadingSteps.app);
 
   // localStorage helper functions - easily removable for database transition
   const saveToStorage = (key, data) => {
@@ -343,6 +360,11 @@ export default function App() {
     );
   }
 
+  // Show loading screen while app is initializing
+  if (isLoading) {
+    return <LoadingScreen progress={progress} message={message} />;
+  }
+
   return (
     <BrowserRouter>
       <Routes>
@@ -418,7 +440,24 @@ export default function App() {
         />
 
       </Routes>
+      
+      {/* User info in top right corner */}
+      {user && (
+        <div className="user-info">
+          Welcome, {user.username}!
+          <button onClick={logout}>Logout</button>
+        </div>
+      )}
     </BrowserRouter>
+  );
+}
+
+// Main App component with AuthProvider
+export default function App() {
+  return (
+    <AuthProvider>
+      <AuthenticatedApp />
+    </AuthProvider>
   );
 }
 
