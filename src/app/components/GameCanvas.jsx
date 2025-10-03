@@ -5691,16 +5691,23 @@ ctx.fillText(`Difficulty: ${difficulty.current}`, textMarginX, textMarginY + (fo
                 console.log('Exp to add:', expToAdd);
                 
                 // Add rewards and reload data for UI update
-                Promise.all([addGold(goldToAdd), addExp(expToAdd)])
-                  .then(() => {
+                const giveRewards = async () => {
+                  try {
+                    // Wait for both rewards to be saved to database
+                    await Promise.all([addGold(goldToAdd), addExp(expToAdd)]);
                     console.log('Rewards given successfully');
+                    
                     // Reload data after rewards are saved to database
                     if (reloadGameData) {
-                      setTimeout(() => reloadGameData(), 1000); // Small delay to ensure DB write is complete
+                      console.log('Reloading game data after rewards...');
+                      await reloadGameData(); // Use await instead of setTimeout
                     }
-                  })
-                  .catch(error => console.error('Error giving rewards:', error));
+                  } catch (error) {
+                    console.error('Error giving rewards:', error);
+                  }
+                };
                 
+                giveRewards(); // Call the async function
                 rewardsGivenRef.current = true; // Mark rewards as given
             }
         }

@@ -6,6 +6,7 @@ import Home from "./Home";
 import Loadout from "./Loadout";
 import Settings from "./Settings";
 import Credits from "./Credits";
+import Leaderboard from "./Leaderboard";
 import LoadingScreen from "./components/LoadingScreen";
 import { useLoading, loadingSteps } from "./hooks/useLoading";
 import { AuthProvider, useAuth } from "../contexts/AuthContext.jsx";
@@ -51,6 +52,7 @@ function AuthenticatedApp() {
     gold: 0,
     level: 1,
     exp: 0,
+    bestScore: 0,
     characters: { selected: 'wizard' },
     abilities: {},
     settings: {}
@@ -76,6 +78,7 @@ function AuthenticatedApp() {
         gold: data.score || 0, // score v databázi = gold v aplikaci
         level: data.level || 1,
         exp: data.exp || 0, // přidáme exp z databáze
+        bestScore: data.best_score || 0, // přidáme best score
         characters: JSON.parse(data.abilities || '{}').characters || { selected: 'wizard' },
         abilities: JSON.parse(data.abilities || '{}').abilities || {},
         settings: JSON.parse(data.settings || '{}')
@@ -92,50 +95,61 @@ function AuthenticatedApp() {
 
   // Funkce pro reload dat z databáze (pro použití po hře)
   const reloadGameData = async () => {
-    console.log('Reloading game data from database...');
-    const data = await loadFromDatabase({
-      gold: 0,
-      level: 1,
-      exp: 0,
-      characters: { selected: 'wizard' },
-      abilities: {},
-      settings: {}
-    });
-    
-    const parsedData = {
-      gold: data.score || 0,
-      level: data.level || 1,
-      exp: data.exp || 0,
-      characters: JSON.parse(data.abilities || '{}').characters || { selected: 'wizard' },
-      abilities: JSON.parse(data.abilities || '{}').abilities || {},
-      settings: JSON.parse(data.settings || '{}')
-    };
-    
-    console.log('Reloaded data:', parsedData);
-    setGameData(parsedData);
+    try {
+      console.log('Reloading game data from database...');
+      const data = await loadFromDatabase({
+        gold: 0,
+        level: 1,
+        exp: 0,
+        characters: { selected: 'wizard' },
+        abilities: {},
+        settings: {}
+      });
+      
+      const parsedData = {
+        gold: data.score || 0,
+        level: data.level || 1,
+        exp: data.exp || 0,
+        bestScore: data.best_score || 0,
+        characters: JSON.parse(data.abilities || '{}').characters || { selected: 'wizard' },
+        abilities: JSON.parse(data.abilities || '{}').abilities || {},
+        settings: JSON.parse(data.settings || '{}')
+      };
+      
+      console.log('Reloaded data:', parsedData);
+      setGameData(parsedData);
+    } catch (error) {
+      console.error('Error reloading game data:', error);
+    }
   };
 
   // Funkce pro uložení dat do databáze
   const saveGameData = async (newData) => {
-    console.log('saveGameData called with:', newData);
-    console.log('Current gameData:', gameData);
-    const updatedData = { ...gameData, ...newData };
-    console.log('Updated data will be:', updatedData);
-    setGameData(updatedData);
-    
-    // Uložíme do databáze ve správném formátu
-    await saveToDatabase({
-      level: updatedData.level,
-      score: updatedData.gold, // gold = score v databázi
-      exp: updatedData.exp, // přidáme exp do databáze
-      abilities: JSON.stringify({
-        characters: updatedData.characters,
-        abilities: updatedData.abilities
-      }),
-      achievements: JSON.stringify([]), // zatím prázdné
-      settings: JSON.stringify(updatedData.settings)
-    });
-    console.log('Data saved to database successfully');
+    try {
+      console.log('saveGameData called with:', newData);
+      console.log('Current gameData:', gameData);
+      const updatedData = { ...gameData, ...newData };
+      console.log('Updated data will be:', updatedData);
+      setGameData(updatedData);
+      
+      // Uložíme do databáze ve správném formátu
+      await saveToDatabase({
+        level: updatedData.level,
+        score: updatedData.gold, // gold = score v databázi
+        exp: updatedData.exp, // přidáme exp do databáze
+        abilities: JSON.stringify({
+          characters: updatedData.characters,
+          abilities: updatedData.abilities
+        }),
+        achievements: JSON.stringify([]), // zatím prázdné
+        settings: JSON.stringify(updatedData.settings)
+      });
+      console.log('Data saved to database successfully');
+    } catch (error) {
+      console.error('Error saving to database:', error);
+      // V případě chyby, vrátíme gameData na původní stav
+      setGameData(gameData);
+    }
   };
 
   // Sync character state when gameData changes
@@ -474,6 +488,7 @@ function AuthenticatedApp() {
           gold={gold || 0} 
           level={level || 1} 
           exp={exp || 0} 
+          bestScore={gameData.bestScore || 0}
           resetXp={resetXp} 
           addLevel={addLevel} 
           reloadGameData={reloadGameData}
@@ -519,6 +534,17 @@ function AuthenticatedApp() {
         <Route 
         path="/credits" 
         element={<Credits 
+          gold={gold || 0} 
+          level={level || 1} 
+          exp={exp || 0} 
+          resetXp={resetXp} 
+          addLevel={addLevel} 
+        />} 
+        />
+
+        <Route 
+        path="/leaderboard" 
+        element={<Leaderboard 
           gold={gold || 0} 
           level={level || 1} 
           exp={exp || 0} 

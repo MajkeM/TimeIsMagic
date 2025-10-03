@@ -34,6 +34,7 @@ export default async function handler(req, res) {
         const defaultProgress = {
           level: 1,
           score: 0,
+          best_score: 0,
           exp: 0,
           abilities: JSON.stringify({}),
           achievements: JSON.stringify([]),
@@ -93,7 +94,7 @@ export default async function handler(req, res) {
       // Nejdříve zkusíme UPDATE
       const updateResult = await client.query(
         `UPDATE user_progress 
-         SET level = $2, score = $3, exp = $4, abilities = $5, achievements = $6, settings = $7, last_played = NOW(), updated_at = NOW()
+         SET level = $2, score = $3, best_score = GREATEST(best_score, $3), exp = $4, abilities = $5, achievements = $6, settings = $7, last_played = NOW(), updated_at = NOW()
          WHERE user_id = $1
          RETURNING *`,
         [
@@ -110,13 +111,14 @@ export default async function handler(req, res) {
       if (updateResult.rows.length === 0) {
         // Pokud UPDATE neaktualizoval nic, vytvoříme nový záznam
         result = await client.query(
-          `INSERT INTO user_progress (user_id, level, score, exp, abilities, achievements, settings) 
-           VALUES ($1, $2, $3, $4, $5, $6, $7) 
+          `INSERT INTO user_progress (user_id, level, score, best_score, exp, abilities, achievements, settings) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
            RETURNING *`,
           [
             decoded.userId,
             progressData.level || 1,
             progressData.score || 0,
+            progressData.score || 0, // best_score = current score for new users
             progressData.exp || 0,
             JSON.stringify(progressData.abilities || {}),
             JSON.stringify(progressData.achievements || []),
