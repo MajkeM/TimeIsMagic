@@ -1,19 +1,33 @@
+import { Client } from 'pg';
+
 export default async function handler(req, res) {
   if (req.method === "GET" || req.method === "POST") {
+    let client;
     try {
-      // Zkusíme createClient() jak navrhuje chyba
-      const { createClient } = await import("@vercel/postgres");
-      
       const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
-      const client = createClient({ connectionString });
       
-      // Test připojení
-      const result = await client.sql`SELECT 1 as test, NOW() as current_time`;
+      if (!connectionString) {
+        throw new Error('No database connection string found');
+      }
+
+      // Vytvoříme PostgreSQL klienta
+      client = new Client({
+        connectionString,
+        ssl: {
+          rejectUnauthorized: false
+        }
+      });
+
+      // Připojíme se k databázi
+      await client.connect();
+      
+      // Test jednoduchého dotazu
+      const testResult = await client.query('SELECT 1 as test, NOW() as current_time');
       
       return res.status(200).json({
         success: true,
-        message: "Database connection successful with createClient!",
-        result: result.rows[0],
+        message: "Database connection successful with pg client!",
+        result: testResult.rows[0],
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -25,6 +39,15 @@ export default async function handler(req, res) {
         errorName: error.name,
         timestamp: new Date().toISOString(),
       });
+    } finally {
+      // Zavřeme připojení
+      if (client) {
+        try {
+          await client.end();
+        } catch (closeError) {
+          console.error("Error closing database connection:", closeError);
+        }
+      }
     }
   } else {
     res.setHeader("Allow", ["GET", "POST"]);
