@@ -10,11 +10,12 @@ export default async function handler(req, res) {
         throw new Error('No database connection string found');
       }
 
-      // Vytvoříme PostgreSQL klienta
+      // Vytvoříme PostgreSQL klienta s vypnutým SSL ověřováním
       client = new Client({
         connectionString,
         ssl: {
-          rejectUnauthorized: false
+          rejectUnauthorized: false,
+          checkServerIdentity: () => undefined
         }
       });
 
