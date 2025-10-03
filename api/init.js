@@ -1,35 +1,13 @@
-import { Client } from 'pg';
+import { sql } from '@vercel/postgres';
 
 export default async function handler(req, res) {
   if (req.method === 'GET' || req.method === 'POST') {
-    let client;
     try {
-      const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
-      
-      if (!connectionString) {
-        throw new Error('No database connection string found');
-      }
-
-      // Parsujeme connection string a vytvoříme explicitní konfiguraci
-      const url = new URL(connectionString);
-      
-      client = new Client({
-        host: url.hostname,
-        port: parseInt(url.port) || 5432,
-        database: url.pathname.slice(1), // Remove leading slash
-        username: url.username,
-        password: url.password,
-        ssl: false // Vypneme SSL úplně
-      });
-
-      // Připojíme se k databázi
-      await client.connect();
-      
-      // Test jednoduchého dotazu
-      const testResult = await client.query('SELECT 1 as test, NOW() as current_time');
+      // Test jednoduchého dotazu s Vercel postgres
+      const testResult = await sql`SELECT 1 as test, NOW() as current_time`;
       
       // Pokud test funguje, vytvoříme tabulky
-      await client.query(`
+      await sql`
         CREATE TABLE IF NOT EXISTS users (
           id SERIAL PRIMARY KEY,
           username VARCHAR(50) UNIQUE NOT NULL,
@@ -37,10 +15,10 @@ export default async function handler(req, res) {
           email VARCHAR(100),
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-      `);
+        )
+      `;
 
-      await client.query(`
+      await sql`
         CREATE TABLE IF NOT EXISTS user_progress (
           id SERIAL PRIMARY KEY,
           user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -52,8 +30,8 @@ export default async function handler(req, res) {
           last_played TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-      `);
+        )
+      `;
       
       return res.status(200).json({ 
         success: true,
@@ -71,15 +49,6 @@ export default async function handler(req, res) {
         errorName: error.name,
         timestamp: new Date().toISOString()
       });
-    } finally {
-      // Zavřeme připojení
-      if (client) {
-        try {
-          await client.end();
-        } catch (closeError) {
-          console.error("Error closing database connection:", closeError);
-        }
-      }
     }
   } else {
     res.setHeader('Allow', ['GET', 'POST']);
