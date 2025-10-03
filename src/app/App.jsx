@@ -15,14 +15,15 @@ import Auth from "./components/Auth";
 function AuthenticatedApp() {
   const { isAuthenticated, loading: authLoading, user, logout } = useAuth();
 
+  // DOČASNĚ VYPNUTO PRO INICIALIZACI DATABÁZE
   // Show auth screen if not authenticated
-  if (authLoading) {
-    return <LoadingScreen progress={50} message="Checking authentication..." />;
-  }
+  // if (authLoading) {
+  //   return <LoadingScreen progress={50} message="Checking authentication..." />;
+  // }
 
-  if (!isAuthenticated) {
-    return <Auth />;
-  }
+  // if (!isAuthenticated) {
+  //   return <Auth />;
+  // }
 
   // Initialize loading for the entire app
   const { isLoading, progress, message } = useLoading(loadingSteps.app);
