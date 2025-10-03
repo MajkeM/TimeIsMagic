@@ -13,7 +13,7 @@ import Auth from "./components/Auth";
 
 // Create wrapper component for authenticated content
 function AuthenticatedApp() {
-  const { isAuthenticated, loading: authLoading, user, logout } = useAuth();
+  const { isAuthenticated, loading: authLoading, user, logout, saveProgress, loadProgress } = useAuth();
 
   // Show auth screen if not authenticated
   if (authLoading) {
@@ -27,58 +27,80 @@ function AuthenticatedApp() {
   // Initialize loading for the entire app
   const { isLoading, progress, message } = useLoading(loadingSteps.app);
 
-  // localStorage helper functions - easily removable for database transition
-  const saveToStorage = (key, data) => {
+  // Database helper functions - replaces localStorage
+  const saveToDatabase = async (data) => {
     try {
-      localStorage.setItem(key, JSON.stringify(data));
+      await saveProgress(data);
     } catch (error) {
-      console.error('Failed to save to localStorage:', error);
+      console.error('Failed to save to database:', error);
     }
   };
 
-  const loadFromStorage = (key, defaultValue) => {
+  const loadFromDatabase = async (defaultValue = {}) => {
     try {
-      const stored = localStorage.getItem(key);
-      return stored ? JSON.parse(stored) : defaultValue;
+      const progressData = await loadProgress();
+      return progressData || defaultValue;
     } catch (error) {
-      console.error('Failed to load from localStorage:', error);
-      // Clear corrupted localStorage item
-      localStorage.removeItem(key);
+      console.error('Failed to load from database:', error);
       return defaultValue;
     }
   };
 
-  // Version check and migration system
-  const APP_VERSION = "2.0"; // Increase when data structure changes
-  const checkAndMigrateStorage = () => {
-    const storedVersion = localStorage.getItem('app_version');
-    
-    if (storedVersion !== APP_VERSION) {
-      console.log('Migrating localStorage to new version:', APP_VERSION);
-      
-      // Clear old incompatible data
-      const keysToKeep = ['gold', 'level', 'exp']; // Keep basic progress
-      const currentGold = loadFromStorage('gold', 0);
-      const currentLevel = loadFromStorage('level', 1);
-      const currentExp = loadFromStorage('exp', 0);
-      
-      // Clear all localStorage
-      localStorage.clear();
-      
-      // Restore basic progress
-      saveToStorage('gold', currentGold);
-      saveToStorage('level', currentLevel);
-      saveToStorage('exp', currentExp);
-      saveToStorage('app_version', APP_VERSION);
-      
-      console.log('Migration completed, kept progress:', { gold: currentGold, level: currentLevel, exp: currentExp });
-    }
-  };
+  // State pro herní data - načte se z databáze
+  const [gameData, setGameData] = useState({
+    gold: 0,
+    level: 1,
+    exp: 0,
+    characters: { selected: 'wizard' },
+    abilities: {},
+    settings: {}
+  });
 
-  // Run migration check on app start
+  // Načtení dat z databáze při startu
   useEffect(() => {
-    checkAndMigrateStorage();
-  }, []);
+    const loadGameData = async () => {
+      const data = await loadFromDatabase({
+        gold: 0,
+        level: 1,
+        exp: 0,
+        characters: { selected: 'wizard' },
+        abilities: {},
+        settings: {}
+      });
+      
+      // Parsujeme JSON stringy z databáze
+      const parsedData = {
+        gold: data.score || 0, // score v databázi = gold v aplikaci
+        level: data.level || 1,
+        exp: 0, // můžeme později přidat do databáze
+        characters: JSON.parse(data.abilities || '{}').characters || { selected: 'wizard' },
+        abilities: JSON.parse(data.abilities || '{}').abilities || {},
+        settings: JSON.parse(data.settings || '{}')
+      };
+      
+      setGameData(parsedData);
+    };
+    
+    loadGameData();
+  }, [user]);
+
+  // Funkce pro uložení dat do databáze
+  const saveGameData = async (newData) => {
+    const updatedData = { ...gameData, ...newData };
+    setGameData(updatedData);
+    
+    // Uložíme do databáze ve správném formátu
+    await saveToDatabase({
+      level: updatedData.level,
+      score: updatedData.gold, // gold = score v databázi
+      abilities: JSON.stringify({
+        characters: updatedData.characters,
+        abilities: updatedData.abilities
+      }),
+      achievements: JSON.stringify([]), // zatím prázdné
+      settings: JSON.stringify(updatedData.settings)
+    });
+  };
 
   // Level requirements only for characters
   const levelRequirements = {
@@ -122,13 +144,21 @@ function AuthenticatedApp() {
   };
 
   const [showCollision, setShowCollision] = useState(false);
-  const [R_ability, setR_Ability] = useState(loadFromStorage('R_ability', 'reload'));
-  const [F_ability, setF_Ability] = useState(loadFromStorage('F_ability', 'flash'));
-  const [T_ability, setT_Ability] = useState(loadFromStorage('T_ability', 'teleport'));
+  // Game state derived from database data
+  const [R_ability, setR_Ability] = useState('reload');
+  const [F_ability, setF_Ability] = useState('flash'); 
+  const [T_ability, setT_Ability] = useState('teleport');
 
-  const [gold, setGold] = useState(loadFromStorage('gold', 0));
-  const [level, setLevel] = useState(loadFromStorage('level', 1));
-  const [exp, setExp] = useState(loadFromStorage('exp', 0));
+  // Update local state when gameData changes
+  useEffect(() => {
+    setR_Ability(gameData.abilities?.R || 'reload');
+    setF_Ability(gameData.abilities?.F || 'flash');
+    setT_Ability(gameData.abilities?.T || 'teleport');
+  }, [gameData]);
+
+  const gold = gameData.gold;
+  const level = gameData.level;
+  const exp = gameData.exp;
 
   const [character, setCharacter] = useState(loadFromStorage('character', 'wizard'));
 
