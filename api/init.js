@@ -4,7 +4,13 @@ export default async function handler(req, res) {
   if (req.method === 'GET' || req.method === 'POST') {
     try {
       // Zkusíme přímé připojení k Neon databázi
-      const sql = neon(process.env.DATABASE_URL || process.env.POSTGRES_URL);
+      const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+      
+      if (!connectionString) {
+        throw new Error('No database connection string found');
+      }
+      
+      const sql = neon(connectionString);
       
       // Test jednoduchého dotazu
       const result = await sql`SELECT 1 as test, NOW() as current_time`;
