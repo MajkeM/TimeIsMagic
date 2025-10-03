@@ -86,7 +86,10 @@ function AuthenticatedApp() {
 
   // Funkce pro uložení dat do databáze
   const saveGameData = async (newData) => {
+    console.log('saveGameData called with:', newData);
+    console.log('Current gameData:', gameData);
     const updatedData = { ...gameData, ...newData };
+    console.log('Updated data will be:', updatedData);
     setGameData(updatedData);
     
     // Uložíme do databáze ve správném formátu
@@ -100,6 +103,7 @@ function AuthenticatedApp() {
       achievements: JSON.stringify([]), // zatím prázdné
       settings: JSON.stringify(updatedData.settings)
     });
+    console.log('Data saved to database successfully');
   };
 
   // Sync character state when gameData changes
@@ -342,8 +346,12 @@ function AuthenticatedApp() {
   };
 
   const addGold = async (amount) => {
+    console.log('addGold called with amount:', amount);
+    console.log('Current gold:', gold);
     const newGold = gold + amount;
+    console.log('New gold will be:', newGold);
     await saveGameData({ gold: newGold });
+    console.log('Gold saved to database');
   };
 
   const addExp = async (amount) => {
