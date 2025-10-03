@@ -48,6 +48,7 @@ export default async function handler(req, res) {
           user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
           level INTEGER DEFAULT 1,
           score INTEGER DEFAULT 0,
+          exp INTEGER DEFAULT 0,
           abilities TEXT DEFAULT '{}',
           achievements TEXT DEFAULT '[]',
           settings TEXT DEFAULT '{}',

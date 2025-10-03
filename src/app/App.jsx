@@ -59,6 +59,7 @@ function AuthenticatedApp() {
   // Načtení dat z databáze při startu
   useEffect(() => {
     const loadGameData = async () => {
+      console.log('Loading game data from database for user:', user);
       const data = await loadFromDatabase({
         gold: 0,
         level: 1,
@@ -68,20 +69,25 @@ function AuthenticatedApp() {
         settings: {}
       });
       
+      console.log('Raw data from database:', data);
+      
       // Parsujeme JSON stringy z databáze
       const parsedData = {
         gold: data.score || 0, // score v databázi = gold v aplikaci
         level: data.level || 1,
-        exp: 0, // můžeme později přidat do databáze
+        exp: data.exp || 0, // přidáme exp z databáze
         characters: JSON.parse(data.abilities || '{}').characters || { selected: 'wizard' },
         abilities: JSON.parse(data.abilities || '{}').abilities || {},
         settings: JSON.parse(data.settings || '{}')
       };
       
+      console.log('Parsed game data:', parsedData);
       setGameData(parsedData);
     };
     
-    loadGameData();
+    if (user) {
+      loadGameData();
+    }
   }, [user]);
 
   // Funkce pro uložení dat do databáze
@@ -96,6 +102,7 @@ function AuthenticatedApp() {
     await saveToDatabase({
       level: updatedData.level,
       score: updatedData.gold, // gold = score v databázi
+      exp: updatedData.exp, // přidáme exp do databáze
       abilities: JSON.stringify({
         characters: updatedData.characters,
         abilities: updatedData.abilities
@@ -355,16 +362,22 @@ function AuthenticatedApp() {
   };
 
   const addExp = async (amount) => {
+    console.log('addExp called with amount:', amount);
+    console.log('Current exp:', exp);
     const newExp = exp + amount;
+    console.log('New exp will be:', newExp);
     
     // Check if player should level up (every 100 exp points)
     const newLevel = Math.floor(newExp / 100) + 1;
     if (newLevel > level) {
+      console.log('Level up! New level:', newLevel);
       await saveGameData({ exp: newExp, level: newLevel });
       updateAvailabilityBasedOnLevel(newLevel);
     } else {
+      console.log('No level up, just adding exp');
       await saveGameData({ exp: newExp });
     }
+    console.log('Exp saved to database');
   };
 
   const resetXp = async () => {
