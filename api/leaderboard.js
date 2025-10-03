@@ -9,20 +9,33 @@ export default async function handler(req, res) {
   let client;
 
   try {
+    console.log('🏆 Leaderboard API called');
+    
     // Verify JWT token
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('🏆 No token provided');
       return res.status(401).json({ error: 'No token provided' });
     }
 
     const token = authHeader.substring(7);
+    console.log('🏆 Token received, verifying...');
+    
+    if (!process.env.JWT_SECRET) {
+      console.error('🏆 JWT_SECRET not set in environment variables');
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
+    
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('🏆 Token verified for user:', decoded.userId);
 
     if (!decoded.userId) {
+      console.log('🏆 Invalid token - no userId');
       return res.status(401).json({ error: 'Invalid token' });
     }
 
     const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+    console.log('🏆 Connecting to database...');
     
     client = new Client({
       connectionString,
@@ -30,6 +43,7 @@ export default async function handler(req, res) {
     });
 
     await client.connect();
+    console.log('🏆 Database connected, fetching leaderboard...');
 
     // Get top 50 players by best score
     const result = await client.query(`
@@ -45,6 +59,8 @@ export default async function handler(req, res) {
       ORDER BY up.best_score DESC
       LIMIT 50
     `);
+
+    console.log('🏆 Leaderboard fetched, rows:', result.rows.length);
 
     return res.status(200).json({
       success: true,

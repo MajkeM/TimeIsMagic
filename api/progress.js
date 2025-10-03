@@ -5,14 +5,22 @@ export default async function handler(req, res) {
   if (req.method === "GET") {
     let client;
     try {
+      console.log('📖 GET /api/progress called');
       const token = req.headers.authorization?.replace("Bearer ", "");
       
       if (!token) {
+        console.log('📖 No token provided');
         return res.status(401).json({ error: "No token provided" });
+      }
+
+      if (!process.env.JWT_SECRET) {
+        console.error('📖 JWT_SECRET not set in environment variables');
+        return res.status(500).json({ error: 'Server configuration error' });
       }
 
       // Ověříme token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log('📖 Authenticated user:', decoded.userId);
 
       const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
       
@@ -75,6 +83,11 @@ export default async function handler(req, res) {
       if (!token) {
         console.log('📝 No token provided');
         return res.status(401).json({ error: "No token provided" });
+      }
+
+      if (!process.env.JWT_SECRET) {
+        console.error('📝 JWT_SECRET not set in environment variables');
+        return res.status(500).json({ error: 'Server configuration error' });
       }
 
       // Ověříme token
