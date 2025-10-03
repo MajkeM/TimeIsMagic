@@ -39,10 +39,13 @@ export default async function handler(req, res) {
         );
       `);
 
+      // Nejdříve zrušíme starou tabulku a vytvoříme novou s unikátním constraintem
+      await client.query(`DROP TABLE IF EXISTS user_progress CASCADE;`);
+
       await client.query(`
-        CREATE TABLE IF NOT EXISTS user_progress (
+        CREATE TABLE user_progress (
           id SERIAL PRIMARY KEY,
-          user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+          user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
           level INTEGER DEFAULT 1,
           score INTEGER DEFAULT 0,
           abilities TEXT DEFAULT '{}',

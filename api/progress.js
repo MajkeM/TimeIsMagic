@@ -86,19 +86,14 @@ export default async function handler(req, res) {
 
       await client.connect();
 
-      // Uložíme progress pro konkrétního uživatele
-      const result = await client.query(
-        `INSERT INTO user_progress (user_id, level, score, abilities, achievements, settings, last_played, updated_at) 
-         VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW()) 
-         ON CONFLICT (user_id) 
-         DO UPDATE SET 
-           level = EXCLUDED.level,
-           score = EXCLUDED.score,
-           abilities = EXCLUDED.abilities,
-           achievements = EXCLUDED.achievements,
-           settings = EXCLUDED.settings,
-           last_played = NOW(),
-           updated_at = NOW()
+      // Uložíme progress pro konkrétního uživatele - použijeme UPDATE nebo INSERT
+      let result;
+      
+      // Nejdříve zkusíme UPDATE
+      const updateResult = await client.query(
+        `UPDATE user_progress 
+         SET level = $2, score = $3, abilities = $4, achievements = $5, settings = $6, last_played = NOW(), updated_at = NOW()
+         WHERE user_id = $1
          RETURNING *`,
         [
           decoded.userId,
@@ -109,6 +104,25 @@ export default async function handler(req, res) {
           JSON.stringify(progressData.settings || {})
         ]
       );
+
+      if (updateResult.rows.length === 0) {
+        // Pokud UPDATE neaktualizoval nic, vytvoříme nový záznam
+        result = await client.query(
+          `INSERT INTO user_progress (user_id, level, score, abilities, achievements, settings) 
+           VALUES ($1, $2, $3, $4, $5, $6) 
+           RETURNING *`,
+          [
+            decoded.userId,
+            progressData.level || 1,
+            progressData.score || 0,
+            JSON.stringify(progressData.abilities || {}),
+            JSON.stringify(progressData.achievements || []),
+            JSON.stringify(progressData.settings || {})
+          ]
+        );
+      } else {
+        result = updateResult;
+      }
 
       return res.status(200).json({ 
         message: "Progress saved successfully",
