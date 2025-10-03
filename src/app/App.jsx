@@ -174,11 +174,13 @@ function AuthenticatedApp() {
     await saveGameData({ gold: newGold });
   };
 
-  const handleCharacterChange = (event) => {
+  const handleCharacterChange = async (event) => {
     const newCharacter = event.target.value;
     if (characterAvailability[newCharacter]) {
       setCharacter(newCharacter);
-      saveToStorage('character', newCharacter);
+      await saveGameData({ 
+        characters: { ...gameData.characters, selected: newCharacter }
+      });
     } else {
       alert(`Character ${newCharacter} requires level ${levelRequirements.characters[newCharacter]}!`);
     }
@@ -245,7 +247,9 @@ function AuthenticatedApp() {
       );
       
       if (hasChanges) {
-        saveToStorage('characterAvailability', newCharacterAvailability);
+        saveGameData({ 
+          abilities: { ...gameData.abilities, characterAvailability: newCharacterAvailability }
+        });
         return newCharacterAvailability;
       }
       
@@ -254,20 +258,22 @@ function AuthenticatedApp() {
   }, [level]);
 
   // Update character availability when level changes (for external calls)
-  const updateAvailabilityBasedOnLevel = useCallback((newLevel) => {
+  const updateAvailabilityBasedOnLevel = useCallback(async (newLevel) => {
     setCharacterAvailability(prev => {
       const newCharacterAvailability = {};
       Object.keys(levelRequirements.characters).forEach(char => {
         newCharacterAvailability[char] = 
           prev[char] || newLevel >= levelRequirements.characters[char];
       });
-      saveToStorage('characterAvailability', newCharacterAvailability);
+      saveGameData({ 
+        abilities: { ...gameData.abilities, characterAvailability: newCharacterAvailability }
+      });
       return newCharacterAvailability;
     });
-  }, []);
+  }, [gameData.abilities]);
 
   // change ability avaibility state for ability that was unlocked
-  const handleAbilityChangeAvailability = (abilityType, abilityName) => {
+  const handleAbilityChangeAvailability = async (abilityType, abilityName) => {
     const newAvailability = {
       ...abilityAvailability,
       [abilityType]: {
@@ -276,12 +282,14 @@ function AuthenticatedApp() {
       }
     };
     setAbilityAvailability(newAvailability);
-    saveToStorage('abilityAvailability', newAvailability);
+    await saveGameData({ 
+      abilities: { ...gameData.abilities, abilityAvailability: newAvailability }
+    });
   };
 
 
   // function that will unlock ability if player has enough gold
-  const checkEnoghGoldandUnlock = (abilityType, abilityName) => {
+  const checkEnoghGoldandUnlock = async (abilityType, abilityName) => {
     const cost = abilityCosts[abilityType][abilityName];
     if (gold >= cost) {
       const newAvailability = {
@@ -292,14 +300,17 @@ function AuthenticatedApp() {
         }
       };
       setAbilityAvailability(newAvailability);
-      saveToStorage('abilityAvailability', newAvailability);
-      handleGoldChange(cost);
+      const newGold = gold - cost;
+      await saveGameData({ 
+        gold: newGold,
+        abilities: { ...gameData.abilities, abilityAvailability: newAvailability }
+      });
     } else {
       alert("Not enough gold to unlock this ability!");
     }
   }
 
-  const handleAbilityChange = (event) => {
+  const handleAbilityChange = async (event) => {
     const { name, value } = event.target;
     
     // Check if ability is available (purchased)
@@ -310,13 +321,19 @@ function AuthenticatedApp() {
     
     if (name === "R") {
       setR_Ability(value);
-      saveToStorage('R_ability', value);
+      await saveGameData({ 
+        abilities: { ...gameData.abilities, R: value }
+      });
     } else if (name === "F") {
       setF_Ability(value);
-      saveToStorage('F_ability', value);
+      await saveGameData({ 
+        abilities: { ...gameData.abilities, F: value }
+      });
     } else if (name === "T") {
       setT_Ability(value);
-      saveToStorage('T_ability', value);
+      await saveGameData({ 
+        abilities: { ...gameData.abilities, T: value }
+      });
     }
   }
 
@@ -324,42 +341,32 @@ function AuthenticatedApp() {
     setShowCollision((prev) => !prev);
   };
 
-  const addGold = (amount) => {
-    setGold((prevGold) => {
-      const newGold = prevGold + amount;
-      saveToStorage('gold', newGold);
-      return newGold;
-    });
+  const addGold = async (amount) => {
+    const newGold = gold + amount;
+    await saveGameData({ gold: newGold });
   };
 
-  const addExp = (amount) => {
-    setExp((prevExp) => {
-      const newExp = prevExp + amount;
-      saveToStorage('exp', newExp);
-      
-      // Check if player should level up (every 100 exp points)
-      const newLevel = Math.floor(newExp / 100) + 1;
-      if (newLevel > level) {
-        setLevel(newLevel);
-        saveToStorage('level', newLevel);
-        updateAvailabilityBasedOnLevel(newLevel);
-      }
-      
-      return newExp;
-    });
+  const addExp = async (amount) => {
+    const newExp = exp + amount;
+    
+    // Check if player should level up (every 100 exp points)
+    const newLevel = Math.floor(newExp / 100) + 1;
+    if (newLevel > level) {
+      await saveGameData({ exp: newExp, level: newLevel });
+      updateAvailabilityBasedOnLevel(newLevel);
+    } else {
+      await saveGameData({ exp: newExp });
+    }
   };
 
-  const resetXp = () => {
-    setExp(0);
+  const resetXp = async () => {
+    await saveGameData({ exp: 0 });
   }
 
-  const addLevel = () => {
-    setLevel((prevLevel) => {
-      const newLevel = prevLevel + 1;
-      saveToStorage('level', newLevel);
-      updateAvailabilityBasedOnLevel(newLevel);
-      return newLevel;
-    });
+  const addLevel = async () => {
+    const newLevel = level + 1;
+    await saveGameData({ level: newLevel });
+    updateAvailabilityBasedOnLevel(newLevel);
   }
 
   // Add error boundary for safer navigation
