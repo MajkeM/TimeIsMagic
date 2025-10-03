@@ -3,12 +3,12 @@ import "./globals.css";
 import {useState, useRef, useEffect} from "react";
 import UserGoldLevelBar from "./components/UserGoldLevelBar";
 
-export default function Settings({toggleCollision, gold, level, exp}) {
+export default function Settings({toggleCollision, gold, level, exp, resetXp, addLevel}) {
     return (
         <div className="settings-page">
             
             <Navbar />
-            <UserGoldLevelBar gold={gold} level={level} exp={exp} />
+            <UserGoldLevelBar gold={gold} level={level} exp={exp} resetXp={resetXp} addLevel={addLevel} />
             <div className="settings-content">
                 <h1>Settings Page</h1>
                 <p>Adjust your game settings here.</p>

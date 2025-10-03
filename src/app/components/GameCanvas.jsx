@@ -17,6 +17,18 @@ import phaseAbility from "../Sprites/phaseAbility.png";
 import scoreAbility from "../Sprites/scoreAbility.png";
 import abilityBackground from "../Sprites/ability-background.png";
 import scoreBackground from "../Sprites/score-background.png";
+import soldierAbility from "../Sprites/soldier-ability.png";
+// New abilities - using existing sprites as placeholders until proper sprites are added
+import freezeAbility from "../Sprites/freeze-ability.png"; // Placeholder for freeze
+import lightningStormAbility from "../Sprites/lightning-ability.png"; // Placeholder for lightning storm
+import poisonCloudAbility from "../Sprites/poison-ability.png"; // Placeholder for poison cloud
+import shieldAbility from "../Sprites/shield-ability.png"; // Placeholder for shield
+import dashAbility from "../Sprites/dash-ability.png"; // Placeholder for dash
+import magnetAbility from "../Sprites/magnet-ability.png"; // Placeholder for magnet
+import mirrorCloneAbility from "../Sprites/mirrorClone-ability.png"; // Placeholder for mirror clone
+import berserkerModeAbility from "../Sprites/berserker-ability.png"; // Placeholder for berserker mode
+import wallCreationAbility from "../Sprites/wallCreation-ability.png"; // Placeholder for wall creation
+import meteorAbility from "../Sprites/meteor-ability.png"; // Placeholder for meteor
 // New enemy sprites
 import bomberSprite from "../Sprites/bomberSprite.png"; // Using rock sprite for bomber
 import teleporterSprite from "../Sprites/goblinSprite.png"; // Using goblin sprite but different color
@@ -24,10 +36,12 @@ import rapunzelSprite from "../Sprites/rapunzelPlayerSprite.png";
 // New character sprites (you can change these import paths to your actual sprite files)
 import archerSprite from "../Sprites/archerPlayer.png"; // Change this to your archer sprite
 import mageSprite from "../Sprites/runeMagePlayer.png"; // Change this to your mage sprite
+import kingSprite from "./../Sprites/kingPlayerSprite.png"; // Temporary sprite for King - will be replaced
+import soldierSprite from "./../Sprites/soldierSprite.png"; // Temporary sprite for Soldier - will be replaced
 import { Link } from "react-router-dom";
 
 
-export default function GameCanvas({showCollision, R_ability, F_ability, T_ability, character}) {
+export default function GameCanvas({showCollision, R_ability, F_ability, T_ability, character, addGold, addExp, exp, level, gold}) {
 
     // canvas 
         // ability icons 
@@ -66,6 +80,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
 
         const abilityOnCooldown = useRef(false); // Přidat cooldown tracking
         const abilityCooldownStartTime = useRef(0); // Track when cooldown started
+        const reloadAbilityActive = useRef(false); // Track when reload ability is active
         const abilityReloadRef = useRef(null);
         const reloadTimeRef = useRef(RELOADTIME); // Přidat reloadTime jako ref
 
@@ -88,10 +103,10 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
 
         // Gravity Well ability
         const GRAVITY_COOLDOWN = 14000;
-        const GRAVITY_DURATION = 3000;
-        const GRAVITY_PULL_RADIUS = 250;
-        const GRAVITY_PULL_STRENGTH = 8;
-        const GRAVITY_EXPLOSION_RADIUS = 150;
+        const GRAVITY_DURATION = 2000;
+        const GRAVITY_PULL_RADIUS = 550;
+        const GRAVITY_PULL_STRENGTH = 15;
+        const GRAVITY_EXPLOSION_RADIUS = 400;
         const gravityWellAbilityRef = useRef(null);
         const gravityWellAbilityOnCooldown = useRef(false);
         const gravityWellAbilityCooldownStartTime = useRef(0);
@@ -140,23 +155,147 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
         const scoreBoostEffectActive = useRef(false);
         const scoreBoostEffectStartTime = useRef(0);
 
+        // Soldier Ability (spawns soldiers like King's combat)
+        const SOLDIER_ABILITY_COOLDOWN = 3000; // Same as King's soldier cooldown
+        const SOLDIER_ABILITY_COOLDOWN_BOOSTED = 500; // Same as King's boosted cooldown
+        const soldierAbilityRef = useRef(null);
+        const soldierAbilityOnCooldown = useRef(false);
+        const soldierAbilityCooldownStartTime = useRef(0);
+        const soldierAbilitySoldiers = useRef([]); // Separate soldier array for the ability
+        const soldierAbilitySoldierBullets = useRef([]); // Separate bullet array for ability soldiers
+
+        // Freeze ability (R)
+        const FREEZE_COOLDOWN = 15000;
+        const FREEZE_DURATION = 3000;
+        const freezeAbilityRef = useRef(null);
+        const freezeAbilityOnCooldown = useRef(false);
+        const freezeAbilityCooldownStartTime = useRef(0);
+        const freezeAbilityActive = useRef(false);
+        const freezeAbilityStartTime = useRef(0);
+
+        // Lightning Storm ability (R)
+        const LIGHTNING_STORM_COOLDOWN = 12000;
+        const LIGHTNING_STORM_DURATION = 5000;
+        const LIGHTNING_STORM_STRIKES = 15; // Number of lightning strikes
+        const LIGHTNING_STORM_RADIUS = 100; // Lightning strike damage radius
+        const LIGHTNING_STORM_DAMAGE = 25;
+        const lightningStormAbilityRef = useRef(null);
+        const lightningStormAbilityOnCooldown = useRef(false);
+        const lightningStormAbilityCooldownStartTime = useRef(0);
+        const lightningStormAbilityActive = useRef(false);
+        const lightningStormAbilityStartTime = useRef(0);
+        const lightningStrikes = useRef([]);
+
+        // Poison Cloud ability (R)
+        const POISON_CLOUD_COOLDOWN = 10000;
+        const POISON_CLOUD_DURATION = 8000;
+        const POISON_CLOUD_RADIUS = 200;
+        const POISON_CLOUD_DAMAGE_INTERVAL = 500; // Damage every 0.5 seconds
+        const POISON_CLOUD_DAMAGE = 5;
+        const poisonCloudAbilityRef = useRef(null);
+        const poisonCloudAbilityOnCooldown = useRef(false);
+        const poisonCloudAbilityCooldownStartTime = useRef(0);
+        const poisonClouds = useRef([]);
+
+        // Shield ability (F)
+        const SHIELD_COOLDOWN = 20000;
+        const SHIELD_DURATION = 8000;
+        const SHIELD_HITS = 3; // Number of hits the shield can absorb
+        const shieldAbilityRef = useRef(null);
+        const shieldAbilityOnCooldown = useRef(false);
+        const shieldAbilityCooldownStartTime = useRef(0);
+        const shieldAbilityActive = useRef(false);
+        const shieldAbilityStartTime = useRef(0);
+        const shieldHitsRemaining = useRef(0);
+
+        // Dash ability (F)
+        const DASH_COOLDOWN = 5000;
+        const DASH_DISTANCE = 300;
+        const DASH_DAMAGE = 20;
+        const DASH_SPEED = 50; // Speed of dash movement
+        const dashAbilityRef = useRef(null);
+        const dashAbilityOnCooldown = useRef(false);
+        const dashAbilityCooldownStartTime = useRef(0);
+        const dashActive = useRef(false);
+        const dashStartTime = useRef(0);
+        const dashStartPosition = useRef({x: 0, y: 0});
+        const dashEndPosition = useRef({x: 0, y: 0});
+
+        // Magnet ability (T)
+        const MAGNET_COOLDOWN = 12000;
+        const MAGNET_DURATION = 4000;
+        const MAGNET_PULL_STRENGTH = 50; // Extremely strong magnet
+        const magnetAbilityRef = useRef(null);
+        const magnetAbilityOnCooldown = useRef(false);
+        const magnetAbilityCooldownStartTime = useRef(0);
+        const magnetAbilityActive = useRef(false);
+        const magnetAbilityStartTime = useRef(0);
+
+        // Mirror Clone ability (T)
+        const MIRROR_CLONE_COOLDOWN = 20000;
+        const MIRROR_CLONE_DURATION = 10000;
+        const MIRROR_CLONE_COUNT = 2;
+        const mirrorCloneAbilityRef = useRef(null);
+        const mirrorCloneAbilityOnCooldown = useRef(false);
+        const mirrorCloneAbilityCooldownStartTime = useRef(0);
+        const mirrorCloneAbilityActive = useRef(false);
+        const mirrorCloneAbilityStartTime = useRef(0);
+        const mirrorClones = useRef([]);
+
+        // Berserker Mode ability (T)
+        const BERSERKER_MODE_COOLDOWN = 25000;
+        const BERSERKER_MODE_DURATION = 10000;
+        const BERSERKER_ATTACK_SPEED_MULTIPLIER = 0.05; // 20x faster attacks
+        const BERSERKER_MOVE_SPEED_MULTIPLIER = 4.0; // 4x faster movement
+        const BERSERKER_DAMAGE_MULTIPLIER = 8.0; // 8x more damage
+        const berserkerModeAbilityRef = useRef(null);
+        const berserkerModeAbilityOnCooldown = useRef(false);
+        const berserkerModeAbilityCooldownStartTime = useRef(0);
+        const berserkerModeAbilityActive = useRef(false);
+        const berserkerModeAbilityStartTime = useRef(0);
+
+        // Wall Creation ability (F)
+        const WALL_CREATION_COOLDOWN = 8000;
+        const WALL_CREATION_LIFETIME = 15000;
+        const WALL_WIDTH = 200;
+        const WALL_HEIGHT = 20;
+        const wallCreationAbilityRef = useRef(null);
+        const wallCreationAbilityOnCooldown = useRef(false);
+        const wallCreationAbilityCooldownStartTime = useRef(0);
+        const walls = useRef([]);
+
+        // Meteor ability (R)
+        const METEOR_COOLDOWN = 16000;
+        const METEOR_DELAY = 2000; // 2 seconds warning before impact
+        const METEOR_RADIUS = 200; // Much larger meteor damage radius
+        const METEOR_DAMAGE_RADIUS = 400; // Even larger damage area
+        const METEOR_DAMAGE = 150; // Much more damage
+        const meteorAbilityRef = useRef(null);
+        const meteorAbilityOnCooldown = useRef(false);
+        const meteorAbilityCooldownStartTime = useRef(0);
+        const meteors = useRef([]);
+        const meteorTargets = useRef([]);
+
     // Ability configuration helper
     const getAbilityConfig = () => {
         return {
             R: {
                 ability: R_ability,
                 key: 'r',
-                available: R_ability === 'reload' || R_ability === 'splash' || R_ability === 'gravitywell'
+                available: R_ability === 'reload' || R_ability === 'splash' || R_ability === 'gravitywell' || 
+                          R_ability === 'freeze' || R_ability === 'lightningstorm' || R_ability === 'poisoncloud' || R_ability === 'meteor'
             },
             F: {
                 ability: F_ability,
                 key: 'f', 
-                available: F_ability === 'flash' || F_ability === 'speed' || F_ability === 'phasewalk'
+                available: F_ability === 'flash' || F_ability === 'speed' || F_ability === 'phasewalk' || 
+                          F_ability === 'shield' || F_ability === 'dash' || F_ability === 'wallcreation'
             },
             T: {
                 ability: T_ability,
                 key: 't',
-                available: T_ability === 'teleport' || T_ability === 'immortality' || T_ability === 'scoreboost'
+                available: T_ability === 'teleport' || T_ability === 'immortality' || T_ability === 'scoreboost' || T_ability === 'soldierHelp' ||
+                          T_ability === 'magnet' || T_ability === 'mirrorclone' || T_ability === 'berserkermode'
             }
         };
     };
@@ -176,7 +315,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 combatType: 'slash',
                 width: 180,
                 height: 180,
-                rotationOffset: Math.PI/2
+                rotationOffset: -Math.PI/2
             },
             archer: {
                 sprite: archerSprite,
@@ -191,6 +330,13 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 width: 180,
                 height: 180,
                 rotationOffset: -Math.PI/2
+            },
+            king: {
+                sprite: kingSprite,
+                combatType: 'soldiers',
+                width: 180,
+                height: 180,
+                rotationOffset: -Math.PI/2
             }
         };
     };
@@ -198,6 +344,8 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     // end abilities
 
     // constants
+    const CANVAS_WIDTH = window.innerWidth;
+    const CANVAS_HEIGHT = window.innerHeight;
     
 
 
@@ -221,29 +369,29 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     // Teleporter enemy constants
     const SPAWN_TELEPORTER_ENEMY_TIME = 12000; // Spawns every 12 seconds
     const SPAWN_TELEPORTER_ENEMY_TIME_MIN = 6000;
-    const TELEPORTER_ENEMY_SPEED = 5; // Faster than basic enemies
-    const TELEPORTER_ENEMY_SPEED_SLOW = 2;
-    const TELEPORTER_BULLET_SPEED = 25; // Homing bullets
-    const TELEPORTER_BULLET_SPEED_SLOW = 2;
+    const TELEPORTER_ENEMY_SPEED = 3; // Faster than basic enemies
+    const TELEPORTER_ENEMY_SPEED_SLOW = 1;
+    const TELEPORTER_BULLET_SPEED = 15; // Homing bullets
+    const TELEPORTER_BULLET_SPEED_SLOW = 1;
     const TELEPORTER_TELEPORT_INTERVAL = 4000; // Teleports every 4 seconds
     const TELEPORTER_HOMING_STRENGTH = 0.1; // How strongly bullets home
 
-    const PLAYER_SPEED = 6;
+    const PLAYER_SPEED = 4;
     const PLAYER_SPEED_SLOW = 1;
-    const PLAYER_BULLET_SPEED = 30;
+    const PLAYER_BULLET_SPEED = 25;
     const PLAYER_BULLET_SPEED_SLOW = 1;
     const PLAYER_COLLISION_RADIUS = 40; // Collision radius for player (180x180 sprite)
     
-    const BASIC_ENEMY_SPEED = 4;
-    const BASIC_ENEMY_BULLET_SPEED = 20;
+    const BASIC_ENEMY_SPEED = 3;
+    const BASIC_ENEMY_BULLET_SPEED = 15;
     const BASIC_ENEMY_SPEED_SLOW = 1;
     const BASIC_ENEMY_BULLET_SPEED_SLOW = 1.5;
 
     const GOBLIN_BULLET_SIZE = 125; // Size of goblin bullet sprite (width and height) - zmenšeno z 120
     const GOBLIN_BULLET_RADIUS = 20; // Collision radius for goblin bullets - zmenšeno z 25
 
-    const TRIPPLESHOOT_ENEMY_SPEED = 3.5;
-    const TRIPPLESHOOT_ENEMY_BULLET_SPEED = 30;
+    const TRIPPLESHOOT_ENEMY_SPEED = 2.5;
+    const TRIPPLESHOOT_ENEMY_BULLET_SPEED = 15;
     const TRIPPLESHOOT_ENEMY_SPEED_SLOW = 1;
     const TRIPPLESHOOT_ENEMY_BULLET_SPEED_SLOW = 1.5;
 
@@ -286,6 +434,10 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
 
     //game
     const gameImageBackgroundRef = useRef(null);    
+
+    // Kill effects system
+    const particles = useRef([]);
+    const floatingTexts = useRef([]);
 
     // player
     const playerRef = useRef({})
@@ -340,20 +492,31 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     const teleporterImageRef = useRef(null);
 
     // Slash combat system constants and refs
-    const SLASH_RANGE = 200; // Range of slash attack
+    const SLASH_RANGE = 300; // Range of slash attack
     const SLASH_DURATION = 300; // Duration of slash animation in ms
     const SLASH_COOLDOWN = 600; // Cooldown between slashes
+    const SLASH_COOLDOWN_BOOSTED = 100; // Reduced cooldown with reload ability
     const SLASH_ANGLE_SPREAD = Math.PI / 3; // 60 degree slash arc
     
     // Archer combat system constants
     const ARROW_SPEED = 35; // Faster than bullets
     const ARROW_COOLDOWN = 400; // Faster than bullets but slower than slash
+    const ARROW_COOLDOWN_BOOSTED = 100; // Reduced cooldown with reload ability
     const ARROW_PIERCING = 3; // Can pierce through 3 enemies
     
     // Mage combat system constants
     const SPELL_COOLDOWN = 1700; // Slower cast time
+    const SPELL_COOLDOWN_BOOSTED = 200; // Reduced cooldown with reload ability (8.5x faster)
     const SPELL_DAMAGE_RADIUS = 120; // AOE damage radius
     const SPELL_DURATION = 800; // How long spell effect lasts
+    
+    // King combat system constants
+    const KING_SOLDIER_COOLDOWN = 3000; // 3 seconds cooldown to spawn soldier
+    const KING_SOLDIER_COOLDOWN_BOOSTED = 500; // Reduced cooldown with reload ability (6x faster)
+    const KING_SOLDIER_LIFETIME = 5000; // 5 seconds soldier lifetime
+    const KING_SOLDIER_SHOOT_COOLDOWN = 1000; // 1 second between soldier shots
+    const KING_SOLDIER_BULLET_SPEED = 20; // Soldier bullet speed
+    const KING_SOLDIER_RANGE = 300; // How far soldier can detect enemies
     
     // Slash system refs
     const slashActive = useRef(false);
@@ -374,6 +537,14 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     const canCastSpell = useRef(true);
     const lastSpellTime = useRef(0);
     const mageImageRef = useRef(null);
+    
+    // King system refs
+    const soldiers = useRef([]);
+    const soldierBullets = useRef([]);
+    const canSpawnSoldier = useRef(true);
+    const lastSoldierSpawnTime = useRef(0);
+    const kingImageRef = useRef(null);
+    const soldierImageRef = useRef(null);
 
     // Use ref for loose state so gameLoop can see updates immediately
     const looseRef = useRef(false);
@@ -388,12 +559,42 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             // R Ability handler (reload or splash)
             if (key === "r" && abilityConfig.R.available) {
                 if (R_ability === 'reload' && !abilityOnCooldown.current) {
+                    console.log("Reload ability activated!");
                     reloadTimeRef.current = RELOADTIME_ABILITY_BOOST;
+                    reloadAbilityActive.current = true;
                     abilityOnCooldown.current = true;
                     abilityCooldownStartTime.current = currentTime;
 
+                    // Reset ability timestamps to current time to sync with boosted cooldowns
+                    // Always reset timestamps when abilities are on cooldown
+                    if (!canSlash.current) {
+                        lastSlashTime.current = currentTime;
+                        console.log("Reset slash time");
+                    }
+                    if (!canShootArrow.current) {
+                        lastArrowTime.current = currentTime;
+                        console.log("Reset arrow time");
+                    }
+                    if (!canCastSpell.current) {
+                        lastSpellTime.current = currentTime;
+                        console.log("Reset spell time");
+                    }
+                    if (!canSpawnSoldier.current) {
+                        lastSoldierSpawnTime.current = currentTime;
+                        console.log("Reset King soldier time");
+                    }
+                    if (soldierAbilityOnCooldown.current) {
+                        soldierAbilityCooldownStartTime.current = currentTime;
+                        console.log("Reset soldier ability time");
+                    }
+
                     setTimeout(() => {
-                        reloadTimeRef.current = RELOADTIME;
+                        let finalReloadTime = RELOADTIME;
+                        if (berserkerModeAbilityActive.current) {
+                            finalReloadTime *= BERSERKER_ATTACK_SPEED_MULTIPLIER;
+                        }
+                        reloadTimeRef.current = finalReloadTime;
+                        reloadAbilityActive.current = false;
                     }, RELOADTIME_ABILITY_BOOST_DURATION);
                     
                     setTimeout(() => {
@@ -510,71 +711,106 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     setTimeout(() => {
                         gravityWellAbilityOnCooldown.current = false;
                     }, GRAVITY_COOLDOWN);
-                }
-            }
-
-            // T Ability handler (teleport or immortality)
-            if (key === "t" && abilityConfig.T.available) {
-                if (T_ability === 'teleport' && !teleportAbilityOnCooldown.current) {
-                    teleportAbilityActive.current = true;
-                    teleportAbilityStartTime.current = currentTime;
-                    teleportAbilityOnCooldown.current = true;
-                    teleportAbilityCooldownStartTime.current = currentTime;
+                } else if (R_ability === 'freeze' && !freezeAbilityOnCooldown.current) {
+                    // Freeze ability - freeze all enemies for FREEZE_DURATION
+                    freezeAbilityActive.current = true;
+                    freezeAbilityOnCooldown.current = true;
+                    freezeAbilityCooldownStartTime.current = currentTime;
                     
-                    const mousePos = mousemove.current;
-                    basicEnemyRef.current = basicEnemyRef.current.filter(enemy => {
-                        const ex = enemy.x + enemy.width / 2;
-                        const ey = enemy.y + enemy.height / 4;
-                        const distance = Math.sqrt((ex - mousePos.x) ** 2 + (ey - mousePos.y) ** 2);
-                        return distance > TELEPORT_DISTANCE;
-                    });
-                    trippleShootEnemyRef.current = trippleShootEnemyRef.current.filter(enemy => {
-                        const ex = enemy.x + enemy.width / 2;
-                        const ey = enemy.y + enemy.height / 2;
-                        const distance = Math.sqrt((ex - mousePos.x) ** 2 + (ey - mousePos.y) ** 2);
-                        return distance > TELEPORT_DISTANCE;
-                    });
-
+                    // Deactivate freeze after duration
                     setTimeout(() => {
-                        teleportAbilityActive.current = false;
-                    }, TELEPORT_DURATION);
-
-                    setTimeout(() => {
-                        teleportAbilityOnCooldown.current = false;
-                    }, TELEPORT_COOLDOWN);
-                } else if (T_ability === 'immortality' && !immortalityAbilityOnCooldown.current) {
-                    // Immortality ability - player becomes invulnerable for 6 seconds
-                    immortalityAbilityActive.current = true;
-                    immortalityAbilityStartTime.current = currentTime;
-                    immortalityAbilityOnCooldown.current = true;
-                    immortalityAbilityCooldownStartTime.current = currentTime;
-                    
-                    // Reset immortality after duration
-                    setTimeout(() => {
-                        immortalityAbilityActive.current = false;
-                    }, IMMORTALITY_DURATION);
+                        freezeAbilityActive.current = false;
+                    }, FREEZE_DURATION);
                     
                     // Reset cooldown
                     setTimeout(() => {
-                        immortalityAbilityOnCooldown.current = false;
-                    }, IMMORTALITY_COOLDOWN);
-                } else if (T_ability === 'scoreboost' && !scoreBoostAbilityOnCooldown.current) {
-                    // Score Boost ability - instantly adds 100 points
-                    score.current += SCOREBOOST_POINTS;
-                    scoreBoostEffectActive.current = true;
-                    scoreBoostEffectStartTime.current = currentTime;
-                    scoreBoostAbilityOnCooldown.current = true;
-                    scoreBoostAbilityCooldownStartTime.current = currentTime;
+                        freezeAbilityOnCooldown.current = false;
+                    }, FREEZE_COOLDOWN);
+                } else if (R_ability === 'lightningstorm' && !lightningStormAbilityOnCooldown.current) {
+                    // Lightning Storm ability - spawn lightning strikes at random positions
+                    lightningStormAbilityActive.current = true;
+                    lightningStormAbilityOnCooldown.current = true;
+                    lightningStormAbilityCooldownStartTime.current = currentTime;
                     
-                    // Remove visual effect after short duration
-                    setTimeout(() => {
-                        scoreBoostEffectActive.current = false;
-                    }, 1000);
+                    let strikeCount = 0;
+                    const strikesInterval = setInterval(() => {
+                        if (strikeCount >= LIGHTNING_STORM_STRIKES) {
+                            clearInterval(strikesInterval);
+                            lightningStormAbilityActive.current = false;
+                            return;
+                        }
+                        
+                        // Create lightning strike at random position
+                        const strikeX = Math.random() * CANVAS_WIDTH;
+                        const strikeY = Math.random() * CANVAS_HEIGHT;
+                        
+                        lightningStrikes.current.push({
+                            x: strikeX,
+                            y: strikeY,
+                            timestamp: performance.now(),
+                            radius: LIGHTNING_STORM_RADIUS
+                        });
+                        
+                        strikeCount++;
+                    }, LIGHTNING_STORM_DURATION / LIGHTNING_STORM_STRIKES);
                     
                     // Reset cooldown
                     setTimeout(() => {
-                        scoreBoostAbilityOnCooldown.current = false;
-                    }, SCOREBOOST_COOLDOWN);
+                        lightningStormAbilityOnCooldown.current = false;
+                    }, LIGHTNING_STORM_COOLDOWN);
+                } else if (R_ability === 'poisoncloud' && !poisonCloudAbilityOnCooldown.current) {
+                    // Poison Cloud ability - create poison cloud at mouse position
+                    const poisonX = mousemove.current.x;
+                    const poisonY = mousemove.current.y;
+                    
+                    poisonClouds.current.push({
+                        x: poisonX,
+                        y: poisonY,
+                        timestamp: performance.now(),
+                        radius: POISON_CLOUD_RADIUS
+                    });
+                    
+                    poisonCloudAbilityOnCooldown.current = true;
+                    poisonCloudAbilityCooldownStartTime.current = currentTime;
+                    
+                    // Reset cooldown
+                    setTimeout(() => {
+                        poisonCloudAbilityOnCooldown.current = false;
+                    }, POISON_CLOUD_COOLDOWN);
+                } else if (R_ability === 'meteor' && !meteorAbilityOnCooldown.current) {
+                    // Meteor ability - delay then spawn meteor at mouse position
+                    const meteorTargetX = mousemove.current.x;
+                    const meteorTargetY = mousemove.current.y;
+                    
+                    meteorAbilityOnCooldown.current = true;
+                    meteorAbilityCooldownStartTime.current = currentTime;
+                    
+                    // Show meteor target indicator
+                    meteorTargets.current.push({
+                        x: meteorTargetX,
+                        y: meteorTargetY,
+                        timestamp: performance.now()
+                    });
+                    
+                    // Spawn meteor after delay
+                    setTimeout(() => {
+                        meteors.current.push({
+                            x: meteorTargetX,
+                            y: meteorTargetY,
+                            timestamp: performance.now(),
+                            radius: METEOR_RADIUS
+                        });
+                        
+                        // Remove target indicator
+                        meteorTargets.current = meteorTargets.current.filter(target => 
+                            target.x !== meteorTargetX || target.y !== meteorTargetY
+                        );
+                    }, METEOR_DELAY);
+                    
+                    // Reset cooldown
+                    setTimeout(() => {
+                        meteorAbilityOnCooldown.current = false;
+                    }, METEOR_COOLDOWN);
                 }
             }
 
@@ -637,6 +873,129 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     setTimeout(() => {
                         phaseWalkAbilityOnCooldown.current = false;
                     }, PHASEWALK_COOLDOWN);
+                } else if (F_ability === 'shield' && !shieldAbilityOnCooldown.current) {
+                    // Shield ability - activate protective shield
+                    shieldAbilityActive.current = true;
+                    shieldAbilityOnCooldown.current = true;
+                    shieldAbilityCooldownStartTime.current = currentTime;
+                    shieldHitsRemaining.current = SHIELD_HITS;
+                    
+                    // Deactivate shield after duration or when hits depleted
+                    setTimeout(() => {
+                        shieldAbilityActive.current = false;
+                        shieldHitsRemaining.current = 0;
+                    }, SHIELD_DURATION);
+                    
+                    // Reset cooldown
+                    setTimeout(() => {
+                        shieldAbilityOnCooldown.current = false;
+                    }, SHIELD_COOLDOWN);
+                } else if (F_ability === 'dash' && !dashAbilityOnCooldown.current) {
+                    // Dash ability - quick movement towards mouse
+                    const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+                    const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+                    
+                    const dx = mousemove.current.x - playerCenterX;
+                    const dy = mousemove.current.y - playerCenterY;
+                    const length = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (length > 0) {
+                        const normalizedDx = dx / length;
+                        const normalizedDy = dy / length;
+                        
+                        const dashDistance = Math.min(length, DASH_DISTANCE);
+                        
+                        // Kill enemies along the dash path
+                        const numSteps = 10; // Check collision in multiple steps along the dash
+                        for (let step = 0; step <= numSteps; step++) {
+                            const stepProgress = step / numSteps;
+                            const checkX = playerCenterX + normalizedDx * dashDistance * stepProgress;
+                            const checkY = playerCenterY + normalizedDy * dashDistance * stepProgress;
+                            
+                            // Check collision with basic enemies
+                            basicEnemyRef.current = basicEnemyRef.current.filter((enemy) => {
+                                const enemyCenterX = enemy.x + enemy.width / 2;
+                                const enemyCenterY = enemy.y + enemy.height / 2;
+                                const distance = Math.sqrt((checkX - enemyCenterX) ** 2 + (checkY - enemyCenterY) ** 2);
+                                if (distance < 50) {
+                                    score.current += 10;
+                                    return false; // Kill the enemy
+                                }
+                                return true;
+                            });
+                            
+                            // Check collision with triple shoot enemies
+                            trippleShootEnemyRef.current = trippleShootEnemyRef.current.filter((enemy) => {
+                                const enemyCenterX = enemy.x + enemy.width / 2;
+                                const enemyCenterY = enemy.y + enemy.height / 2;
+                                const distance = Math.sqrt((checkX - enemyCenterX) ** 2 + (checkY - enemyCenterY) ** 2);
+                                if (distance < 50) {
+                                    score.current += 30;
+                                    return false; // Kill the enemy
+                                }
+                                return true;
+                            });
+                            
+                            // Check collision with teleporter enemies
+                            teleporterEnemyRef.current = teleporterEnemyRef.current.filter((enemy) => {
+                                const enemyCenterX = enemy.x + enemy.width / 2;
+                                const enemyCenterY = enemy.y + enemy.height / 2;
+                                const distance = Math.sqrt((checkX - enemyCenterX) ** 2 + (checkY - enemyCenterY) ** 2);
+                                if (distance < 50) {
+                                    score.current += 35;
+                                    return false; // Kill the enemy
+                                }
+                                return true;
+                            });
+                            
+                            // Check collision with bomber enemies
+                            bomberEnemyRef.current = bomberEnemyRef.current.filter((enemy) => {
+                                const enemyCenterX = enemy.x + enemy.width / 2;
+                                const enemyCenterY = enemy.y + enemy.height / 2;
+                                const distance = Math.sqrt((checkX - enemyCenterX) ** 2 + (checkY - enemyCenterY) ** 2);
+                                if (distance < 50) {
+                                    score.current += 25;
+                                    return false; // Kill the enemy
+                                }
+                                return true;
+                            });
+                        }
+                        
+                        const newX = playerRef.current.x + normalizedDx * dashDistance;
+                        const newY = playerRef.current.y + normalizedDy * dashDistance;
+                        
+                        // Clamp to canvas bounds
+                        playerRef.current.x = Math.max(0, Math.min(window.innerWidth - playerRef.current.width, newX));
+                        playerRef.current.y = Math.max(0, Math.min(window.innerHeight - playerRef.current.height, newY));
+                    }
+                    
+                    dashAbilityOnCooldown.current = true;
+                    dashAbilityCooldownStartTime.current = currentTime;
+                    
+                    // Reset cooldown
+                    setTimeout(() => {
+                        dashAbilityOnCooldown.current = false;
+                    }, DASH_COOLDOWN);
+                } else if (F_ability === 'wallcreation' && !wallCreationAbilityOnCooldown.current) {
+                    // Wall Creation ability - create large wall at mouse position
+                    const wallX = mousemove.current.x;
+                    const wallY = mousemove.current.y;
+                    
+                    walls.current.push({
+                        x: wallX - 100, // Center the large wall
+                        y: wallY - 25,
+                        width: 200, // Large rectangle
+                        height: 50,
+                        timestamp: performance.now()
+                    });
+                    
+                    wallCreationAbilityOnCooldown.current = true;
+                    wallCreationAbilityCooldownStartTime.current = currentTime;
+                    
+                    // Reset cooldown
+                    setTimeout(() => {
+                        wallCreationAbilityOnCooldown.current = false;
+                    }, WALL_CREATION_COOLDOWN);
                 }
             }
         };
@@ -652,6 +1011,11 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     // tripple shoot enemy bullets (shoots every 5 seconds)
     useEffect(() => {
         const shootTrippleShootEnemyBullets = () => {
+            // Don't let frozen enemies shoot
+            if (freezeAbilityActive.current) {
+                return;
+            }
+            
             trippleShootEnemyRef.current.forEach((enemy) => {
                 // number of bullets to shoot
                 const bulletCount = 3;
@@ -694,6 +1058,11 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     // basic enemy bullets (shoots every 3 seconds)
     useEffect(() => {
         const shootEnemyBullets = () => {
+            // Don't let frozen enemies shoot
+            if (freezeAbilityActive.current) {
+                return;
+            }
+            
             basicEnemyRef.current.forEach((enemy) => {
                 const dx = (playerRef.current.x + playerRef.current.width / 2) - (enemy.x + enemy.width / 2);
                 const dy = (playerRef.current.y + playerRef.current.height / 2) - (enemy.y + enemy.height / 2);
@@ -722,6 +1091,11 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     // teleporter enemy bullets (shoots homing bullets every 2.5 seconds)
     useEffect(() => {
         const shootTeleporterEnemyBullets = () => {
+            // Don't let frozen enemies shoot
+            if (freezeAbilityActive.current) {
+                return;
+            }
+            
             teleporterEnemyRef.current.forEach((enemy) => {
                 const dx = (playerRef.current.x + playerRef.current.width / 2) - (enemy.x + enemy.width / 2);
                 const dy = (playerRef.current.y + playerRef.current.height / 2) - (enemy.y + enemy.height / 2);
@@ -820,13 +1194,20 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     angle: bulletAngle,
                 })
                 canShoot.current = false;
+
+                // Capture cooldown value to avoid race conditions
+                const wizardCooldownToUse = reloadAbilityActive.current ? RELOADTIME_ABILITY_BOOST : reloadTimeRef.current;
+
                 setTimeout(() => {
                     canShoot.current = true;
-                }, reloadTimeRef.current);
+                }, wizardCooldownToUse);
             } else if (currentCharacter.combatType === 'slash' && canSlash.current) {
                 // Rapunzel slash combat
                 const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
                 const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+                
+                // Debug log for Rapunzel's ability
+                console.log("Rapunzel slashing, reload active:", reloadAbilityActive.current);
                 
                 const dx = mousemove.current.x - playerCenterX;
                 const dy = mousemove.current.y - playerCenterY;
@@ -842,13 +1223,21 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     slashActive.current = false;
                 }, SLASH_DURATION);
                 
+                // Capture cooldown value to avoid race conditions
+                const slashCooldownToUse = reloadAbilityActive.current ? SLASH_COOLDOWN_BOOSTED : SLASH_COOLDOWN;
+                console.log("Rapunzel cooldown will be:", slashCooldownToUse);
+                
                 setTimeout(() => {
                     canSlash.current = true;
-                }, SLASH_COOLDOWN);
+                    console.log("Rapunzel can slash again");
+                }, slashCooldownToUse);
             } else if (currentCharacter.combatType === 'arrows' && canShootArrow.current) {
                 // Archer arrow combat
                 const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
                 const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+                
+                // Debug log for Archer's ability
+                console.log("Archer shooting arrow, reload active:", reloadAbilityActive.current);
                 
                 const dx = mousemove.current.x - playerCenterX;
                 const dy = mousemove.current.y - playerCenterY;
@@ -869,12 +1258,21 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 });
                 
                 canShootArrow.current = false;
+                
+                // Capture cooldown value to avoid race conditions
+                const arrowCooldownToUse = reloadAbilityActive.current ? ARROW_COOLDOWN_BOOSTED : ARROW_COOLDOWN;
+                console.log("Archer cooldown will be:", arrowCooldownToUse);
+                
                 setTimeout(() => {
                     canShootArrow.current = true;
-                }, ARROW_COOLDOWN);
+                    console.log("Archer can shoot arrow again");
+                }, arrowCooldownToUse);
             } else if (currentCharacter.combatType === 'spells' && canCastSpell.current) {
                 // Mage spell combat
                 const currentTime = performance.now();
+                
+                // Debug log for Mage's ability
+                console.log("Mage casting spell, reload active:", reloadAbilityActive.current);
                 
                 spells.current.push({
                     x: mousemove.current.x,
@@ -888,9 +1286,43 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 canCastSpell.current = false;
                 lastSpellTime.current = currentTime;
                 
+                // Capture cooldown value to avoid race conditions
+                const spellCooldownToUse = reloadAbilityActive.current ? SPELL_COOLDOWN_BOOSTED : SPELL_COOLDOWN;
+                console.log("Mage cooldown will be:", spellCooldownToUse);
+                
                 setTimeout(() => {
                     canCastSpell.current = true;
-                }, SPELL_COOLDOWN);
+                    console.log("Mage can cast spell again");
+                }, spellCooldownToUse);
+            } else if (currentCharacter.combatType === 'soldiers' && canSpawnSoldier.current) {
+                // King soldier spawning combat (simplified to match other characters)
+                const currentTime = performance.now();
+                
+                // Debug log for King's ability
+                console.log("King spawning soldier, reload active:", reloadAbilityActive.current);
+                
+                // Spawn soldier at clicked position
+                soldiers.current.push({
+                    x: mousemove.current.x - 15, // Center the soldier
+                    y: mousemove.current.y - 15,
+                    width: 120,
+                    height: 120,
+                    spawnTime: Date.now(), // Keep Date.now() for soldier lifetime
+                    lastShootTime: 0
+                });
+                
+                lastSoldierSpawnTime.current = currentTime;
+                canSpawnSoldier.current = false;
+                
+                // Capture cooldown value at spawn time to avoid race conditions
+                const cooldownToUse = reloadAbilityActive.current ? KING_SOLDIER_COOLDOWN_BOOSTED : KING_SOLDIER_COOLDOWN;
+                console.log("King cooldown will be:", cooldownToUse);
+                
+                // Allow spawning again after cooldown (same logic as other characters)
+                setTimeout(() => {
+                    canSpawnSoldier.current = true;
+                    console.log("King can spawn soldier again");
+                }, cooldownToUse);
             }
         }
 
@@ -1072,6 +1504,18 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
         };
     }, []);
 
+    // load soldier ability image
+    useEffect(() => {
+        const soldierAbilityImage = new Image();
+        soldierAbilityImage.src = soldierAbility; // Use the imported soldier ability sprite
+        soldierAbilityImage.onload = () => {
+            soldierAbilityRef.current = soldierAbilityImage;
+        };
+        soldierAbilityImage.onerror = () => {
+            console.error('Failed to load soldier ability sprite');
+        };
+    }, []);
+
 
     useEffect(() => {
         const gameImageBackground = new Image();
@@ -1213,6 +1657,141 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
         };
     }, []);
 
+    // Load King sprite
+    useEffect(() => {
+        const kingImage = new Image();
+        kingImage.src = kingSprite; // Use the imported sprite
+        kingImage.onload = () => {
+            kingImageRef.current = kingImage;
+        };
+        kingImage.onerror = () => {
+            console.error('Failed to load King sprite');
+        };
+    }, []);
+
+    // Load Soldier sprite
+    useEffect(() => {
+        const soldierImage = new Image();
+        soldierImage.src = soldierSprite; // Use the imported sprite
+        soldierImage.onload = () => {
+            soldierImageRef.current = soldierImage;
+        };
+        soldierImage.onerror = () => {
+            console.error('Failed to load Soldier sprite');
+        };
+    }, []);
+
+    // Load new ability images
+    useEffect(() => {
+        const freezeImage = new Image();
+        freezeImage.src = freezeAbility;
+        freezeImage.onload = () => {
+            freezeAbilityRef.current = freezeImage;
+        };
+        freezeImage.onerror = () => {
+            console.error('Failed to load freeze ability sprite');
+        };
+    }, []);
+
+    useEffect(() => {
+        const lightningImage = new Image();
+        lightningImage.src = lightningStormAbility;
+        lightningImage.onload = () => {
+            lightningStormAbilityRef.current = lightningImage;
+        };
+        lightningImage.onerror = () => {
+            console.error('Failed to load lightning storm ability sprite');
+        };
+    }, []);
+
+    useEffect(() => {
+        const poisonImage = new Image();
+        poisonImage.src = poisonCloudAbility;
+        poisonImage.onload = () => {
+            poisonCloudAbilityRef.current = poisonImage;
+        };
+        poisonImage.onerror = () => {
+            console.error('Failed to load poison cloud ability sprite');
+        };
+    }, []);
+
+    useEffect(() => {
+        const meteorImage = new Image();
+        meteorImage.src = meteorAbility;
+        meteorImage.onload = () => {
+            meteorAbilityRef.current = meteorImage;
+        };
+        meteorImage.onerror = () => {
+            console.error('Failed to load meteor ability sprite');
+        };
+    }, []);
+
+    useEffect(() => {
+        const shieldImage = new Image();
+        shieldImage.src = shieldAbility;
+        shieldImage.onload = () => {
+            shieldAbilityRef.current = shieldImage;
+        };
+        shieldImage.onerror = () => {
+            console.error('Failed to load shield ability sprite');
+        };
+    }, []);
+
+    useEffect(() => {
+        const dashImage = new Image();
+        dashImage.src = dashAbility;
+        dashImage.onload = () => {
+            dashAbilityRef.current = dashImage;
+        };
+        dashImage.onerror = () => {
+            console.error('Failed to load dash ability sprite');
+        };
+    }, []);
+
+    useEffect(() => {
+        const wallImage = new Image();
+        wallImage.src = wallCreationAbility;
+        wallImage.onload = () => {
+            wallCreationAbilityRef.current = wallImage;
+        };
+        wallImage.onerror = () => {
+            console.error('Failed to load wall creation ability sprite');
+        };
+    }, []);
+
+    useEffect(() => {
+        const magnetImage = new Image();
+        magnetImage.src = magnetAbility;
+        magnetImage.onload = () => {
+            magnetAbilityRef.current = magnetImage;
+        };
+        magnetImage.onerror = () => {
+            console.error('Failed to load magnet ability sprite');
+        };
+    }, []);
+
+    useEffect(() => {
+        const mirrorImage = new Image();
+        mirrorImage.src = mirrorCloneAbility;
+        mirrorImage.onload = () => {
+            mirrorCloneAbilityRef.current = mirrorImage;
+        };
+        mirrorImage.onerror = () => {
+            console.error('Failed to load mirror clone ability sprite');
+        };
+    }, []);
+
+    useEffect(() => {
+        const berserkerImage = new Image();
+        berserkerImage.src = berserkerModeAbility;
+        berserkerImage.onload = () => {
+            berserkerModeAbilityRef.current = berserkerImage;
+        };
+        berserkerImage.onerror = () => {
+            console.error('Failed to load berserker mode ability sprite');
+        };
+    }, []);
+
     // canvas
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -1262,6 +1841,79 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     };
 
 
+    // Functions for kill effects
+    const createKillEffect = (x, y, scoreValue) => {
+        // Create particles
+        const particleCount = Math.min(15 + scoreValue, 25); // More particles for higher scores
+        for (let i = 0; i < particleCount; i++) {
+            particles.current.push({
+                x: x + (Math.random() - 0.5) * 20,
+                y: y + (Math.random() - 0.5) * 20,
+                vx: (Math.random() - 0.5) * 8,
+                vy: (Math.random() - 0.5) * 8 - 2,
+                life: 1.0,
+                decay: 0.02,
+                size: Math.random() * 4 + 2,
+                color: scoreValue >= 25 ? [255, 215, 0] : scoreValue >= 15 ? [255, 100, 100] : [255, 255, 255]
+            });
+        }
+
+        // Create floating score text
+        floatingTexts.current.push({
+            x: x,
+            y: y,
+            text: `+${scoreValue}`,
+            life: 1.0,
+            decay: 0.015,
+            vy: -2,
+            color: scoreValue >= 25 ? '#FFD700' : scoreValue >= 15 ? '#FF6464' : '#FFFFFF',
+            fontSize: Math.min(20 + scoreValue * 0.5, 35)
+        });
+    };
+
+    const updateAndDrawEffects = (ctx) => {
+        // Update and draw particles
+        particles.current = particles.current.filter(particle => {
+            particle.x += particle.vx;
+            particle.y += particle.vy;
+            particle.vy += 0.1; // gravity
+            particle.life -= particle.decay;
+            
+            if (particle.life > 0) {
+                ctx.save();
+                ctx.globalAlpha = particle.life;
+                ctx.fillStyle = `rgb(${particle.color[0]}, ${particle.color[1]}, ${particle.color[2]})`;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size * particle.life, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+                return true;
+            }
+            return false;
+        });
+
+        // Update and draw floating texts
+        floatingTexts.current = floatingTexts.current.filter(text => {
+            text.y += text.vy;
+            text.life -= text.decay;
+            
+            if (text.life > 0) {
+                ctx.save();
+                ctx.globalAlpha = text.life;
+                ctx.fillStyle = text.color;
+                ctx.font = `bold ${text.fontSize}px 'MedievalSharp', cursive`;
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+                ctx.lineWidth = 3;
+                ctx.textAlign = 'center';
+                ctx.strokeText(text.text, text.x, text.y);
+                ctx.fillText(text.text, text.x, text.y);
+                ctx.restore();
+                return true;
+            }
+            return false;
+        });
+    };
+
     const gameLoop = () => {
         const currentTime = performance.now();
 
@@ -1306,6 +1958,9 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 break;
             case 'mage':
                 currentPlayerImage = mageImageRef.current;
+                break;
+            case 'king':
+                currentPlayerImage = kingImageRef.current;
                 break;
             default:
                 currentPlayerImage = playerImageRef.current;
@@ -1425,6 +2080,307 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             }
         }
 
+        // Draw new abilities visual effects
+        
+        // Lightning strikes
+        lightningStrikes.current.forEach(strike => {
+            const strikeAge = currentTime - strike.timestamp;
+            const alpha = 1 - (strikeAge / 500); // Fade out over 0.5 seconds
+            
+            ctx.save();
+            ctx.fillStyle = `rgba(255, 255, 100, ${alpha})`;
+            ctx.shadowColor = 'yellow';
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(strike.x, strike.y, strike.radius, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.restore();
+        });
+
+        // Poison clouds
+        poisonClouds.current.forEach(cloud => {
+            const cloudAge = currentTime - cloud.timestamp;
+            const alpha = Math.max(0, 1 - (cloudAge / POISON_CLOUD_DURATION));
+            
+            ctx.save();
+            ctx.fillStyle = `rgba(0, 255, 0, ${alpha * 0.3})`;
+            ctx.strokeStyle = `rgba(0, 150, 0, ${alpha})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(cloud.x, cloud.y, cloud.radius, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+        });
+
+        // Meteors
+        meteors.current.forEach(meteor => {
+            const meteorAge = currentTime - meteor.timestamp;
+            const alpha = Math.max(0, 1 - (meteorAge / 2000)); // Longer lasting effect
+            
+            ctx.save();
+            
+            // Massive explosion effect
+            const explosionRadius = meteor.radius * (1 + (meteorAge / 1000) * 2);
+            
+            // Outer explosion ring (orange/red)
+            const explosionGradient = ctx.createRadialGradient(meteor.x, meteor.y, 0, meteor.x, meteor.y, explosionRadius);
+            explosionGradient.addColorStop(0, `rgba(255, 255, 255, ${alpha * 0.9})`);
+            explosionGradient.addColorStop(0.3, `rgba(255, 150, 0, ${alpha * 0.7})`);
+            explosionGradient.addColorStop(0.6, `rgba(255, 69, 0, ${alpha * 0.5})`);
+            explosionGradient.addColorStop(1, `rgba(255, 0, 0, ${alpha * 0.2})`);
+            
+            ctx.fillStyle = explosionGradient;
+            ctx.beginPath();
+            ctx.arc(meteor.x, meteor.y, explosionRadius, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Inner white-hot core
+            ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.8})`;
+            ctx.shadowColor = 'white';
+            ctx.shadowBlur = 50;
+            ctx.beginPath();
+            ctx.arc(meteor.x, meteor.y, meteor.radius * 0.3, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Meteor particles flying outward
+            for (let i = 0; i < 16; i++) {
+                const angle = (i / 16) * Math.PI * 2;
+                const distance = meteorAge * 0.3 + Math.sin(meteorAge * 0.01 + i) * 20;
+                const particleX = meteor.x + Math.cos(angle) * distance;
+                const particleY = meteor.y + Math.sin(angle) * distance;
+                
+                ctx.fillStyle = `rgba(255, ${100 + Math.sin(meteorAge * 0.01 + i) * 50}, 0, ${alpha * 0.6})`;
+                ctx.beginPath();
+                ctx.arc(particleX, particleY, 8, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+            
+            ctx.restore();
+        });
+
+        // Meteor targets (warning indicators)
+        meteorTargets.current.forEach(target => {
+            const targetAge = currentTime - target.timestamp;
+            const warningIntensity = (targetAge / METEOR_DELAY); // 0 to 1
+            const alpha = Math.sin((targetAge / METEOR_DELAY) * Math.PI * 8) * 0.5 + 0.5; // Fast blinking
+            
+            ctx.save();
+            
+            // Outer warning circle (gets more intense over time)
+            ctx.strokeStyle = `rgba(255, ${255 * (1 - warningIntensity)}, 0, ${alpha})`;
+            ctx.lineWidth = 4 + warningIntensity * 6;
+            ctx.beginPath();
+            ctx.arc(target.x, target.y, METEOR_DAMAGE_RADIUS, 0, 2 * Math.PI);
+            ctx.stroke();
+            
+            // Inner danger circle
+            ctx.strokeStyle = `rgba(255, 0, 0, ${alpha * 0.8})`;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(target.x, target.y, METEOR_RADIUS, 0, 2 * Math.PI);
+            ctx.stroke();
+            
+            // Center crosshair
+            ctx.strokeStyle = `rgba(255, 0, 0, ${alpha})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(target.x - 20, target.y);
+            ctx.lineTo(target.x + 20, target.y);
+            ctx.moveTo(target.x, target.y - 20);
+            ctx.lineTo(target.x, target.y + 20);
+            ctx.stroke();
+            
+            // Warning text
+            if (warningIntensity > 0.5) {
+                ctx.fillStyle = `rgba(255, 0, 0, ${alpha})`;
+                ctx.font = "bold 20px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText("INCOMING METEOR!", target.x, target.y - 80);
+            }
+            
+            ctx.restore();
+        });
+
+        // Walls
+        walls.current.forEach(wall => {
+            const wallAge = currentTime - wall.timestamp;
+            const alpha = Math.max(0, 1 - (wallAge / WALL_CREATION_LIFETIME));
+            
+            ctx.save();
+            
+            // Shadow effect
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetX = 4;
+            ctx.shadowOffsetY = 4;
+            
+            // Main wall body - stone-like appearance
+            ctx.fillStyle = `rgba(120, 120, 120, ${alpha})`;
+            ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+            
+            // Top highlight
+            ctx.fillStyle = `rgba(160, 160, 160, ${alpha})`;
+            ctx.fillRect(wall.x, wall.y, wall.width, 8);
+            
+            // Side highlight
+            ctx.fillStyle = `rgba(140, 140, 140, ${alpha})`;
+            ctx.fillRect(wall.x, wall.y, 8, wall.height);
+            
+            // Border
+            ctx.strokeStyle = `rgba(80, 80, 80, ${alpha})`;
+            ctx.lineWidth = 3;
+            ctx.strokeRect(wall.x, wall.y, wall.width, wall.height);
+            
+            // Stone texture lines
+            ctx.strokeStyle = `rgba(100, 100, 100, ${alpha * 0.6})`;
+            ctx.lineWidth = 1;
+            
+            // Horizontal lines
+            for (let i = 1; i < 3; i++) {
+                const y = wall.y + (wall.height / 3) * i;
+                ctx.beginPath();
+                ctx.moveTo(wall.x + 5, y);
+                ctx.lineTo(wall.x + wall.width - 5, y);
+                ctx.stroke();
+            }
+            
+            // Vertical lines
+            for (let i = 1; i < Math.floor(wall.width / 40); i++) {
+                const x = wall.x + (wall.width / Math.floor(wall.width / 40)) * i;
+                ctx.beginPath();
+                ctx.moveTo(x, wall.y + 5);
+                ctx.lineTo(x, wall.y + wall.height - 5);
+                ctx.stroke();
+            }
+            
+            ctx.restore();
+        });
+
+        // Mirror clones
+        mirrorClones.current.forEach(clone => {
+            const cloneAge = currentTime - clone.timestamp;
+            const alpha = Math.max(0, 1 - (cloneAge / MIRROR_CLONE_DURATION));
+            
+            ctx.save();
+            ctx.globalAlpha = alpha * 0.7; // Semi-transparent
+            if (playerImageRef.current) {
+                ctx.drawImage(
+                    playerImageRef.current,
+                    clone.x,
+                    clone.y,
+                    clone.width,
+                    clone.height
+                );
+            } else {
+                ctx.fillStyle = `rgba(0, 0, 255, ${alpha})`;
+                ctx.fillRect(clone.x, clone.y, clone.width, clone.height);
+            }
+            ctx.restore();
+        });
+
+        // Shield visual effect
+        if (shieldAbilityActive.current) {
+            ctx.save();
+            const shieldAlpha = 0.4;
+            ctx.strokeStyle = `rgba(0, 150, 255, ${shieldAlpha})`;
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.arc(playerCenterX, playerCenterY, 80, 0, 2 * Math.PI);
+            ctx.stroke();
+            
+            // Add shield hits indicator
+            ctx.fillStyle = `rgba(0, 150, 255, ${shieldAlpha * 0.5})`;
+            ctx.font = "20px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(`${shieldHitsRemaining.current}`, playerCenterX, playerCenterY - 100);
+            ctx.restore();
+        }
+
+        // Berserker mode visual effect
+        if (berserkerModeAbilityActive.current) {
+            ctx.save();
+            
+            // Red screen tint for berserker mode
+            ctx.fillStyle = "rgba(255, 0, 0, 0.08)";
+            ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+            
+            // Intense red aura around player
+            const berserkerAlpha = Math.sin(currentTime * 0.02) * 0.4 + 0.6; // Pulsing effect
+            ctx.strokeStyle = `rgba(255, 0, 0, ${berserkerAlpha})`;
+            ctx.lineWidth = 6;
+            ctx.setLineDash([8, 4]);
+            ctx.beginPath();
+            ctx.arc(playerCenterX, playerCenterY, 100, 0, 2 * Math.PI);
+            ctx.stroke();
+            
+            // Inner red glow
+            ctx.strokeStyle = `rgba(255, 50, 50, ${berserkerAlpha * 0.8})`;
+            ctx.lineWidth = 3;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.arc(playerCenterX, playerCenterY, 75, 0, 2 * Math.PI);
+            ctx.stroke();
+            
+            // Berserker particles around player
+            for (let i = 0; i < 12; i++) {
+                const angle = (currentTime * 0.005 + i * (Math.PI * 2 / 12)) % (Math.PI * 2);
+                const distance = 80 + Math.sin(currentTime * 0.01 + i) * 20;
+                const particleX = playerCenterX + Math.cos(angle) * distance;
+                const particleY = playerCenterY + Math.sin(angle) * distance;
+                
+                ctx.fillStyle = `rgba(255, ${50 + Math.sin(currentTime * 0.01 + i) * 50}, 0, ${berserkerAlpha})`;
+                ctx.beginPath();
+                ctx.arc(particleX, particleY, 4, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+            
+            // Berserker mode text indicator
+            ctx.fillStyle = `rgba(255, 0, 0, ${berserkerAlpha})`;
+            ctx.font = "bold 28px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText("BERSERKER", playerCenterX, playerCenterY - 130);
+            
+            ctx.restore();
+        }
+        
+        // Freeze effect - blue overlay on screen
+        if (freezeAbilityActive.current) {
+            ctx.save();
+            ctx.fillStyle = "rgba(0, 100, 255, 0.1)";
+            ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+            
+            // Draw freeze text
+            ctx.fillStyle = "rgba(0, 150, 255, 0.8)";
+            ctx.font = "bold 24px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText("FROZEN", window.innerWidth / 2, 50);
+            ctx.restore();
+        }
+        
+        // Magnet effect - magnetic field lines
+        if (magnetAbilityActive.current) {
+            ctx.save();
+            const magnetAlpha = 0.3 + Math.sin(currentTime * 0.015) * 0.2;
+            ctx.strokeStyle = `rgba(255, 0, 255, ${magnetAlpha})`;
+            ctx.lineWidth = 3;
+            
+            // Magnetic field lines radiating from player
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const startX = playerCenterX + Math.cos(angle) * 80;
+                const startY = playerCenterY + Math.sin(angle) * 80;
+                const endX = playerCenterX + Math.cos(angle) * 200;
+                const endY = playerCenterY + Math.sin(angle) * 200;
+                
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+        
         // Draw immortality progress bar when immortality ability is active
         if (immortalityAbilityActive.current) {
             const elapsed = currentTime - immortalityAbilityStartTime.current;
@@ -1716,13 +2672,13 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             let barY = playerRef.current.y - 20; // Default position
             
             // Adjust position based on other active abilities (12px spacing)
-            if (immortalityAbilityActive.current && speedAbilityActive.current && reloadTimeRef.current === RELOADTIME_ABILITY_BOOST) {
+            if (immortalityAbilityActive.current && speedAbilityActive.current && reloadAbilityActive.current) {
                 barY = playerRef.current.y - 58; // 12px above reload bar
             } else if ((immortalityAbilityActive.current && speedAbilityActive.current) || 
-                      (immortalityAbilityActive.current && reloadTimeRef.current === RELOADTIME_ABILITY_BOOST) || 
-                      (speedAbilityActive.current && reloadTimeRef.current === RELOADTIME_ABILITY_BOOST)) {
+                      (immortalityAbilityActive.current && reloadAbilityActive.current) || 
+                      (speedAbilityActive.current && reloadAbilityActive.current)) {
                 barY = playerRef.current.y - 46; // 12px above the second bar
-            } else if (immortalityAbilityActive.current || speedAbilityActive.current || reloadTimeRef.current === RELOADTIME_ABILITY_BOOST) {
+            } else if (immortalityAbilityActive.current || speedAbilityActive.current || reloadAbilityActive.current) {
                 barY = playerRef.current.y - 34; // 12px above the first bar
             }
             
@@ -1948,7 +2904,11 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
         if (moving.current) {
             if (speedAbilityActive.current) {
                 // Speed ability is active - use boosted speeds with responsive scaling
-                playerRef.current.speed = PLAYER_SPEED * SPEED_PLAYER_MULTIPLIER * responsiveMultiplier;
+                let playerSpeedMultiplier = SPEED_PLAYER_MULTIPLIER;
+                if (berserkerModeAbilityActive.current) {
+                    playerSpeedMultiplier *= BERSERKER_MOVE_SPEED_MULTIPLIER;
+                }
+                playerRef.current.speed = PLAYER_SPEED * playerSpeedMultiplier * responsiveMultiplier;
                 bulletSpeed.current = PLAYER_BULLET_SPEED * responsiveMultiplier;
                 basicEnemySpeed.current = BASIC_ENEMY_SPEED * SPEED_ENEMY_MULTIPLIER * responsiveMultiplier;
                 enemyBulletSpeed.current = BASIC_ENEMY_BULLET_SPEED * SPEED_ENEMY_MULTIPLIER * responsiveMultiplier;
@@ -1970,7 +2930,11 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 teleporterEnemyBulletSpeed.current = TELEPORTER_BULLET_SPEED * responsiveMultiplier;
             } else {
                 // Normal speeds when moving with responsive scaling
-                playerRef.current.speed = PLAYER_SPEED * responsiveMultiplier;
+                let playerSpeedMultiplier = 1;
+                if (berserkerModeAbilityActive.current) {
+                    playerSpeedMultiplier *= BERSERKER_MOVE_SPEED_MULTIPLIER;
+                }
+                playerRef.current.speed = PLAYER_SPEED * playerSpeedMultiplier * responsiveMultiplier;
                 bulletSpeed.current = PLAYER_BULLET_SPEED * responsiveMultiplier;
                 basicEnemySpeed.current = BASIC_ENEMY_SPEED * responsiveMultiplier;
                 enemyBulletSpeed.current = BASIC_ENEMY_BULLET_SPEED * responsiveMultiplier;
@@ -2006,9 +2970,288 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             }
         }
 
+        // Handle ability keys
+        const currentAbilityConfig = getAbilityConfig();
+        
+        // T Ability handler (teleport or immortality)
+        if ((keys.current["t"] || keys.current["T"]) && currentAbilityConfig.T.available) {
+            console.log("T key pressed, T_ability:", T_ability, "cooldown:", teleportAbilityOnCooldown.current);
+            if (T_ability === 'teleport' && !teleportAbilityOnCooldown.current) {
+                console.log("Teleport ability activated!");
+                teleportAbilityActive.current = true;
+                teleportAbilityStartTime.current = currentTime;
+                teleportAbilityOnCooldown.current = true;
+                teleportAbilityCooldownStartTime.current = currentTime;
+                
+                const mousePos = mousemove.current;
+                console.log("Mouse position:", mousePos);
+                
+                // Teleport player to mouse position first
+                const teleportX = mousePos.x - playerRef.current.width / 2;
+                const teleportY = mousePos.y - playerRef.current.height / 2;
+                
+                // Keep player within screen bounds
+                playerRef.current.x = Math.max(0, Math.min(teleportX, window.innerWidth - playerRef.current.width));
+                playerRef.current.y = Math.max(0, Math.min(teleportY, window.innerHeight - playerRef.current.height));
+                
+                // Kill all enemies around the mouse position (where player will teleport)
+                console.log("Mouse position for killing:", mousePos.x, mousePos.y);
+                
+                // Count enemies before destruction
+                const enemiesBefore = basicEnemyRef.current.length + trippleShootEnemyRef.current.length + teleporterEnemyRef.current.length + bomberEnemyRef.current.length;
+                console.log("Enemies before teleport:", enemiesBefore);
+                
+                // Destroy basic enemies in teleport area
+                basicEnemyRef.current = basicEnemyRef.current.filter(enemy => {
+                    const ex = enemy.x + enemy.width / 2;
+                    const ey = enemy.y + enemy.height / 4;
+                    const distance = Math.sqrt((ex - mousePos.x) ** 2 + (ey - mousePos.y) ** 2);
+                    if (distance <= TELEPORT_DISTANCE) {
+                        console.log("Killing basic enemy at distance:", distance);
+                        // Create kill effects
+                        createKillEffect(ex, ey, 10);
+                        score.current += 10; // Add score for destroyed basic enemy
+                        return false;
+                    }
+                    return true;
+                });
+                
+                // Destroy triple shoot enemies in teleport area
+                trippleShootEnemyRef.current = trippleShootEnemyRef.current.filter(enemy => {
+                    const ex = enemy.x + enemy.width / 2;
+                    const ey = enemy.y + enemy.height / 2;
+                    const distance = Math.sqrt((ex - mousePos.x) ** 2 + (ey - mousePos.y) ** 2);
+                    if (distance <= TELEPORT_DISTANCE) {
+                        console.log("Killing triple shoot enemy at distance:", distance);
+                        // Create kill effects
+                        createKillEffect(ex, ey, 30);
+                        
+                        score.current += 30; // Add score for destroyed triple shoot enemy
+                        return false;
+                    }
+                    return true;
+                });
+                
+                // Destroy teleporter enemies in teleport area
+                teleporterEnemyRef.current = teleporterEnemyRef.current.filter(enemy => {
+                    const ex = enemy.x + enemy.width / 2;
+                    const ey = enemy.y + enemy.height / 2;
+                    const distance = Math.sqrt((ex - mousePos.x) ** 2 + (ey - mousePos.y) ** 2);
+                    if (distance <= TELEPORT_DISTANCE) {
+                        console.log("Killing teleporter enemy at distance:", distance);
+                        // Create kill effects
+                        createKillEffect(ex, ey, 35);
+                        
+                        score.current += 35; // Add score for destroyed teleporter enemy
+                        return false;
+                    }
+                    return true;
+                });
+                
+                // Destroy bomber enemies in teleport area
+                bomberEnemyRef.current = bomberEnemyRef.current.filter(enemy => {
+                    const ex = enemy.x + enemy.width / 2;
+                    const ey = enemy.y + enemy.height / 2;
+                    const distance = Math.sqrt((ex - mousePos.x) ** 2 + (ey - mousePos.y) ** 2);
+                    if (distance <= TELEPORT_DISTANCE) {
+                        console.log("Killing bomber enemy at distance:", distance);
+                        // Create kill effects
+                        createKillEffect(ex, ey, 25);
+                        
+                        score.current += 25; // Add score for destroyed bomber enemy
+                        return false;
+                    }
+                    return true;
+                });
+                
+                // Count enemies after destruction
+                const enemiesAfter = basicEnemyRef.current.length + trippleShootEnemyRef.current.length + teleporterEnemyRef.current.length + bomberEnemyRef.current.length;
+                console.log("Enemies after teleport:", enemiesAfter, "Killed:", enemiesBefore - enemiesAfter);
+                
+                // Destroy all enemy bullets in teleport area
+                basicEnemyBulletsRef.current = basicEnemyBulletsRef.current.filter(bullet => {
+                    const distance = Math.sqrt((bullet.x - mousePos.x) ** 2 + (bullet.y - mousePos.y) ** 2);
+                    return distance > TELEPORT_DISTANCE;
+                });
+                
+                trippleShootEnemyBulletsRef.current = trippleShootEnemyBulletsRef.current.filter(bullet => {
+                    const distance = Math.sqrt((bullet.x - mousePos.x) ** 2 + (bullet.y - mousePos.y) ** 2);
+                    return distance > TELEPORT_DISTANCE;
+                });
+                
+                teleporterEnemyBulletsRef.current = teleporterEnemyBulletsRef.current.filter(bullet => {
+                    const distance = Math.sqrt((bullet.x - mousePos.x) ** 2 + (bullet.y - mousePos.y) ** 2);
+                    return distance > TELEPORT_DISTANCE;
+                });
 
+                setTimeout(() => {
+                    teleportAbilityActive.current = false;
+                }, TELEPORT_DURATION);
 
-
+                setTimeout(() => {
+                    teleportAbilityOnCooldown.current = false;
+                }, TELEPORT_COOLDOWN);
+                
+                // Reset key state to prevent repeated triggering
+                keys.current["t"] = false;
+                keys.current["T"] = false;
+            } else if (T_ability === 'immortality' && !immortalityAbilityOnCooldown.current) {
+                // Immortality ability - player becomes invulnerable for a duration
+                immortalityAbilityActive.current = true;
+                immortalityAbilityStartTime.current = currentTime;
+                immortalityAbilityOnCooldown.current = true;
+                immortalityAbilityCooldownStartTime.current = currentTime;
+                
+                // Remove immortality after duration
+                setTimeout(() => {
+                    immortalityAbilityActive.current = false;
+                }, IMMORTALITY_DURATION);
+                
+                // Reset cooldown
+                setTimeout(() => {
+                    immortalityAbilityOnCooldown.current = false;
+                }, IMMORTALITY_COOLDOWN);
+                
+                // Reset key state to prevent repeated triggering
+                keys.current["t"] = false;
+                keys.current["T"] = false;
+            } else if (T_ability === 'scoreboost' && !scoreBoostAbilityOnCooldown.current) {
+                // Score Boost ability - instantly adds points to score
+                score.current += SCOREBOOST_POINTS;
+                scoreBoostAbilityOnCooldown.current = true;
+                scoreBoostAbilityCooldownStartTime.current = currentTime;
+                
+                // Create visual effect to show score boost
+                scoreBoostEffectActive.current = true;
+                scoreBoostEffectStartTime.current = currentTime;
+                
+                // Remove visual effect after short duration
+                setTimeout(() => {
+                    scoreBoostEffectActive.current = false;
+                }, 1000);
+                
+                // Reset cooldown
+                setTimeout(() => {
+                    scoreBoostAbilityOnCooldown.current = false;
+                }, SCOREBOOST_COOLDOWN);
+                
+                // Reset key state to prevent repeated triggering
+                keys.current["t"] = false;
+                keys.current["T"] = false;
+            } else if (T_ability === 'soldierHelp' && !soldierAbilityOnCooldown.current) {
+                // Soldier Help ability - spawn a soldier at mouse position (same as King's combat)
+                const currentTime = performance.now();
+                
+                // Spawn soldier at clicked position
+                soldierAbilitySoldiers.current.push({
+                    x: mousemove.current.x - 15, // Center the soldier
+                    y: mousemove.current.y - 15,
+                    width: 120,
+                    height: 120,
+                    spawnTime: Date.now(), // Keep Date.now() for soldier lifetime
+                    lastShootTime: 0
+                });
+                
+                soldierAbilityOnCooldown.current = true;
+                soldierAbilityCooldownStartTime.current = currentTime;
+                
+                // Use boosted cooldown if reload ability is active
+                const cooldownToUse = reloadAbilityActive.current ? SOLDIER_ABILITY_COOLDOWN_BOOSTED : SOLDIER_ABILITY_COOLDOWN;
+                
+                // Reset cooldown
+                setTimeout(() => {
+                    soldierAbilityOnCooldown.current = false;
+                }, cooldownToUse);
+                
+                // Reset key state to prevent repeated triggering
+                keys.current["t"] = false;
+                keys.current["T"] = false;
+            } else if (T_ability === 'magnet' && !magnetAbilityOnCooldown.current) {
+                // Magnet ability - attract enemies and projectiles to player
+                const currentTime = performance.now();
+                
+                magnetAbilityActive.current = true;
+                magnetAbilityOnCooldown.current = true;
+                magnetAbilityCooldownStartTime.current = currentTime;
+                
+                // Deactivate magnet after duration
+                setTimeout(() => {
+                    magnetAbilityActive.current = false;
+                }, MAGNET_DURATION);
+                
+                // Reset cooldown
+                setTimeout(() => {
+                    magnetAbilityOnCooldown.current = false;
+                }, MAGNET_COOLDOWN);
+                
+                // Reset key state to prevent repeated triggering
+                keys.current["t"] = false;
+                keys.current["T"] = false;
+            } else if (T_ability === 'mirrorclone' && !mirrorCloneAbilityOnCooldown.current) {
+                // Mirror Clone ability - create mirror clones of player
+                const currentTime = performance.now();
+                const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+                const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+                
+                // Create mirror clones at offset positions
+                for (let i = 0; i < MIRROR_CLONE_COUNT; i++) {
+                    const angle = (i * 2 * Math.PI) / MIRROR_CLONE_COUNT;
+                    const offsetX = Math.cos(angle) * 100;
+                    const offsetY = Math.sin(angle) * 100;
+                    
+                    mirrorClones.current.push({
+                        x: playerCenterX + offsetX - playerRef.current.width / 2,
+                        y: playerCenterY + offsetY - playerRef.current.height / 2,
+                        width: playerRef.current.width,
+                        height: playerRef.current.height,
+                        timestamp: performance.now(),
+                        lastShootTime: 0
+                    });
+                }
+                
+                mirrorCloneAbilityOnCooldown.current = true;
+                mirrorCloneAbilityCooldownStartTime.current = currentTime;
+                
+                // Reset cooldown
+                setTimeout(() => {
+                    mirrorCloneAbilityOnCooldown.current = false;
+                }, MIRROR_CLONE_COOLDOWN);
+                
+                // Reset key state to prevent repeated triggering
+                keys.current["t"] = false;
+                keys.current["T"] = false;
+            } else if (T_ability === 'berserkermode' && !berserkerModeAbilityOnCooldown.current) {
+                // Berserker Mode ability - increase damage and speed
+                const currentTime = performance.now();
+                
+                berserkerModeAbilityActive.current = true;
+                berserkerModeAbilityOnCooldown.current = true;
+                berserkerModeAbilityCooldownStartTime.current = currentTime;
+                
+                // Apply berserker attack speed boost
+                if (!reloadAbilityActive.current) {
+                    reloadTimeRef.current = RELOADTIME * BERSERKER_ATTACK_SPEED_MULTIPLIER;
+                }
+                
+                // Deactivate berserker mode after duration
+                setTimeout(() => {
+                    berserkerModeAbilityActive.current = false;
+                    // Reset reload time when berserker mode ends
+                    if (!reloadAbilityActive.current) {
+                        reloadTimeRef.current = RELOADTIME;
+                    }
+                }, BERSERKER_MODE_DURATION);
+                
+                // Reset cooldown
+                setTimeout(() => {
+                    berserkerModeAbilityOnCooldown.current = false;
+                }, BERSERKER_MODE_COOLDOWN);
+                
+                // Reset key state to prevent repeated triggering
+                keys.current["t"] = false;
+                keys.current["T"] = false;
+            }
+        }
 
         // Draw bullets
         bullets.current.forEach((bullet, index) => {
@@ -2047,6 +3290,13 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
 
         // Remove bullets that are out of bounds
         bullets.current = bullets.current.filter((bullet) => {
+            // Check wall collision
+            for (let wall of walls.current) {
+                if (bullet.x + 20 > wall.x && bullet.x < wall.x + wall.width &&
+                    bullet.y + 20 > wall.y && bullet.y < wall.y + wall.height) {
+                    return false; // Remove bullet if it hits wall
+                }
+            }
             return bullet.x >= 0 && bullet.x <= window.innerWidth && bullet.y >= 0 && bullet.y <= window.innerHeight;
         })
 
@@ -2096,6 +3346,226 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
         // Remove arrows that are out of bounds
         arrows.current = arrows.current.filter((arrow) => {
             return arrow.x >= -100 && arrow.x <= window.innerWidth + 100 && arrow.y >= -100 && arrow.y <= window.innerHeight + 100;
+        });
+
+        // Update and draw soldiers (King)
+        const currentTimeMs = Date.now();
+        
+        // Remove expired soldiers
+        soldiers.current = soldiers.current.filter(soldier => {
+            return currentTimeMs - soldier.spawnTime < KING_SOLDIER_LIFETIME;
+        });
+        
+        // Update and draw soldiers
+        soldiers.current.forEach((soldier, index) => {
+            // Find nearest enemy to target
+            let nearestEnemy = null;
+            let nearestDistance = KING_SOLDIER_RANGE;
+            
+            [...basicEnemyRef.current, ...trippleShootEnemyRef.current, ...bomberEnemyRef.current, ...teleporterEnemyRef.current].forEach(enemy => {
+                const dx = enemy.x + enemy.width/2 - (soldier.x + soldier.width/2);
+                const dy = enemy.y + enemy.height/2 - (soldier.y + soldier.height/2);
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < nearestDistance) {
+                    nearestEnemy = enemy;
+                    nearestDistance = distance;
+                }
+            });
+            
+            // Shoot at nearest enemy if in range and off cooldown
+            if (nearestEnemy && currentTimeMs - soldier.lastShootTime >= KING_SOLDIER_SHOOT_COOLDOWN) {
+                const soldierCenterX = soldier.x + soldier.width/2;
+                const soldierCenterY = soldier.y + soldier.height/2;
+                const targetCenterX = nearestEnemy.x + nearestEnemy.width/2;
+                const targetCenterY = nearestEnemy.y + nearestEnemy.height/2;
+                
+                const dx = targetCenterX - soldierCenterX;
+                const dy = targetCenterY - soldierCenterY;
+                const length = Math.sqrt(dx * dx + dy * dy);
+                const dirX = dx / length;
+                const dirY = dy / length;
+                const bulletAngle = Math.atan2(dy, dx);
+                
+                soldierBullets.current.push({
+                    x: soldierCenterX - 5,
+                    y: soldierCenterY - 5,
+                    dirX: dirX,
+                    dirY: dirY,
+                    angle: bulletAngle,
+                    width: 10,
+                    height: 10
+                });
+                
+                soldier.lastShootTime = currentTimeMs;
+            }
+            
+            // Draw soldier
+            if (soldierImageRef.current) {
+                ctx.drawImage(soldierImageRef.current, soldier.x, soldier.y, soldier.width, soldier.height);
+            } else {
+                ctx.fillStyle = "blue";
+                ctx.fillRect(soldier.x, soldier.y, soldier.width, soldier.height);
+            }
+            
+            // Draw soldier collision boundary (debug visualization)
+            if (showCollision) {
+                const soldierCenterX = soldier.x + soldier.width/2;
+                const soldierCenterY = soldier.y + soldier.height/2;
+                const soldierRadius = 15;
+                
+                ctx.strokeStyle = "rgba(0, 0, 255, 0.6)"; // Semi-transparent blue
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(soldierCenterX, soldierCenterY, soldierRadius, 0, 2 * Math.PI);
+                ctx.stroke();
+                
+                // Draw soldier shooting range
+                ctx.strokeStyle = "rgba(0, 0, 255, 0.2)"; // Very light blue
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(soldierCenterX, soldierCenterY, KING_SOLDIER_RANGE, 0, 2 * Math.PI);
+                ctx.stroke();
+            }
+        });
+        
+        // Update and draw soldier bullets
+        soldierBullets.current.forEach((bullet, index) => {
+            bullet.x += bullet.dirX * KING_SOLDIER_BULLET_SPEED;
+            bullet.y += bullet.dirY * KING_SOLDIER_BULLET_SPEED;
+            
+            // Draw soldier bullet (smaller than player bullets)
+            ctx.fillStyle = "orange";
+            ctx.beginPath();
+            ctx.arc(bullet.x + bullet.width/2, bullet.y + bullet.height/2, 5, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Draw soldier bullet collision boundary (debug visualization)
+            if (showCollision) {
+                const bulletCenterX = bullet.x + bullet.width/2;
+                const bulletCenterY = bullet.y + bullet.height/2;
+                const bulletRadius = 5;
+                
+                ctx.strokeStyle = "rgba(255, 165, 0, 0.6)"; // Semi-transparent orange
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(bulletCenterX, bulletCenterY, bulletRadius, 0, 2 * Math.PI);
+                ctx.stroke();
+            }
+        });
+        
+        // Remove soldier bullets that are out of bounds
+        soldierBullets.current = soldierBullets.current.filter((bullet) => {
+            return bullet.x >= -50 && bullet.x <= window.innerWidth + 50 && bullet.y >= -50 && bullet.y <= window.innerHeight + 50;
+        });
+
+        // Handle Soldier Ability soldiers (same logic as King's soldiers but separate arrays)
+        // Remove expired ability soldiers
+        soldierAbilitySoldiers.current = soldierAbilitySoldiers.current.filter(soldier => {
+            return currentTimeMs - soldier.spawnTime < KING_SOLDIER_LIFETIME;
+        });
+
+        // Update and draw ability soldiers
+        soldierAbilitySoldiers.current.forEach((soldier, index) => {
+            // Find nearest enemy to target
+            let nearestEnemy = null;
+            let nearestDistance = KING_SOLDIER_RANGE;
+            
+            [...basicEnemyRef.current, ...trippleShootEnemyRef.current, ...bomberEnemyRef.current, ...teleporterEnemyRef.current].forEach(enemy => {
+                const dx = enemy.x + enemy.width/2 - (soldier.x + soldier.width/2);
+                const dy = enemy.y + enemy.height/2 - (soldier.y + soldier.height/2);
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < nearestDistance) {
+                    nearestEnemy = enemy;
+                    nearestDistance = distance;
+                }
+            });
+            
+            // Shoot at nearest enemy if in range and off cooldown
+            if (nearestEnemy && currentTimeMs - soldier.lastShootTime >= KING_SOLDIER_SHOOT_COOLDOWN) {
+                const soldierCenterX = soldier.x + soldier.width/2;
+                const soldierCenterY = soldier.y + soldier.height/2;
+                const targetCenterX = nearestEnemy.x + nearestEnemy.width/2;
+                const targetCenterY = nearestEnemy.y + nearestEnemy.height/2;
+                
+                const dx = targetCenterX - soldierCenterX;
+                const dy = targetCenterY - soldierCenterY;
+                const length = Math.sqrt(dx * dx + dy * dy);
+                const dirX = dx / length;
+                const dirY = dy / length;
+                const bulletAngle = Math.atan2(dy, dx);
+                
+                soldierAbilitySoldierBullets.current.push({
+                    x: soldierCenterX - 5,
+                    y: soldierCenterY - 5,
+                    dirX: dirX,
+                    dirY: dirY,
+                    angle: bulletAngle,
+                    width: 10,
+                    height: 10
+                });
+                
+                soldier.lastShootTime = currentTimeMs;
+            }
+            
+            // Draw ability soldier (use same sprite as King's soldiers)
+            if (soldierImageRef.current) {
+                ctx.drawImage(soldierImageRef.current, soldier.x, soldier.y, soldier.width, soldier.height);
+            } else {
+                ctx.fillStyle = "green"; // Different color to distinguish from King's soldiers
+                ctx.fillRect(soldier.x, soldier.y, soldier.width, soldier.height);
+            }
+            
+            // Draw soldier collision boundary (debug visualization)
+            if (showCollision) {
+                const soldierCenterX = soldier.x + soldier.width/2;
+                const soldierCenterY = soldier.y + soldier.height/2;
+                const soldierRadius = 15;
+                
+                ctx.strokeStyle = "rgba(0, 255, 0, 0.6)"; // Semi-transparent green to distinguish from King's soldiers
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(soldierCenterX, soldierCenterY, soldierRadius, 0, 2 * Math.PI);
+                ctx.stroke();
+                
+                // Draw soldier shooting range
+                ctx.strokeStyle = "rgba(0, 255, 0, 0.2)"; // Very light green
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(soldierCenterX, soldierCenterY, KING_SOLDIER_RANGE, 0, 2 * Math.PI);
+                ctx.stroke();
+            }
+        });
+        
+        // Update and draw ability soldier bullets
+        soldierAbilitySoldierBullets.current.forEach((bullet, index) => {
+            bullet.x += bullet.dirX * KING_SOLDIER_BULLET_SPEED;
+            bullet.y += bullet.dirY * KING_SOLDIER_BULLET_SPEED;
+            
+            // Draw ability soldier bullet (same as King's soldier bullets but different color)
+            ctx.fillStyle = "lime"; // Different color to distinguish from King's soldier bullets
+            ctx.beginPath();
+            ctx.arc(bullet.x + bullet.width/2, bullet.y + bullet.height/2, 5, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Draw soldier bullet collision boundary (debug visualization)
+            if (showCollision) {
+                const bulletCenterX = bullet.x + bullet.width/2;
+                const bulletCenterY = bullet.y + bullet.height/2;
+                const bulletRadius = 5;
+                
+                ctx.strokeStyle = "rgba(0, 255, 0, 0.6)"; // Semi-transparent green
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(bulletCenterX, bulletCenterY, bulletRadius, 0, 2 * Math.PI);
+                ctx.stroke();
+            }
+        });
+        
+        // Remove ability soldier bullets that are out of bounds
+        soldierAbilitySoldierBullets.current = soldierAbilitySoldierBullets.current.filter((bullet) => {
+            return bullet.x >= -50 && bullet.x <= window.innerWidth + 50 && bullet.y >= -50 && bullet.y <= window.innerHeight + 50;
         });
 
         // Draw spells (Mage)
@@ -2168,40 +3638,212 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
         // Remove inactive spells
         spells.current = spells.current.filter((spell) => spell.active);
 
-        // Draw basic enemies
-        basicEnemyRef.current.forEach((enemy, index) => {
-            // Move enemy towards player
-            let dx = (playerRef.current.x + playerRef.current.width / 2) - (enemy.x + enemy.width / 2);
-            let dy = (playerRef.current.y + playerRef.current.height / 2) - (enemy.y + enemy.height / 2);
+        // Process new abilities effects
+        const abilityTime = performance.now();
+        
+        // Lightning strikes - damage enemies and remove expired strikes
+        lightningStrikes.current = lightningStrikes.current.filter(strike => {
+            const strikeAge = abilityTime - strike.timestamp;
+            if (strikeAge > 500) return false; // Strike lasts 0.5 seconds
             
-            // Apply gravity well pull if active
-            if (gravityWellActive.current) {
-                const gravityX = gravityWellPosition.current.x;
-                const gravityY = gravityWellPosition.current.y;
-                const enemyCenterX = enemy.x + enemy.width / 2;
-                const enemyCenterY = enemy.y + enemy.height / 2;
-                const gravityDistance = Math.sqrt((enemyCenterX - gravityX) ** 2 + (enemyCenterY - gravityY) ** 2);
+            // Damage all enemy types in strike radius
+            [basicEnemyRef, trippleShootEnemyRef, bomberEnemyRef, teleporterEnemyRef].forEach(enemyArray => {
+                enemyArray.current = enemyArray.current.filter(enemy => {
+                    const enemyCenterX = enemy.x + enemy.width / 2;
+                    const enemyCenterY = enemy.y + enemy.height / 2;
+                    const distance = Math.sqrt((enemyCenterX - strike.x) ** 2 + (enemyCenterY - strike.y) ** 2);
+                    if (distance <= strike.radius) {
+                        score.current += 20;
+                        return false;
+                    }
+                    return true;
+                });
+            });
+            
+            return true;
+        });
+        
+        // Poison clouds - damage enemies over time and remove expired clouds
+        poisonClouds.current = poisonClouds.current.filter(cloud => {
+            const cloudAge = abilityTime - cloud.timestamp;
+            if (cloudAge > POISON_CLOUD_DURATION) return false;
+            
+            // Damage enemies every 0.5 seconds
+            if (Math.floor(cloudAge / 500) > Math.floor((cloudAge - 16) / 500)) {
+                [basicEnemyRef, trippleShootEnemyRef, bomberEnemyRef, teleporterEnemyRef].forEach(enemyArray => {
+                    enemyArray.current = enemyArray.current.filter(enemy => {
+                        const enemyCenterX = enemy.x + enemy.width / 2;
+                        const enemyCenterY = enemy.y + enemy.height / 2;
+                        const distance = Math.sqrt((enemyCenterX - cloud.x) ** 2 + (enemyCenterY - cloud.y) ** 2);
+                        if (distance <= cloud.radius) {
+                            score.current += 5;
+                            return false;
+                        }
+                        return true;
+                    });
+                });
+            }
+            
+            return true;
+        });
+        
+        // Meteors - damage enemies and remove after impact
+        meteors.current = meteors.current.filter(meteor => {
+            const meteorAge = abilityTime - meteor.timestamp;
+            if (meteorAge > 1000) return false; // Meteor lasts 1 second
+            
+            // Damage all enemy types in meteor radius
+            [basicEnemyRef, trippleShootEnemyRef, bomberEnemyRef, teleporterEnemyRef].forEach(enemyArray => {
+                enemyArray.current = enemyArray.current.filter(enemy => {
+                    const enemyCenterX = enemy.x + enemy.width / 2;
+                    const enemyCenterY = enemy.y + enemy.height / 2;
+                    const distance = Math.sqrt((enemyCenterX - meteor.x) ** 2 + (enemyCenterY - meteor.y) ** 2);
+                    if (distance <= meteor.radius) {
+                        score.current += 40;
+                        return false;
+                    }
+                    return true;
+                });
+            });
+            
+            return true;
+        });
+        
+        // Remove expired meteor targets
+        meteorTargets.current = meteorTargets.current.filter(target => {
+            return abilityTime - target.timestamp < METEOR_DELAY;
+        });
+        
+        // Remove expired walls
+        walls.current = walls.current.filter(wall => {
+            return abilityTime - wall.timestamp < WALL_CREATION_LIFETIME;
+        });
+        
+        // Remove expired mirror clones
+        mirrorClones.current = mirrorClones.current.filter(clone => {
+            return abilityTime - clone.timestamp < MIRROR_CLONE_DURATION;
+        });
+        
+        // Mirror clones shooting
+        mirrorClones.current.forEach(clone => {
+            const now = Date.now();
+            if (now - clone.lastShootTime > 1000) { // Clone shoots every 1 second
+                clone.lastShootTime = now;
                 
-                if (gravityDistance <= GRAVITY_PULL_RADIUS) {
-                    // Pull towards gravity well
-                    const gravityDx = gravityX - enemyCenterX;
-                    const gravityDy = gravityY - enemyCenterY;
-                    const gravityLength = Math.sqrt(gravityDx * gravityDx + gravityDy * gravityDy);
+                // Find nearest enemy to clone
+                let nearestEnemy = null;
+                let nearestDistance = Infinity;
+                
+                [basicEnemyRef, trippleShootEnemyRef, bomberEnemyRef, teleporterEnemyRef].forEach(enemyArray => {
+                    enemyArray.current.forEach(enemy => {
+                        const distance = Math.sqrt((enemy.x - clone.x) ** 2 + (enemy.y - clone.y) ** 2);
+                        if (distance < nearestDistance) {
+                            nearestDistance = distance;
+                            nearestEnemy = enemy;
+                        }
+                    });
+                });
+                
+                if (nearestEnemy) {
+                    const cloneCenterX = clone.x + clone.width / 2;
+                    const cloneCenterY = clone.y + clone.height / 2;
+                    const enemyCenterX = nearestEnemy.x + nearestEnemy.width / 2;
+                    const enemyCenterY = nearestEnemy.y + nearestEnemy.height / 2;
                     
-                    if (gravityLength > 0) {
-                        const pullStrength = GRAVITY_PULL_STRENGTH * (1 - gravityDistance / GRAVITY_PULL_RADIUS);
-                        dx = gravityDx / gravityLength * pullStrength;
-                        dy = gravityDy / gravityLength * pullStrength;
+                    const dx = enemyCenterX - cloneCenterX;
+                    const dy = enemyCenterY - cloneCenterY;
+                    const length = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (length > 0) {
+                        bullets.current.push({
+                            x: cloneCenterX - 50,
+                            y: cloneCenterY - 50,
+                            dirX: dx / length,
+                            dirY: dy / length,
+                            angle: Math.atan2(dy, dx),
+                            width: 20,
+                            height: 20
+                        });
                     }
                 }
             }
-            
-            const length = Math.sqrt(dx * dx + dy * dy);
-            const dirX = length > 0 ? dx / length : 0;
-            const dirY = length > 0 ? dy / length : 0;
+        });
 
-            enemy.x += dirX * basicEnemySpeed.current;
-            enemy.y += dirY * basicEnemySpeed.current;
+        // Draw basic enemies
+        basicEnemyRef.current.forEach((enemy, index) => {
+            // Skip movement if frozen
+            if (freezeAbilityActive.current) {
+                // Don't move enemy when frozen, but still draw it
+            } else {
+                // Move enemy towards player
+                let dx = (playerRef.current.x + playerRef.current.width / 2) - (enemy.x + enemy.width / 2);
+                let dy = (playerRef.current.y + playerRef.current.height / 2) - (enemy.y + enemy.height / 2);
+                
+                // Apply magnet effect if active
+                if (magnetAbilityActive.current) {
+                    const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+                    const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+                    const enemyCenterX = enemy.x + enemy.width / 2;
+                    const enemyCenterY = enemy.y + enemy.height / 2;
+                    
+                    const magnetDx = playerCenterX - enemyCenterX;
+                    const magnetDy = playerCenterY - enemyCenterY;
+                    const magnetLength = Math.sqrt(magnetDx * magnetDx + magnetDy * magnetDy);
+                    
+                    if (magnetLength > 0) {
+                        // Extremely strong magnet when close
+                        const magnetStrength = magnetLength < 100 ? 8.0 : 2.0;
+                        dx += (magnetDx / magnetLength) * magnetStrength; // Add to existing movement
+                        dy += (magnetDy / magnetLength) * magnetStrength; // Add to existing movement
+                    }
+                }
+                
+                // Apply gravity well pull if active
+                if (gravityWellActive.current) {
+                    const gravityX = gravityWellPosition.current.x;
+                    const gravityY = gravityWellPosition.current.y;
+                    const enemyCenterX = enemy.x + enemy.width / 2;
+                    const enemyCenterY = enemy.y + enemy.height / 2;
+                    const gravityDistance = Math.sqrt((enemyCenterX - gravityX) ** 2 + (enemyCenterY - gravityY) ** 2);
+                    
+                    if (gravityDistance <= GRAVITY_PULL_RADIUS) {
+                        // Pull towards gravity well
+                        const gravityDx = gravityX - enemyCenterX;
+                        const gravityDy = gravityY - enemyCenterY;
+                        const gravityLength = Math.sqrt(gravityDx * gravityDx + gravityDy * gravityDy);
+                        
+                        if (gravityLength > 0) {
+                            const pullStrength = GRAVITY_PULL_STRENGTH * (1 - gravityDistance / GRAVITY_PULL_RADIUS);
+                            dx += gravityDx / gravityLength * pullStrength; // Add to existing movement
+                            dy += gravityDy / gravityLength * pullStrength; // Add to existing movement
+                        }
+                    }
+                }
+                
+                const length = Math.sqrt(dx * dx + dy * dy);
+                const dirX = length > 0 ? dx / length : 0;
+                const dirY = length > 0 ? dy / length : 0;
+
+                // Calculate new position
+                const newX = enemy.x + dirX * basicEnemySpeed.current;
+                const newY = enemy.y + dirY * basicEnemySpeed.current;
+                
+                // Check wall collision before moving
+                let canMove = true;
+                for (let wall of walls.current) {
+                    if (newX + enemy.width > wall.x && newX < wall.x + wall.width &&
+                        newY + enemy.height > wall.y && newY < wall.y + wall.height) {
+                        canMove = false;
+                        break;
+                    }
+                }
+                
+                // Only move if not colliding with walls
+                if (canMove) {
+                    enemy.x = newX;
+                    enemy.y = newY;
+                }
+            }
 
             // Calculate collision position on goblin's head instead of center
 
@@ -2249,15 +3891,56 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
 
         // draw tripple shoot enemies
         trippleShootEnemyRef.current.forEach((enemy, index) => {
-            // Move enemy towards player
-            const dx = (playerRef.current.x + playerRef.current.width / 2) - (enemy.x + enemy.width / 2);
-            const dy = (playerRef.current.y + playerRef.current.height / 2) - (enemy.y + enemy.height / 2);
-            const length = Math.sqrt(dx * dx + dy * dy);
-            const dirX = length > 0 ? dx / length : 0;
-            const dirY = length > 0 ? dy / length : 0;
+            // Skip movement if frozen
+            if (!freezeAbilityActive.current) {
+                // Move enemy towards player
+                let dx = (playerRef.current.x + playerRef.current.width / 2) - (enemy.x + enemy.width / 2);
+                let dy = (playerRef.current.y + playerRef.current.height / 2) - (enemy.y + enemy.height / 2);
+                
+                // Apply magnet effect if active
+                if (magnetAbilityActive.current) {
+                    const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+                    const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+                    const enemyCenterX = enemy.x + enemy.width / 2;
+                    const enemyCenterY = enemy.y + enemy.height / 2;
+                    
+                    const magnetDx = playerCenterX - enemyCenterX;
+                    const magnetDy = playerCenterY - enemyCenterY;
+                    const magnetLength = Math.sqrt(magnetDx * magnetDx + magnetDy * magnetDy);
+                    
+                    if (magnetLength > 0) {
+                        // Extremely strong magnet when close
+                        const magnetStrength = magnetLength < 100 ? 8.0 : 2.0;
+                        dx = (magnetDx / magnetLength) * magnetStrength;
+                        dy = (magnetDy / magnetLength) * magnetStrength;
+                    }
+                }
+                
+                const length = Math.sqrt(dx * dx + dy * dy);
+                const dirX = length > 0 ? dx / length : 0;
+                const dirY = length > 0 ? dy / length : 0;
 
-            enemy.x += dirX * trippleShootEnemySpeed.current;
-            enemy.y += dirY * trippleShootEnemySpeed.current;
+                // Calculate new position
+                const newX = enemy.x + dirX * trippleShootEnemySpeed.current;
+                const newY = enemy.y + dirY * trippleShootEnemySpeed.current;
+                
+                // Check wall collision before moving
+                let canMove = true;
+                for (let wall of walls.current) {
+                    if (newX + enemy.width > wall.x && newX < wall.x + wall.width &&
+                        newY + enemy.height > wall.y && newY < wall.y + wall.height) {
+                        canMove = false;
+                        break;
+                    }
+                }
+                
+                // Only move if not colliding with walls
+                if (canMove) {
+                    enemy.x = newX;
+                    enemy.y = newY;
+                }
+                enemy.y += dirY * trippleShootEnemySpeed.current;
+            }
 
             // Calculate rotation angle towards player (face towards player with feather behind)
             const enemyCenterX = enemy.x + enemy.width / 2;
@@ -2305,15 +3988,55 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             const currentTime = performance.now();
             const timeAlive = currentTime - enemy.spawnTime;
             
-            // Move bomber towards player (slower movement)
-            const dx = (playerRef.current.x + playerRef.current.width / 2) - (enemy.x + enemy.width / 2);
-            const dy = (playerRef.current.y + playerRef.current.height / 2) - (enemy.y + enemy.height / 2);
-            const length = Math.sqrt(dx * dx + dy * dy);
-            const dirX = dx / length;
-            const dirY = dy / length;
+            // Skip movement if frozen
+            if (!freezeAbilityActive.current) {
+                // Move bomber towards player (slower movement)
+                let dx = (playerRef.current.x + playerRef.current.width / 2) - (enemy.x + enemy.width / 2);
+                let dy = (playerRef.current.y + playerRef.current.height / 2) - (enemy.y + enemy.height / 2);
+                
+                // Apply magnet effect if active
+                if (magnetAbilityActive.current) {
+                    const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+                    const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+                    const enemyCenterX = enemy.x + enemy.width / 2;
+                    const enemyCenterY = enemy.y + enemy.height / 2;
+                    
+                    const magnetDx = playerCenterX - enemyCenterX;
+                    const magnetDy = playerCenterY - enemyCenterY;
+                    const magnetLength = Math.sqrt(magnetDx * magnetDx + magnetDy * magnetDy);
+                    
+                    if (magnetLength > 0) {
+                        // Extremely strong magnet when close
+                        const magnetStrength = magnetLength < 100 ? 8.0 : 2.0;
+                        dx = (magnetDx / magnetLength) * magnetStrength;
+                        dy = (magnetDy / magnetLength) * magnetStrength;
+                    }
+                }
+                
+                const length = Math.sqrt(dx * dx + dy * dy);
+                const dirX = dx / length;
+                const dirY = dy / length;
 
-            enemy.x += dirX * bomberEnemySpeed.current;
-            enemy.y += dirY * bomberEnemySpeed.current;
+                // Calculate new position
+                const newX = enemy.x + dirX * bomberEnemySpeed.current;
+                const newY = enemy.y + dirY * bomberEnemySpeed.current;
+                
+                // Check wall collision before moving
+                let canMove = true;
+                for (let wall of walls.current) {
+                    if (newX + enemy.width > wall.x && newX < wall.x + wall.width &&
+                        newY + enemy.height > wall.y && newY < wall.y + wall.height) {
+                        canMove = false;
+                        break;
+                    }
+                }
+                
+                // Only move if not colliding with walls
+                if (canMove) {
+                    enemy.x = newX;
+                    enemy.y = newY;
+                }
+            }
 
             const enemyCenterX = enemy.x + enemy.width / 2;
             const enemyCenterY = enemy.y + enemy.height / 2;
@@ -2333,8 +4056,16 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 
                 // Check if player is in explosion radius
                 if (distanceToPlayer <= BOMBER_EXPLOSION_RADIUS && !immortalityAbilityActive.current && !phaseWalkActive.current) {
-                    looseRef.current = true;
-                    setLoose(true);
+                    // Check shield protection
+                    if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
+                        shieldHitsRemaining.current--;
+                        if (shieldHitsRemaining.current <= 0) {
+                            shieldAbilityActive.current = false;
+                        }
+                    } else {
+                        looseRef.current = true;
+                        setLoose(true);
+                    }
                 }
                 
                 // Remove other enemies in explosion radius
@@ -2425,16 +4156,53 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
 
         // Draw teleporter enemies
         teleporterEnemyRef.current.forEach((enemy, index) => {
-            // Move towards player when not teleporting
-            if (!enemy.teleporting) {
-                const dx = (playerRef.current.x + playerRef.current.width / 2) - (enemy.x + enemy.width / 2);
-                const dy = (playerRef.current.y + playerRef.current.height / 2) - (enemy.y + enemy.height / 2);
+            // Move towards player when not teleporting and not frozen
+            if (!enemy.teleporting && !freezeAbilityActive.current) {
+                let dx = (playerRef.current.x + playerRef.current.width / 2) - (enemy.x + enemy.width / 2);
+                let dy = (playerRef.current.y + playerRef.current.height / 2) - (enemy.y + enemy.height / 2);
+                
+                // Apply magnet effect if active
+                if (magnetAbilityActive.current) {
+                    const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+                    const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+                    const enemyCenterX = enemy.x + enemy.width / 2;
+                    const enemyCenterY = enemy.y + enemy.height / 2;
+                    
+                    const magnetDx = playerCenterX - enemyCenterX;
+                    const magnetDy = playerCenterY - enemyCenterY;
+                    const magnetLength = Math.sqrt(magnetDx * magnetDx + magnetDy * magnetDy);
+                    
+                    if (magnetLength > 0) {
+                        // Extremely strong magnet when close
+                        const magnetStrength = magnetLength < 100 ? 8.0 : 2.0;
+                        dx = (magnetDx / magnetLength) * magnetStrength;
+                        dy = (magnetDy / magnetLength) * magnetStrength;
+                    }
+                }
+                
                 const length = Math.sqrt(dx * dx + dy * dy);
                 const dirX = length > 0 ? dx / length : 0;
                 const dirY = length > 0 ? dy / length : 0;
 
-                enemy.x += dirX * teleporterEnemySpeed.current;
-                enemy.y += dirY * teleporterEnemySpeed.current;
+                // Calculate new position
+                const newX = enemy.x + dirX * teleporterEnemySpeed.current;
+                const newY = enemy.y + dirY * teleporterEnemySpeed.current;
+                
+                // Check wall collision before moving
+                let canMove = true;
+                for (let wall of walls.current) {
+                    if (newX + enemy.width > wall.x && newX < wall.x + wall.width &&
+                        newY + enemy.height > wall.y && newY < wall.y + wall.height) {
+                        canMove = false;
+                        break;
+                    }
+                }
+                
+                // Only move if not colliding with walls
+                if (canMove) {
+                    enemy.x = newX;
+                    enemy.y = newY;
+                }
             }
 
             const enemyCenterX = enemy.x + enemy.width / 2;
@@ -2632,13 +4400,39 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             }
         });
         
-        // Remove basic enemy bullets that are out of bounds
+        // Remove basic enemy bullets that are out of bounds or hit walls
         basicEnemyBulletsRef.current = basicEnemyBulletsRef.current.filter((bullet) => {
+            // Check wall collision
+            for (let wall of walls.current) {
+                if (bullet.x + 10 > wall.x && bullet.x < wall.x + wall.width &&
+                    bullet.y + 10 > wall.y && bullet.y < wall.y + wall.height) {
+                    return false; // Remove bullet if it hits wall
+                }
+            }
             return bullet.x >= 0 && bullet.x <= window.innerWidth && bullet.y >= 0 && bullet.y <= window.innerHeight;
         });
 
-        // Remove teleporter enemy bullets that are out of bounds
+        // Remove teleporter enemy bullets that are out of bounds or hit walls
         teleporterEnemyBulletsRef.current = teleporterEnemyBulletsRef.current.filter((bullet) => {
+            // Check wall collision
+            for (let wall of walls.current) {
+                if (bullet.x + 10 > wall.x && bullet.x < wall.x + wall.width &&
+                    bullet.y + 10 > wall.y && bullet.y < wall.y + wall.height) {
+                    return false; // Remove bullet if it hits wall
+                }
+            }
+            return bullet.x >= 0 && bullet.x <= window.innerWidth && bullet.y >= 0 && bullet.y <= window.innerHeight;
+        });
+
+        // Remove triple shoot enemy bullets that are out of bounds or hit walls
+        trippleShootEnemyBulletsRef.current = trippleShootEnemyBulletsRef.current.filter((bullet) => {
+            // Check wall collision
+            for (let wall of walls.current) {
+                if (bullet.x + 10 > wall.x && bullet.x < wall.x + wall.width &&
+                    bullet.y + 10 > wall.y && bullet.y < wall.y + wall.height) {
+                    return false; // Remove bullet if it hits wall
+                }
+            }
             return bullet.x >= 0 && bullet.x <= window.innerWidth && bullet.y >= 0 && bullet.y <= window.innerHeight;
         });
 
@@ -2652,8 +4446,16 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 trippleShootEnemyBulletsRef.current.splice(index, 1);
                 // Only lose if not immortal or phase walking
                 if (!immortalityAbilityActive.current && !phaseWalkActive.current) {
-                    looseRef.current = true;
-                    setLoose(true);
+                    // Check shield protection
+                    if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
+                        shieldHitsRemaining.current--;
+                        if (shieldHitsRemaining.current <= 0) {
+                            shieldAbilityActive.current = false;
+                        }
+                    } else {
+                        looseRef.current = true;
+                        setLoose(true);
+                    }
                 }
             }
         });
@@ -2670,6 +4472,10 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     // Remove both bullet and enemy on collision
                     bullets.current.splice(bIndex, 1);
                     trippleShootEnemyRef.current.splice(eIndex, 1);
+                    
+                    // Create kill effects
+                    createKillEffect(enemyCenterX, enemyCenterY, 30);
+                    
                     score.current += 30;
                     difficulty.current += Math.floor(score.current / 100);
                 }
@@ -2686,8 +4492,16 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             if (circularCollision(enemyHeadX, enemyHeadY, 50, playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS)) {
                 // Only lose if not immortal or phase walking
                 if (!immortalityAbilityActive.current && !phaseWalkActive.current) {
-                    looseRef.current = true;
-                    setLoose(true);
+                    // Check shield protection
+                    if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
+                        shieldHitsRemaining.current--;
+                        if (shieldHitsRemaining.current <= 0) {
+                            shieldAbilityActive.current = false;
+                        }
+                    } else {
+                        looseRef.current = true;
+                        setLoose(true);
+                    }
                 }
             }
         });
@@ -2700,10 +4514,18 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
             
             if (circularCollision(playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS, enemyCenterX, enemyCenterY, 15)) {
-                // Only lose if not immortal or phase walking or phase walking
-                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !phaseWalkActive.current) {
-                    looseRef.current = true;
-                    setLoose(true);
+                // Only lose if not immortal or phase walking
+                if (!immortalityAbilityActive.current && !phaseWalkActive.current) {
+                    // Check shield protection
+                    if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
+                        shieldHitsRemaining.current--;
+                        if (shieldHitsRemaining.current <= 0) {
+                            shieldAbilityActive.current = false;
+                        }
+                    } else {
+                        looseRef.current = true;
+                        setLoose(true);
+                    }
                 }
             }
         });
@@ -2717,8 +4539,16 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 basicEnemyBulletsRef.current.splice(index, 1);
                 // Only lose if not immortal or phase walking
                 if (!immortalityAbilityActive.current && !phaseWalkActive.current) {
-                    looseRef.current = true;
-                    setLoose(true);
+                    // Check shield protection
+                    if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
+                        shieldHitsRemaining.current--;
+                        if (shieldHitsRemaining.current <= 0) {
+                            shieldAbilityActive.current = false;
+                        }
+                    } else {
+                        looseRef.current = true;
+                        setLoose(true);
+                    }
                 }
             }
         })
@@ -2736,6 +4566,10 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 if (circularCollision(enemyHeadX, enemyHeadY, 40, bulletCenterX, bulletCenterY, 15)) {
                     bullets.current.splice(bIndex, 1);
                     basicEnemyRef.current.splice(eIndex, 1);
+                    
+                    // Create kill effects
+                    createKillEffect(enemyHeadX, enemyHeadY, 10);
+                    
                     score.current += 10;
                     difficulty.current += Math.floor(score.current / 100);
                 }
@@ -2761,6 +4595,10 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     
                     if (normalizedAngleDiff <= SLASH_ANGLE_SPREAD / 2) {
                         basicEnemyRef.current.splice(eIndex, 1);
+                        
+                        // Create kill effects
+                        createKillEffect(enemyHeadX, enemyHeadY, 10);
+                        
                         score.current += 10;
                         difficulty.current += Math.floor(score.current / 100);
                     }
@@ -2780,6 +4618,10 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     
                     if (normalizedAngleDiff <= SLASH_ANGLE_SPREAD / 2) {
                         trippleShootEnemyRef.current.splice(eIndex, 1);
+                        
+                        // Create kill effects
+                        createKillEffect(enemyCenterX, enemyCenterY, 15);
+                        
                         score.current += 15;
                         difficulty.current += Math.floor(score.current / 100);
                     }
@@ -2800,6 +4642,10 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                         
                         if (normalizedAngleDiff <= SLASH_ANGLE_SPREAD / 2) {
                             bomberEnemyRef.current.splice(eIndex, 1);
+                            
+                            // Create kill effects
+                            createKillEffect(enemyCenterX, enemyCenterY, 20);
+                            
                             score.current += 20;
                             difficulty.current += Math.floor(score.current / 100);
                         }
@@ -2821,6 +4667,10 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                         
                         if (normalizedAngleDiff <= SLASH_ANGLE_SPREAD / 2) {
                             teleporterEnemyRef.current.splice(eIndex, 1);
+                            
+                            // Create kill effects
+                            createKillEffect(enemyCenterX, enemyCenterY, 25);
+                            
                             score.current += 25;
                             difficulty.current += Math.floor(score.current / 100);
                         }
@@ -2884,6 +4734,10 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     
                     if (circularCollision(arrow.x, arrow.y, 20, enemyHeadX, enemyHeadY, 40)) {
                         basicEnemyRef.current.splice(eIndex, 1);
+                        
+                        // Create kill effects
+                        createKillEffect(enemyHeadX, enemyHeadY, 10);
+                        
                         score.current += 10;
                         difficulty.current += Math.floor(score.current / 100);
                         
@@ -2901,6 +4755,10 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     
                     if (circularCollision(arrow.x, arrow.y, 20, enemyCenterX, enemyCenterY, 25)) {
                         trippleShootEnemyRef.current.splice(eIndex, 1);
+                        
+                        // Create kill effects
+                        createKillEffect(enemyCenterX, enemyCenterY, 15);
+                        
                         score.current += 15;
                         difficulty.current += Math.floor(score.current / 100);
                         
@@ -2919,6 +4777,10 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                         
                         if (circularCollision(arrow.x, arrow.y, 20, enemyCenterX, enemyCenterY, 40)) {
                             bomberEnemyRef.current.splice(eIndex, 1);
+                            
+                            // Create kill effects
+                            createKillEffect(enemyCenterX, enemyCenterY, 20);
+                            
                             score.current += 20;
                             difficulty.current += Math.floor(score.current / 100);
                             
@@ -2938,6 +4800,10 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                         
                         if (circularCollision(arrow.x, arrow.y, 20, enemyCenterX, enemyCenterY, 35)) {
                             teleporterEnemyRef.current.splice(eIndex, 1);
+                            
+                            // Create kill effects
+                            createKillEffect(enemyCenterX, enemyCenterY, 25);
+                            
                             score.current += 25;
                             difficulty.current += Math.floor(score.current / 100);
                             
@@ -2967,6 +4833,10 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                         
                         if (distance <= currentSpellRadius) {
                             basicEnemyRef.current.splice(eIndex, 1);
+                            
+                            // Create kill effects
+                            createKillEffect(enemyHeadX, enemyHeadY, 12);
+                            
                             score.current += 12; // Slightly higher score for spell kills
                             difficulty.current += Math.floor(score.current / 100);
                         }
@@ -2980,6 +4850,10 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                         
                         if (distance <= currentSpellRadius) {
                             trippleShootEnemyRef.current.splice(eIndex, 1);
+                            
+                            // Create kill effects
+                            createKillEffect(enemyCenterX, enemyCenterY, 18);
+                            
                             score.current += 18;
                             difficulty.current += Math.floor(score.current / 100);
                         }
@@ -2994,6 +4868,10 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                             
                             if (distance <= currentSpellRadius) {
                                 bomberEnemyRef.current.splice(eIndex, 1);
+                                
+                                // Create kill effects
+                                createKillEffect(enemyCenterX, enemyCenterY, 25);
+                                
                                 score.current += 25;
                                 difficulty.current += Math.floor(score.current / 100);
                             }
@@ -3009,6 +4887,10 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                             
                             if (distance <= currentSpellRadius) {
                                 teleporterEnemyRef.current.splice(eIndex, 1);
+                                
+                                // Create kill effects
+                                createKillEffect(enemyCenterX, enemyCenterY, 30);
+                                
                                 score.current += 30;
                                 difficulty.current += Math.floor(score.current / 100);
                             }
@@ -3066,8 +4948,16 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             if (circularCollision(playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS, enemyCenterX, enemyCenterY, 40)) {
                 // Only lose if not immortal
                 if (!immortalityAbilityActive.current) {
-                    looseRef.current = true;
-                    setLoose(true);
+                    // Check shield protection
+                    if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
+                        shieldHitsRemaining.current--;
+                        if (shieldHitsRemaining.current <= 0) {
+                            shieldAbilityActive.current = false;
+                        }
+                    } else {
+                        looseRef.current = true;
+                        setLoose(true);
+                    }
                 }
             }
         });
@@ -3084,8 +4974,16 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             if (circularCollision(playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS, enemyCenterX, enemyCenterY, 35)) {
                 // Only lose if not immortal or phase walking
                 if (!immortalityAbilityActive.current && !phaseWalkActive.current) {
-                    looseRef.current = true;
-                    setLoose(true);
+                    // Check shield protection
+                    if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
+                        shieldHitsRemaining.current--;
+                        if (shieldHitsRemaining.current <= 0) {
+                            shieldAbilityActive.current = false;
+                        }
+                    } else {
+                        looseRef.current = true;
+                        setLoose(true);
+                    }
                 }
             }
         });
@@ -3099,8 +4997,16 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 teleporterEnemyBulletsRef.current.splice(index, 1);
                 // Only lose if not immortal or phase walking
                 if (!immortalityAbilityActive.current && !phaseWalkActive.current) {
-                    looseRef.current = true;
-                    setLoose(true);
+                    // Check shield protection
+                    if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
+                        shieldHitsRemaining.current--;
+                        if (shieldHitsRemaining.current <= 0) {
+                            shieldAbilityActive.current = false;
+                        }
+                    } else {
+                        looseRef.current = true;
+                        setLoose(true);
+                    }
                 }
             }
         });
@@ -3118,6 +5024,10 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 if (circularCollision(enemyCenterX, enemyCenterY, 40, bulletCenterX, bulletCenterY, 15)) {
                     bullets.current.splice(bIndex, 1);
                     bomberEnemyRef.current.splice(eIndex, 1);
+                    
+                    // Create kill effects
+                    createKillEffect(enemyCenterX, enemyCenterY, 25);
+                    
                     score.current += 25; // Higher score for harder enemy
                     difficulty.current += Math.floor(score.current / 100);
                 }
@@ -3137,6 +5047,10 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 if (circularCollision(enemyCenterX, enemyCenterY, 35, bulletCenterX, bulletCenterY, 15)) {
                     bullets.current.splice(bIndex, 1);
                     teleporterEnemyRef.current.splice(eIndex, 1);
+                    
+                    // Create kill effects
+                    createKillEffect(enemyCenterX, enemyCenterY, 30);
+                    
                     score.current += 30; // Highest score for most challenging enemy
                     difficulty.current += Math.floor(score.current / 100);
                 }
@@ -3155,6 +5069,158 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     bullets.current.splice(bIndex, 1);
                 }
             })
+        });
+
+        // Soldier bullet collision detection with all enemy types
+        soldierBullets.current.forEach((soldierBullet, sbIndex) => {
+            const soldierBulletCenterX = soldierBullet.x + soldierBullet.width/2;
+            const soldierBulletCenterY = soldierBullet.y + soldierBullet.height/2;
+            
+            // Collisions with basic enemies
+            basicEnemyRef.current.forEach((enemy, eIndex) => {
+                const enemyHeadX = enemy.x + enemy.width / 2;
+                const enemyHeadY = enemy.y + enemy.height / 4;
+                
+                if (circularCollision(enemyHeadX, enemyHeadY, 40, soldierBulletCenterX, soldierBulletCenterY, 5)) {
+                    soldierBullets.current.splice(sbIndex, 1);
+                    basicEnemyRef.current.splice(eIndex, 1);
+                    
+                    // Create kill effects
+                    createKillEffect(enemyHeadX, enemyHeadY, 10);
+                    
+                    score.current += 10;
+                    difficulty.current += Math.floor(score.current / 100);
+                }
+            });
+            
+            // Collisions with triple shoot enemies
+            trippleShootEnemyRef.current.forEach((enemy, eIndex) => {
+                const enemyCenterX = enemy.x + enemy.width / 2;
+                const enemyCenterY = enemy.y + enemy.height / 2;
+                
+                if (circularCollision(enemyCenterX, enemyCenterY, 15, soldierBulletCenterX, soldierBulletCenterY, 5)) {
+                    soldierBullets.current.splice(sbIndex, 1);
+                    trippleShootEnemyRef.current.splice(eIndex, 1);
+                    
+                    // Create kill effects
+                    createKillEffect(enemyCenterX, enemyCenterY, 30);
+                    
+                    score.current += 30;
+                    difficulty.current += Math.floor(score.current / 100);
+                }
+            });
+            
+            // Collisions with bomber enemies
+            bomberEnemyRef.current.forEach((enemy, eIndex) => {
+                const enemyCenterX = enemy.x + enemy.width / 2;
+                const enemyCenterY = enemy.y + enemy.height / 2;
+                
+                if (circularCollision(enemyCenterX, enemyCenterY, 25, soldierBulletCenterX, soldierBulletCenterY, 5)) {
+                    soldierBullets.current.splice(sbIndex, 1);
+                    bomberEnemyRef.current.splice(eIndex, 1);
+                    
+                    // Create kill effects
+                    createKillEffect(enemyCenterX, enemyCenterY, 25);
+                    
+                    score.current += 25;
+                    difficulty.current += Math.floor(score.current / 100);
+                }
+            });
+            
+            // Collisions with teleporter enemies (only when not teleporting)
+            teleporterEnemyRef.current.forEach((enemy, eIndex) => {
+                if (enemy.teleporting) return; // Can't hit while teleporting
+                
+                const enemyCenterX = enemy.x + enemy.width / 2;
+                const enemyCenterY = enemy.y + enemy.height / 2;
+                
+                if (circularCollision(enemyCenterX, enemyCenterY, 35, soldierBulletCenterX, soldierBulletCenterY, 5)) {
+                    soldierBullets.current.splice(sbIndex, 1);
+                    teleporterEnemyRef.current.splice(eIndex, 1);
+                    
+                    // Create kill effects
+                    createKillEffect(enemyCenterX, enemyCenterY, 30);
+                    
+                    score.current += 30;
+                    difficulty.current += Math.floor(score.current / 100);
+                }
+            });
+        });
+
+        // Soldier Ability bullet collision detection with all enemy types
+        soldierAbilitySoldierBullets.current.forEach((soldierBullet, sbIndex) => {
+            const soldierBulletCenterX = soldierBullet.x + soldierBullet.width/2;
+            const soldierBulletCenterY = soldierBullet.y + soldierBullet.height/2;
+            
+            // Collisions with basic enemies
+            basicEnemyRef.current.forEach((enemy, eIndex) => {
+                const enemyHeadX = enemy.x + enemy.width / 2;
+                const enemyHeadY = enemy.y + enemy.height / 4;
+                
+                if (circularCollision(enemyHeadX, enemyHeadY, 40, soldierBulletCenterX, soldierBulletCenterY, 5)) {
+                    soldierAbilitySoldierBullets.current.splice(sbIndex, 1);
+                    basicEnemyRef.current.splice(eIndex, 1);
+                    
+                    // Create kill effects
+                    createKillEffect(enemyHeadX, enemyHeadY, 10);
+                    
+                    score.current += 10;
+                    difficulty.current += Math.floor(score.current / 100);
+                }
+            });
+            
+            // Collisions with triple shoot enemies
+            trippleShootEnemyRef.current.forEach((enemy, eIndex) => {
+                const enemyCenterX = enemy.x + enemy.width / 2;
+                const enemyCenterY = enemy.y + enemy.height / 2;
+                
+                if (circularCollision(enemyCenterX, enemyCenterY, 15, soldierBulletCenterX, soldierBulletCenterY, 5)) {
+                    soldierAbilitySoldierBullets.current.splice(sbIndex, 1);
+                    trippleShootEnemyRef.current.splice(eIndex, 1);
+                    
+                    // Create kill effects
+                    createKillEffect(enemyCenterX, enemyCenterY, 30);
+                    
+                    score.current += 30;
+                    difficulty.current += Math.floor(score.current / 100);
+                }
+            });
+            
+            // Collisions with bomber enemies
+            bomberEnemyRef.current.forEach((enemy, eIndex) => {
+                const enemyCenterX = enemy.x + enemy.width / 2;
+                const enemyCenterY = enemy.y + enemy.height / 2;
+                
+                if (circularCollision(enemyCenterX, enemyCenterY, 25, soldierBulletCenterX, soldierBulletCenterY, 5)) {
+                    soldierAbilitySoldierBullets.current.splice(sbIndex, 1);
+                    bomberEnemyRef.current.splice(eIndex, 1);
+                    
+                    // Create kill effects
+                    createKillEffect(enemyCenterX, enemyCenterY, 25);
+                    
+                    score.current += 25;
+                    difficulty.current += Math.floor(score.current / 100);
+                }
+            });
+            
+            // Collisions with teleporter enemies (only when not teleporting)
+            teleporterEnemyRef.current.forEach((enemy, eIndex) => {
+                if (enemy.teleporting) return; // Can't hit while teleporting
+                
+                const enemyCenterX = enemy.x + enemy.width / 2;
+                const enemyCenterY = enemy.y + enemy.height / 2;
+                
+                if (circularCollision(enemyCenterX, enemyCenterY, 35, soldierBulletCenterX, soldierBulletCenterY, 5)) {
+                    soldierAbilitySoldierBullets.current.splice(sbIndex, 1);
+                    teleporterEnemyRef.current.splice(eIndex, 1);
+                    
+                    // Create kill effects
+                    createKillEffect(enemyCenterX, enemyCenterY, 30);
+                    
+                    score.current += 30;
+                    difficulty.current += Math.floor(score.current / 100);
+                }
+            });
         });
 
         // Responsive text sizing - improved formula
@@ -3214,7 +5280,9 @@ ctx.fillText(`Difficulty: ${difficulty.current}`, textMarginX, textMarginY + (fo
             ctx.restore();
         } else if (currentCharacter.combatType === 'slash' && !canSlash.current) {
             const elapsed = currentTime - lastSlashTime.current;
-            const progress = Math.min(elapsed / SLASH_COOLDOWN, 1);
+            const cooldownToUse = reloadAbilityActive.current ? SLASH_COOLDOWN_BOOSTED : SLASH_COOLDOWN;
+            // Ensure progress never exceeds 1.0 and handle negative values
+            const progress = Math.max(0, Math.min(elapsed / cooldownToUse, 1));
 
             const barWidth = 20;
             const barHeight = 100;
@@ -3236,7 +5304,9 @@ ctx.fillText(`Difficulty: ${difficulty.current}`, textMarginX, textMarginY + (fo
         } else if (currentCharacter.combatType === 'arrows' && !canShootArrow.current) {
             // Archer arrow cooldown
             const elapsed = currentTime - lastArrowTime.current;
-            const progress = Math.min(elapsed / ARROW_COOLDOWN, 1);
+            const cooldownToUse = reloadAbilityActive.current ? ARROW_COOLDOWN_BOOSTED : ARROW_COOLDOWN;
+            // Ensure progress never exceeds 1.0 and handle negative values
+            const progress = Math.max(0, Math.min(elapsed / cooldownToUse, 1));
 
             const barWidth = 20;
             const barHeight = 100;
@@ -3258,7 +5328,9 @@ ctx.fillText(`Difficulty: ${difficulty.current}`, textMarginX, textMarginY + (fo
         } else if (currentCharacter.combatType === 'spells' && !canCastSpell.current) {
             // Mage spell cooldown
             const elapsed = currentTime - lastSpellTime.current;
-            const progress = Math.min(elapsed / SPELL_COOLDOWN, 1);
+            const cooldownToUse = reloadAbilityActive.current ? SPELL_COOLDOWN_BOOSTED : SPELL_COOLDOWN;
+            // Ensure progress never exceeds 1.0 and handle negative values
+            const progress = Math.max(0, Math.min(elapsed / cooldownToUse, 1));
 
             const barWidth = 20;
             const barHeight = 100;
@@ -3274,6 +5346,30 @@ ctx.fillText(`Difficulty: ${difficulty.current}`, textMarginX, textMarginY + (fo
             ctx.clip();
 
             ctx.fillStyle = "purple"; // Purple for spell cooldown
+            ctx.fillRect(barX, barY, barWidth, barHeight * progress);
+
+            ctx.restore();
+        } else if (currentCharacter.combatType === 'soldiers' && !canSpawnSoldier.current) {
+            // King soldier spawn cooldown
+            const elapsed = currentTime - lastSoldierSpawnTime.current;
+            const cooldownToUse = reloadAbilityActive.current ? KING_SOLDIER_COOLDOWN_BOOSTED : KING_SOLDIER_COOLDOWN;
+            // Ensure progress never exceeds 1.0 and handle negative values
+            const progress = Math.max(0, Math.min(elapsed / cooldownToUse, 1));
+
+            const barWidth = 20;
+            const barHeight = 100;
+            const barX = playerCenterX - 100;
+            const barY = playerCenterY - 40;
+
+            ctx.save();
+
+            ctx.fillStyle = "black";
+            drawRoundedRect(ctx, barX, barY, barWidth, barHeight, 5);
+            ctx.fill();
+
+            ctx.clip();
+
+            ctx.fillStyle = "blue"; // Blue for soldier spawn cooldown
             ctx.fillRect(barX, barY, barWidth, barHeight * progress);
 
             ctx.restore();
@@ -3371,12 +5467,89 @@ ctx.fillText(`Difficulty: ${difficulty.current}`, textMarginX, textMarginY + (fo
                         cooldownDuration = PHASEWALK_COOLDOWN;
                         abilityName = 'F';
                         break;
+                    case 'soldierHelp':
+                        abilityRef = soldierAbilityRef.current; // Use soldier ability icon
+                        isOnCooldown = soldierAbilityOnCooldown.current;
+                        cooldownStartTime = soldierAbilityCooldownStartTime.current;
+                        cooldownDuration = SOLDIER_ABILITY_COOLDOWN;
+                        abilityName = 'T';
+                        break;
                     case 'scoreboost':
                         abilityRef = scoreBoostAbilityRef.current; // Use specific score boost icon
                         isOnCooldown = scoreBoostAbilityOnCooldown.current;
                         cooldownStartTime = scoreBoostAbilityCooldownStartTime.current;
                         cooldownDuration = SCOREBOOST_COOLDOWN;
                         abilityName = 'T';
+                        break;
+                    case 'freeze':
+                        abilityRef = freezeAbilityRef.current;
+                        isOnCooldown = freezeAbilityOnCooldown.current;
+                        cooldownStartTime = freezeAbilityCooldownStartTime.current;
+                        cooldownDuration = FREEZE_COOLDOWN;
+                        abilityName = 'R';
+                        break;
+                    case 'lightningstorm':
+                        abilityRef = lightningStormAbilityRef.current;
+                        isOnCooldown = lightningStormAbilityOnCooldown.current;
+                        cooldownStartTime = lightningStormAbilityCooldownStartTime.current;
+                        cooldownDuration = LIGHTNING_STORM_COOLDOWN;
+                        abilityName = 'R';
+                        break;
+                    case 'poisoncloud':
+                        abilityRef = poisonCloudAbilityRef.current;
+                        isOnCooldown = poisonCloudAbilityOnCooldown.current;
+                        cooldownStartTime = poisonCloudAbilityCooldownStartTime.current;
+                        cooldownDuration = POISON_CLOUD_COOLDOWN;
+                        abilityName = 'R';
+                        break;
+                    case 'meteor':
+                        abilityRef = meteorAbilityRef.current;
+                        isOnCooldown = meteorAbilityOnCooldown.current;
+                        cooldownStartTime = meteorAbilityCooldownStartTime.current;
+                        cooldownDuration = METEOR_COOLDOWN;
+                        abilityName = 'R';
+                        break;
+                    case 'shield':
+                        abilityRef = shieldAbilityRef.current;
+                        isOnCooldown = shieldAbilityOnCooldown.current;
+                        cooldownStartTime = shieldAbilityCooldownStartTime.current;
+                        cooldownDuration = SHIELD_COOLDOWN;
+                        abilityName = 'F';
+                        break;
+                    case 'dash':
+                        abilityRef = dashAbilityRef.current;
+                        isOnCooldown = dashAbilityOnCooldown.current;
+                        cooldownStartTime = dashAbilityCooldownStartTime.current;
+                        cooldownDuration = DASH_COOLDOWN;
+                        abilityName = 'F';
+                        break;
+                    case 'wallcreation':
+                        abilityRef = wallCreationAbilityRef.current;
+                        isOnCooldown = wallCreationAbilityOnCooldown.current;
+                        cooldownStartTime = wallCreationAbilityCooldownStartTime.current;
+                        cooldownDuration = WALL_CREATION_COOLDOWN;
+                        abilityName = 'T';
+                        break;
+                    case 'magnet':
+                        abilityRef = magnetAbilityRef.current;
+                        isOnCooldown = magnetAbilityOnCooldown.current;
+                        cooldownStartTime = magnetAbilityCooldownStartTime.current;
+                        cooldownDuration = MAGNET_COOLDOWN;
+                        abilityName = 'T';
+                        break;
+                    case 'mirrorclone':
+                        abilityRef = mirrorCloneAbilityRef.current;
+                        isOnCooldown = mirrorCloneAbilityOnCooldown.current;
+                        cooldownStartTime = mirrorCloneAbilityCooldownStartTime.current;
+                        cooldownDuration = MIRROR_CLONE_COOLDOWN;
+                        abilityName = 'T';
+                        break;
+                    case 'berserkermode':
+                        abilityRef = berserkerModeAbilityRef.current;
+                        isOnCooldown = berserkerModeAbilityOnCooldown.current;
+                        cooldownStartTime = berserkerModeAbilityCooldownStartTime.current;
+                        cooldownDuration = BERSERKER_MODE_COOLDOWN;
+                        abilityName = 'F';
                         break;
                     default:
                         return; // Skip unknown abilities
@@ -3437,12 +5610,16 @@ ctx.fillText(`Difficulty: ${difficulty.current}`, textMarginX, textMarginY + (fo
             });
         }
 
-        
-
+        // Draw kill effects (particles and floating text)
+        updateAndDrawEffects(ctx);
 
         if (!looseRef.current){
             animationFrameId = requestAnimationFrame(gameLoop);
 
+        }
+        else {
+            addGold(score.current / 10);
+            addExp(score.current / 30);
         }
     }
 
@@ -3490,6 +5667,8 @@ ctx.fillText(`Difficulty: ${difficulty.current}`, textMarginX, textMarginY + (fo
             }}>
                 <h1 style={{ fontSize: '48px', marginBottom: '20px' }}>You Lost!</h1>
                 <p style={{ fontSize: '24px', marginBottom: '30px' }}>Final Score: {score.current}</p>
+                <p>+exp: {score.current / 30}</p>
+                <p>+gold: {score.current / 10}</p>
                 <Link to="/loadout"> Back</Link>
             </div>
         )}
