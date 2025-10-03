@@ -42,12 +42,12 @@ export default async function handler(req, res) {
       await client.query(`
         CREATE TABLE IF NOT EXISTS user_progress (
           id SERIAL PRIMARY KEY,
-          user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
           level INTEGER DEFAULT 1,
           score INTEGER DEFAULT 0,
-          abilities TEXT,
-          achievements TEXT,
-          settings TEXT,
+          abilities TEXT DEFAULT '{}',
+          achievements TEXT DEFAULT '[]',
+          settings TEXT DEFAULT '{}',
           last_played TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
