@@ -1,19 +1,26 @@
-import { initDatabase } from "../src/lib/database.js";
-
 export default async function handler(req, res) {
+  // Debug verze - nejdříve zjistíme jestli funguje základní API
   if (req.method === 'GET' || req.method === 'POST') {
     try {
-      await initDatabase();
+      // Zkontrolujeme environment variables
+      const hasPostgres = !!process.env.POSTGRES_URL;
+      const hasJwtSecret = !!process.env.JWT_SECRET;
+      
       return res.status(200).json({ 
         success: true,
-        message: "Database initialized successfully",
-        timestamp: new Date().toISOString()
+        message: "API endpoint is working",
+        debug: {
+          hasPostgres,
+          hasJwtSecret,
+          nodeVersion: process.version,
+          timestamp: new Date().toISOString()
+        }
       });
     } catch (error) {
-      console.error("Database initialization error:", error);
+      console.error("API error:", error);
       return res.status(500).json({
         success: false,
-        error: "Database initialization failed",
+        error: "API initialization failed",
         details: error.message 
       });
     }
