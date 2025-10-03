@@ -126,29 +126,38 @@ function AuthenticatedApp() {
   // Funkce pro uložení dat do databáze
   const saveGameData = async (newData) => {
     try {
-      console.log('saveGameData called with:', newData);
-      console.log('Current gameData:', gameData);
+      console.log('💾 === DATABASE SAVE START ===');
+      console.log('💾 saveGameData called with:', newData);
+      console.log('💾 Current gameData before merge:', gameData);
       const updatedData = { ...gameData, ...newData };
-      console.log('Updated data will be:', updatedData);
+      console.log('💾 Updated data will be:', updatedData);
+      console.log('💾 Setting gameData state (this will trigger re-render)...');
       setGameData(updatedData);
       
-      // Uložíme do databáze ve správném formátu
-      await saveToDatabase({
+      console.log('💾 Preparing database payload...');
+      const dbPayload = {
         level: updatedData.level,
         score: updatedData.gold, // gold = score v databázi
-        exp: updatedData.exp, // přidáme exp do databáze
+        best_score: Math.max(updatedData.bestScore || 0, updatedData.gold || 0), // Update best score if current gold is higher
+        exp: updatedData.exp,
         abilities: JSON.stringify({
           characters: updatedData.characters,
           abilities: updatedData.abilities
         }),
-        achievements: JSON.stringify([]), // zatím prázdné
+        achievements: JSON.stringify([]),
         settings: JSON.stringify(updatedData.settings)
-      });
-      console.log('Data saved to database successfully');
+      };
+      console.log('💾 Database payload:', dbPayload);
+      
+      // Uložíme do databáze ve správném formátu
+      await saveToDatabase(dbPayload);
+      console.log('💾 === DATABASE SAVE SUCCESS ===');
     } catch (error) {
-      console.error('Error saving to database:', error);
+      console.error('💾 === DATABASE SAVE ERROR ===');
+      console.error('💾 Error saving to database:', error);
       // V případě chyby, vrátíme gameData na původní stav
       setGameData(gameData);
+      console.log('💾 Reverted gameData to original state due to error');
     }
   };
 
@@ -216,6 +225,23 @@ function AuthenticatedApp() {
   const gold = gameData.gold;
   const level = gameData.level;
   const exp = gameData.exp;
+
+  // Debug re-rendering
+  useEffect(() => {
+    console.log('🔄 COMPONENT RE-RENDER: Gold changed to:', gold);
+  }, [gold]);
+
+  useEffect(() => {
+    console.log('🔄 COMPONENT RE-RENDER: Level changed to:', level);
+  }, [level]);
+
+  useEffect(() => {
+    console.log('🔄 COMPONENT RE-RENDER: Exp changed to:', exp);
+  }, [exp]);
+
+  useEffect(() => {
+    console.log('🔄 COMPONENT RE-RENDER: GameData changed:', gameData);
+  }, [gameData]);
 
   const [character, setCharacter] = useState(gameData.characters?.selected || 'wizard');
 
@@ -392,12 +418,15 @@ function AuthenticatedApp() {
   };
 
   const addGold = async (amount) => {
-    console.log('addGold called with amount:', amount);
-    console.log('Current gold:', gold);
+    console.log('🪙 === GOLD OPERATION START ===');
+    console.log('🪙 addGold called with amount:', amount);
+    console.log('🪙 Current gold before operation:', gold);
+    console.log('🪙 Current gameData.gold:', gameData.gold);
     const newGold = gold + amount;
-    console.log('New gold will be:', newGold);
+    console.log('🪙 New gold will be:', newGold);
+    console.log('🪙 Saving to database...');
     await saveGameData({ gold: newGold });
-    console.log('Gold saved to database');
+    console.log('🪙 === GOLD OPERATION END ===');
   };
 
   const addExp = async (amount) => {

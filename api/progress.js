@@ -68,16 +68,21 @@ export default async function handler(req, res) {
   } else if (req.method === "POST") {
     let client;
     try {
+      console.log('📝 POST /api/progress - Received data:', req.body);
+      
       const token = req.headers.authorization?.replace("Bearer ", "");
       
       if (!token) {
+        console.log('📝 No token provided');
         return res.status(401).json({ error: "No token provided" });
       }
 
       // Ověříme token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log('📝 Authenticated user:', decoded.userId);
 
       const progressData = req.body;
+      console.log('📝 Progress data to save:', progressData);
 
       const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
       
@@ -92,6 +97,7 @@ export default async function handler(req, res) {
       let result;
       
       // Nejdříve zkusíme UPDATE
+      console.log('📝 Attempting UPDATE...');
       const updateResult = await client.query(
         `UPDATE user_progress 
          SET level = $2, score = $3, best_score = GREATEST(best_score, $3), exp = $4, abilities = $5, achievements = $6, settings = $7, last_played = NOW(), updated_at = NOW()
@@ -107,9 +113,11 @@ export default async function handler(req, res) {
           JSON.stringify(progressData.settings || {})
         ]
       );
+      console.log('📝 UPDATE result rows:', updateResult.rows.length);
 
       if (updateResult.rows.length === 0) {
         // Pokud UPDATE neaktualizoval nic, vytvoříme nový záznam
+        console.log('📝 No rows updated, attempting INSERT...');
         result = await client.query(
           `INSERT INTO user_progress (user_id, level, score, best_score, exp, abilities, achievements, settings) 
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
@@ -125,8 +133,10 @@ export default async function handler(req, res) {
             JSON.stringify(progressData.settings || {})
           ]
         );
+        console.log('📝 INSERT result:', result.rows[0]);
       } else {
         result = updateResult;
+        console.log('📝 UPDATE successful:', result.rows[0]);
       }
 
       return res.status(200).json({ 
