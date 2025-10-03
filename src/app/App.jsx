@@ -25,9 +25,43 @@ export default function App() {
       return stored ? JSON.parse(stored) : defaultValue;
     } catch (error) {
       console.error('Failed to load from localStorage:', error);
+      // Clear corrupted localStorage item
+      localStorage.removeItem(key);
       return defaultValue;
     }
   };
+
+  // Version check and migration system
+  const APP_VERSION = "2.0"; // Increase when data structure changes
+  const checkAndMigrateStorage = () => {
+    const storedVersion = localStorage.getItem('app_version');
+    
+    if (storedVersion !== APP_VERSION) {
+      console.log('Migrating localStorage to new version:', APP_VERSION);
+      
+      // Clear old incompatible data
+      const keysToKeep = ['gold', 'level', 'exp']; // Keep basic progress
+      const currentGold = loadFromStorage('gold', 0);
+      const currentLevel = loadFromStorage('level', 1);
+      const currentExp = loadFromStorage('exp', 0);
+      
+      // Clear all localStorage
+      localStorage.clear();
+      
+      // Restore basic progress
+      saveToStorage('gold', currentGold);
+      saveToStorage('level', currentLevel);
+      saveToStorage('exp', currentExp);
+      saveToStorage('app_version', APP_VERSION);
+      
+      console.log('Migration completed, kept progress:', { gold: currentGold, level: currentLevel, exp: currentExp });
+    }
+  };
+
+  // Run migration check on app start
+  useEffect(() => {
+    checkAndMigrateStorage();
+  }, []);
 
   // Level requirements only for characters
   const levelRequirements = {
