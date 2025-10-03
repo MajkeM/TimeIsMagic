@@ -10,13 +10,16 @@ export default async function handler(req, res) {
         throw new Error('No database connection string found');
       }
 
-      // Vytvoříme PostgreSQL klienta s vypnutým SSL ověřováním
+      // Parsujeme connection string a vytvoříme explicitní konfiguraci
+      const url = new URL(connectionString);
+      
       client = new Client({
-        connectionString,
-        ssl: {
-          rejectUnauthorized: false,
-          checkServerIdentity: () => undefined
-        }
+        host: url.hostname,
+        port: parseInt(url.port) || 5432,
+        database: url.pathname.slice(1), // Remove leading slash
+        username: url.username,
+        password: url.password,
+        ssl: false // Vypneme SSL úplně
       });
 
       // Připojíme se k databázi
