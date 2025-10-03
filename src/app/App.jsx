@@ -162,12 +162,9 @@ function AuthenticatedApp() {
 
   const [character, setCharacter] = useState(loadFromStorage('character', 'wizard'));
 
-  const handleGoldChange = (cost) => {
-    setGold((prevGold) => {
-      const newGold = prevGold - cost;
-      saveToStorage('gold', newGold);
-      return newGold;
-    });
+  const handleGoldChange = async (cost) => {
+    const newGold = gold - cost;
+    await saveGameData({ gold: newGold });
   };
 
   const handleCharacterChange = (event) => {
