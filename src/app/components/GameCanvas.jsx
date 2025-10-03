@@ -553,6 +553,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
 
     // Use ref for loose state so gameLoop can see updates immediately
     const looseRef = useRef(false);
+    const rewardsGivenRef = useRef(false); // Track if rewards have been given
     const [loose, setLoose] = useState(false);
 
     useEffect(() => {
@@ -1802,6 +1803,9 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     useEffect(() => {
         // Don't start game until loading is complete
         if (isLoading) return;
+        
+        // Reset game state for new game
+        rewardsGivenRef.current = false;
         
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -5678,8 +5682,18 @@ ctx.fillText(`Difficulty: ${difficulty.current}`, textMarginX, textMarginY + (fo
 
         }
         else {
-            addGold(score.current / 10);
-            addExp(score.current / 30);
+            // Only give rewards once when the game ends
+            if (!rewardsGivenRef.current) {
+                const goldToAdd = Math.floor(score.current / 10);
+                const expToAdd = Math.floor(score.current / 30);
+                console.log('Game ended! Score:', score.current);
+                console.log('Gold to add:', goldToAdd);
+                console.log('Exp to add:', expToAdd);
+                addGold(goldToAdd);
+                addExp(expToAdd);
+                rewardsGivenRef.current = true; // Mark rewards as given
+                console.log('Rewards given successfully');
+            }
         }
     }
 
