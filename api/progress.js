@@ -5,7 +5,7 @@ import {
 } from "../src/lib/database.js";
 
 export default async function handler(req, res) {
-  if (req.method === 'GET') {
+  if (req.method === "GET") {
     try {
       const token = req.headers.authorization?.replace("Bearer ", "");
       const decoded = verifyToken(token);
@@ -20,7 +20,7 @@ export default async function handler(req, res) {
       console.error("Get progress error:", error);
       return res.status(500).json({ error: "Internal server error" });
     }
-  } else if (req.method === 'POST') {
+  } else if (req.method === "POST") {
     try {
       const token = req.headers.authorization?.replace("Bearer ", "");
       const decoded = verifyToken(token);
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Internal server error" });
     }
   } else {
-    res.setHeader('Allow', ['GET', 'POST']);
-    return res.status(405).json({ error: 'Method not allowed' });
+    res.setHeader("Allow", ["GET", "POST"]);
+    return res.status(405).json({ error: "Method not allowed" });
   }
 }

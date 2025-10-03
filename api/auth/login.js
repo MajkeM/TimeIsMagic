@@ -1,7 +1,7 @@
 import { loginUser } from "../../src/lib/database.js";
 
 export default async function handler(req, res) {
-  if (req.method === 'POST') {
+  if (req.method === "POST") {
     try {
       const { username, password } = req.body;
 
@@ -21,7 +21,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Internal server error" });
     }
   } else {
-    res.setHeader('Allow', ['POST']);
-    return res.status(405).json({ error: 'Method not allowed' });
+    res.setHeader("Allow", ["POST"]);
+    return res.status(405).json({ error: "Method not allowed" });
   }
 }
