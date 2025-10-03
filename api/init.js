@@ -1,22 +1,31 @@
-import { neon } from '@neondatabase/serverless';
+import { Client } from 'pg';
 
 export default async function handler(req, res) {
   if (req.method === 'GET' || req.method === 'POST') {
+    let client;
     try {
-      // Zkusíme přímé připojení k Neon databázi
       const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
       
       if (!connectionString) {
         throw new Error('No database connection string found');
       }
-      
-      const sql = neon(connectionString);
+
+      // Vytvoříme PostgreSQL klienta
+      client = new Client({
+        connectionString,
+        ssl: {
+          rejectUnauthorized: false
+        }
+      });
+
+      // Připojíme se k databázi
+      await client.connect();
       
       // Test jednoduchého dotazu
-      const result = await sql`SELECT 1 as test, NOW() as current_time`;
+      const testResult = await client.query('SELECT 1 as test, NOW() as current_time');
       
       // Pokud test funguje, vytvoříme tabulky
-      await sql`
+      await client.query(`
         CREATE TABLE IF NOT EXISTS users (
           id SERIAL PRIMARY KEY,
           username VARCHAR(50) UNIQUE NOT NULL,
@@ -25,9 +34,9 @@ export default async function handler(req, res) {
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
-      `;
+      `);
 
-      await sql`
+      await client.query(`
         CREATE TABLE IF NOT EXISTS user_progress (
           id SERIAL PRIMARY KEY,
           user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -40,12 +49,12 @@ export default async function handler(req, res) {
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
-      `;
+      `);
       
       return res.status(200).json({ 
         success: true,
         message: "Database initialized successfully",
-        testResult: result[0],
+        testResult: testResult.rows[0],
         timestamp: new Date().toISOString()
       });
     } catch (error) {
@@ -56,12 +65,17 @@ export default async function handler(req, res) {
         errorMessage: error.message,
         errorCode: error.code,
         errorName: error.name,
-        envVars: {
-          hasDatabaseUrl: !!process.env.DATABASE_URL,
-          hasPostgresUrl: !!process.env.POSTGRES_URL
-        },
         timestamp: new Date().toISOString()
       });
+    } finally {
+      // Zavřeme připojení
+      if (client) {
+        try {
+          await client.end();
+        } catch (closeError) {
+          console.error("Error closing database connection:", closeError);
+        }
+      }
     }
   } else {
     res.setHeader('Allow', ['GET', 'POST']);
