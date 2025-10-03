@@ -102,6 +102,13 @@ function AuthenticatedApp() {
     });
   };
 
+  // Sync character state when gameData changes
+  useEffect(() => {
+    if (gameData.characters?.selected) {
+      setCharacter(gameData.characters.selected);
+    }
+  }, [gameData.characters]);
+
   // Level requirements only for characters
   const levelRequirements = {
     characters: {
@@ -160,7 +167,7 @@ function AuthenticatedApp() {
   const level = gameData.level;
   const exp = gameData.exp;
 
-  const [character, setCharacter] = useState(loadFromStorage('character', 'wizard'));
+  const [character, setCharacter] = useState(gameData.characters?.selected || 'wizard');
 
   const handleGoldChange = async (cost) => {
     const newGold = gold - cost;
@@ -177,9 +184,9 @@ function AuthenticatedApp() {
     }
   }
 
-  // Initialize ability availability from localStorage or default (only free abilities)
+  // Initialize ability availability from gameData or default (only free abilities)
   const initializeAbilityAvailability = () => {
-    return loadFromStorage('abilityAvailability', {
+    return gameData.abilities?.abilityAvailability || {
       R: {
         reload: true,
         splash: false,
@@ -206,20 +213,20 @@ function AuthenticatedApp() {
         mirrorclone: false,
         berserkermode: false
       }
-    });
+    };
   };
 
   const [abilityAvailability, setAbilityAvailability] = useState(initializeAbilityAvailability());
   
   // Character availability based on level
   const [characterAvailability, setCharacterAvailability] = useState(
-    loadFromStorage('characterAvailability', {
+    gameData.abilities?.characterAvailability || {
       wizard: true,
       rapunzel: false,
       archer: false,
       mage: false,
       king: false
-    })
+    }
   );
 
   // Initialize availability on first load and level changes
