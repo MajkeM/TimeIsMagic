@@ -354,29 +354,35 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     
 
 
-    const SPAWN_BASIC_ENEMY_TIME = 2000;
-    const SPAWN_BASIC_ENEMY_TIME_MIN = 1000;
+    // TIER SYSTEM - enemies unlock based on score thresholds
+    const TIER_1_THRESHOLD = 0;     // Basic enemies from start
+    const TIER_2_THRESHOLD = 150;   // Triple shoot and bomber unlock at score 150
+    const TIER_3_THRESHOLD = 300;   // Teleporter enemies unlock at score 300
 
-    const SPAWN_TRIPPLESHOOT_ENEMY_TIME = 10000;
-    const SPAWN_TRIPPLESHOOT_ENEMY_TIME_MIN = 5000;
+    // TIER 1 ENEMIES - Available from start (Score >= 0)
+    const SPAWN_BASIC_ENEMY_TIME = 3000;      // Slower spawn rate for balance
+    const SPAWN_BASIC_ENEMY_TIME_MIN = 1500;  // Increased minimum for better gameplay
 
+    // TIER 2 ENEMIES - Unlock at Score >= 150
+    const SPAWN_TRIPPLESHOOT_ENEMY_TIME = 12000;  // Reduced frequency for balance
+    const SPAWN_TRIPPLESHOOT_ENEMY_TIME_MIN = 6000;
     const TRIPPLESHOOT_ENEMY_BULLET_ANGLE = 0.6 // in radians, 0.2 = 11.46 degrees
 
-    // Bomber enemy constants
-    const SPAWN_BOMBER_ENEMY_TIME = 15000; // Spawns every 15 seconds
-    const SPAWN_BOMBER_ENEMY_TIME_MIN = 8000;
-    const BOMBER_ENEMY_SPEED = 2; // Slower than other enemies
-    const BOMBER_ENEMY_SPEED_SLOW = 0.5;
-    const BOMBER_EXPLOSION_RADIUS = 200; // Large explosion radius
-    const BOMBER_FUSE_TIME = 3000; // 3 seconds before explosion
-    const BOMBER_WARNING_TIME = 1000; // 1 second warning flash
+    // Bomber enemy constants (TIER 2)
+    const SPAWN_BOMBER_ENEMY_TIME = 18000; // Slower spawn for balance
+    const SPAWN_BOMBER_ENEMY_TIME_MIN = 10000;
+    const BOMBER_ENEMY_SPEED = 1.8; // Slightly slower for fairness
+    const BOMBER_ENEMY_SPEED_SLOW = 0.4;
+    const BOMBER_EXPLOSION_RADIUS = 180; // Slightly smaller radius
+    const BOMBER_FUSE_TIME = 3500; // More time to react
+    const BOMBER_WARNING_TIME = 1500; // Longer warning
 
-    // Teleporter enemy constants
-    const SPAWN_TELEPORTER_ENEMY_TIME = 12000; // Spawns every 12 seconds
-    const SPAWN_TELEPORTER_ENEMY_TIME_MIN = 6000;
-    const TELEPORTER_ENEMY_SPEED = 3; // Faster than basic enemies
-    const TELEPORTER_ENEMY_SPEED_SLOW = 1;
-    const TELEPORTER_BULLET_SPEED = 15; // Homing bullets
+    // TIER 3 ENEMIES - Unlock at Score >= 300
+    const SPAWN_TELEPORTER_ENEMY_TIME = 15000; // Less frequent spawn
+    const SPAWN_TELEPORTER_ENEMY_TIME_MIN = 8000;
+    const TELEPORTER_ENEMY_SPEED = 2.5; // Balanced speed
+    const TELEPORTER_ENEMY_SPEED_SLOW = 0.8;
+    const TELEPORTER_BULLET_SPEED = 12; // Reduced bullet speed
     const TELEPORTER_BULLET_SPEED_SLOW = 1;
     const TELEPORTER_TELEPORT_INTERVAL = 4000; // Teleports every 4 seconds
     const TELEPORTER_HOMING_STRENGTH = 0.1; // How strongly bullets home
@@ -400,30 +406,43 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     const TRIPPLESHOOT_ENEMY_SPEED_SLOW = 1;
     const TRIPPLESHOOT_ENEMY_BULLET_SPEED_SLOW = 1.5;
 
-    // Responsive speed system - DISABLED for consistent gameplay across all resolutions
-    // Base reference: 1920x1080 (common desktop resolution)
-    const BASE_WIDTH = 1920;
-    const BASE_HEIGHT = 1080;
+    // Responsive performance system for consistent gameplay across devices
+    // Base reference: 60 FPS target for all devices
+    const TARGET_FPS = 60;
+    const frameTimeHistory = useRef([]);
+    const lastFrameTime = useRef(performance.now());
     
-    // Calculate responsive speed multiplier based on screen size
+    // Helper function for balanced difficulty progression
+    const updateDifficulty = () => {
+        // More gradual difficulty scaling based on current tier
+        const currentTierBonus = score.current >= TIER_3_THRESHOLD ? 3 : (score.current >= TIER_2_THRESHOLD ? 2 : 1);
+        const scalingFactor = 200 / currentTierBonus; // Higher tier = faster difficulty increase
+        difficulty.current = 1 + Math.floor(score.current / scalingFactor);
+    };
+    
+    // Calculate current FPS and adjust game speed accordingly
     const getResponsiveSpeedMultiplier = () => {
-        // FIXED: Always return 1.0 for consistent speed across all screen sizes
-        // This ensures players on notebooks have the same speed as players on large monitors
-        return 1.0;
+        const currentTime = performance.now();
+        const deltaTime = currentTime - lastFrameTime.current;
+        lastFrameTime.current = currentTime;
         
-        /* OLD RESPONSIVE CODE - COMMENTED OUT FOR CONSISTENT GAMEPLAY
-        const currentWidth = window.innerWidth;
-        const currentHeight = window.innerHeight;
+        // Track frame times for averaging
+        frameTimeHistory.current.push(deltaTime);
+        if (frameTimeHistory.current.length > 30) { // Keep last 30 frames
+            frameTimeHistory.current.shift();
+        }
         
-        // Calculate diagonal ratio for more accurate scaling
-        const baseDiagonal = Math.sqrt(BASE_WIDTH * BASE_WIDTH + BASE_HEIGHT * BASE_HEIGHT);
-        const currentDiagonal = Math.sqrt(currentWidth * currentWidth + currentHeight * currentHeight);
-        const diagonalRatio = currentDiagonal / baseDiagonal;
+        // Calculate average FPS
+        const avgDeltaTime = frameTimeHistory.current.reduce((a, b) => a + b, 0) / frameTimeHistory.current.length;
+        const currentFPS = 1000 / avgDeltaTime;
         
-        // Apply some smoothing to prevent extreme speed changes
-        // Clamp between 0.5x and 2x speed for reasonable gameplay
-        return Math.max(0.5, Math.min(2.0, diagonalRatio));
-        */
+        // Calculate speed multiplier to maintain consistent gameplay
+        // If FPS is lower, speed up game elements to compensate
+        const fpsRatio = TARGET_FPS / currentFPS;
+        
+        // Clamp between 0.5x and 2x for reasonable gameplay
+        // This ensures game doesn't become unplayable on very slow or very fast devices
+        return Math.max(0.5, Math.min(2.0, fpsRatio));
     };
 
 
@@ -495,6 +514,11 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     const teleporterEnemyBulletSpeed = useRef(TELEPORTER_BULLET_SPEED);
     const lastTeleporterEnemySpawnTime = useRef(0);
     const teleporterImageRef = useRef(null);
+
+    // Tier system tracking
+    const tier2Unlocked = useRef(false);
+    const tier3Unlocked = useRef(false);
+    const tierNotifications = useRef([]);
 
     // Slash combat system constants and refs
     const SLASH_RANGE = 300; // Range of slash attack
@@ -2783,17 +2807,41 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             }
         }
 
+        // TIER-BASED ENEMY SPAWNING SYSTEM
+        const currentScore = score.current;
+        
+        // Check for tier unlocks and add notifications
+        if (currentScore >= TIER_2_THRESHOLD && !tier2Unlocked.current) {
+            tier2Unlocked.current = true;
+            tierNotifications.current.push({
+                text: "TIER 2 UNLOCKED! Advanced Enemies Incoming!",
+                startTime: currentTime,
+                duration: 4000,
+                color: "#FF9800"
+            });
+        }
+        
+        if (currentScore >= TIER_3_THRESHOLD && !tier3Unlocked.current) {
+            tier3Unlocked.current = true;
+            tierNotifications.current.push({
+                text: "TIER 3 UNLOCKED! Maximum Danger!",
+                startTime: currentTime,
+                duration: 4000,
+                color: "#F44336"
+            });
+        }
+        
+        // Get responsive speed multiplier for consistent performance
+        const speedMultiplier = getResponsiveSpeedMultiplier();
+        
+        // TIER 1 ENEMIES (Available from start - Score >= 0)
         const baseSpawnInterval = SPAWN_BASIC_ENEMY_TIME; 
         const minSpawnInterval = SPAWN_BASIC_ENEMY_TIME_MIN; 
+        const currentSpawnInterval = (baseSpawnInterval / difficulty.current) * speedMultiplier;
+        const spawnInterval = Math.max(minSpawnInterval, currentSpawnInterval);
 
-        const trippleShootEnemyBaseSpawnInterval = SPAWN_TRIPPLESHOOT_ENEMY_TIME;
-        const trippleShootEnemyMinSpawnInterval = SPAWN_TRIPPLESHOOT_ENEMY_TIME_MIN;
-        
-        const currentTrippleShootEnemySpawnInterval = trippleShootEnemyBaseSpawnInterval / difficulty.current;
-        const trippleShootEnemySpawnInterval = Math.max(trippleShootEnemyMinSpawnInterval, currentTrippleShootEnemySpawnInterval);
-        
-        if (currentTime - lastTrippleShootEnemySpawnTime.current > trippleShootEnemySpawnInterval) {
-            lastTrippleShootEnemySpawnTime.current = currentTime;
+        if (currentScore >= TIER_1_THRESHOLD && currentTime - lastSpawnTime.current > spawnInterval) {
+            lastSpawnTime.current = currentTime;
             const side = Math.floor(Math.random() * 4);
             let x, y;
 
@@ -2803,19 +2851,21 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 case 2: /* bottom */ x = Math.random() * window.innerWidth; y = window.innerHeight; break;
                 case 3: /* left */ x = 0; y = Math.random() * window.innerHeight; break;
             }
-            trippleShootEnemyRef.current.push({
-                x: x, y: y, width: 100, height: 100, color: "purple",
+            basicEnemyRef.current.push({
+                x: x, y: y, width: 200, height: 150, color: "red",
             });
         }
 
-
-         const currentSpawnInterval = baseSpawnInterval / difficulty.current;
-
-        // Make sure the interval doesn't go below our minimum
-        const spawnInterval = Math.max(minSpawnInterval, currentSpawnInterval);
-
-        if (currentTime - lastSpawnTime.current > spawnInterval) {
-                lastSpawnTime.current = currentTime;
+        // TIER 2 ENEMIES (Unlock at Score >= 150)
+        if (currentScore >= TIER_2_THRESHOLD) {
+            // Triple Shoot Enemy spawning
+            const trippleShootEnemyBaseSpawnInterval = SPAWN_TRIPPLESHOOT_ENEMY_TIME;
+            const trippleShootEnemyMinSpawnInterval = SPAWN_TRIPPLESHOOT_ENEMY_TIME_MIN;
+            const currentTrippleShootEnemySpawnInterval = (trippleShootEnemyBaseSpawnInterval / difficulty.current) * speedMultiplier;
+            const trippleShootEnemySpawnInterval = Math.max(trippleShootEnemyMinSpawnInterval, currentTrippleShootEnemySpawnInterval);
+            
+            if (currentTime - lastTrippleShootEnemySpawnTime.current > trippleShootEnemySpawnInterval) {
+                lastTrippleShootEnemySpawnTime.current = currentTime;
                 const side = Math.floor(Math.random() * 4);
                 let x, y;
 
@@ -2825,57 +2875,61 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     case 2: /* bottom */ x = Math.random() * window.innerWidth; y = window.innerHeight; break;
                     case 3: /* left */ x = 0; y = Math.random() * window.innerHeight; break;
                 }
-                basicEnemyRef.current.push({
-                    x: x, y: y, width: 200, height: 150, color: "red",
+                trippleShootEnemyRef.current.push({
+                    x: x, y: y, width: 100, height: 100, color: "purple",
                 });
+            }
+
+            // Bomber enemy spawning (TIER 2)
+            const bomberBaseSpawnInterval = SPAWN_BOMBER_ENEMY_TIME;
+            const bomberMinSpawnInterval = SPAWN_BOMBER_ENEMY_TIME_MIN;
+            const currentBomberSpawnInterval = (bomberBaseSpawnInterval / difficulty.current) * speedMultiplier;
+            const bomberSpawnInterval = Math.max(bomberMinSpawnInterval, currentBomberSpawnInterval);
+            
+            if (currentTime - lastBomberEnemySpawnTime.current > bomberSpawnInterval) {
+                lastBomberEnemySpawnTime.current = currentTime;
+                const side = Math.floor(Math.random() * 4);
+                let x, y;
+
+                switch (side) {
+                    case 0: /* top */ x = Math.random() * window.innerWidth; y = 0; break;
+                    case 1: /* right */ x = window.innerWidth; y = Math.random() * window.innerHeight; break;
+                    case 2: /* bottom */ x = Math.random() * window.innerWidth; y = window.innerHeight; break;
+                    case 3: /* left */ x = 0; y = Math.random() * window.innerHeight; break;
+                }
+                bomberEnemyRef.current.push({
+                    x: x, y: y, width: 120, height: 120, color: "orange",
+                    spawnTime: currentTime, // Track when it was spawned for explosion timer
+                    exploded: false,
+                });
+            }
         }
 
-        // Bomber enemy spawning
-        const bomberBaseSpawnInterval = SPAWN_BOMBER_ENEMY_TIME;
-        const bomberMinSpawnInterval = SPAWN_BOMBER_ENEMY_TIME_MIN;
-        const currentBomberSpawnInterval = bomberBaseSpawnInterval / difficulty.current;
-        const bomberSpawnInterval = Math.max(bomberMinSpawnInterval, currentBomberSpawnInterval);
-        
-        if (currentTime - lastBomberEnemySpawnTime.current > bomberSpawnInterval) {
-            lastBomberEnemySpawnTime.current = currentTime;
-            const side = Math.floor(Math.random() * 4);
-            let x, y;
+        // TIER 3 ENEMIES (Unlock at Score >= 300)
+        if (currentScore >= TIER_3_THRESHOLD) {
+            // Teleporter enemy spawning
+            const teleporterBaseSpawnInterval = SPAWN_TELEPORTER_ENEMY_TIME;
+            const teleporterMinSpawnInterval = SPAWN_TELEPORTER_ENEMY_TIME_MIN;
+            const currentTeleporterSpawnInterval = (teleporterBaseSpawnInterval / difficulty.current) * speedMultiplier;
+            const teleporterSpawnInterval = Math.max(teleporterMinSpawnInterval, currentTeleporterSpawnInterval);
+            
+            if (currentTime - lastTeleporterEnemySpawnTime.current > teleporterSpawnInterval) {
+                lastTeleporterEnemySpawnTime.current = currentTime;
+                const side = Math.floor(Math.random() * 4);
+                let x, y;
 
-            switch (side) {
-                case 0: /* top */ x = Math.random() * window.innerWidth; y = 0; break;
-                case 1: /* right */ x = window.innerWidth; y = Math.random() * window.innerHeight; break;
-                case 2: /* bottom */ x = Math.random() * window.innerWidth; y = window.innerHeight; break;
-                case 3: /* left */ x = 0; y = Math.random() * window.innerHeight; break;
+                switch (side) {
+                    case 0: /* top */ x = Math.random() * window.innerWidth; y = 0; break;
+                    case 1: /* right */ x = window.innerWidth; y = Math.random() * window.innerHeight; break;
+                    case 2: /* bottom */ x = Math.random() * window.innerWidth; y = window.innerHeight; break;
+                    case 3: /* left */ x = 0; y = Math.random() * window.innerHeight; break;
+                }
+                teleporterEnemyRef.current.push({
+                    x: x, y: y, width: 150, height: 120, color: "cyan",
+                    teleporting: false,
+                    teleportStartTime: 0,
+                });
             }
-            bomberEnemyRef.current.push({
-                x: x, y: y, width: 120, height: 120, color: "orange",
-                spawnTime: currentTime, // Track when it was spawned for explosion timer
-                exploded: false,
-            });
-        }
-
-        // Teleporter enemy spawning
-        const teleporterBaseSpawnInterval = SPAWN_TELEPORTER_ENEMY_TIME;
-        const teleporterMinSpawnInterval = SPAWN_TELEPORTER_ENEMY_TIME_MIN;
-        const currentTeleporterSpawnInterval = teleporterBaseSpawnInterval / difficulty.current;
-        const teleporterSpawnInterval = Math.max(teleporterMinSpawnInterval, currentTeleporterSpawnInterval);
-        
-        if (currentTime - lastTeleporterEnemySpawnTime.current > teleporterSpawnInterval) {
-            lastTeleporterEnemySpawnTime.current = currentTime;
-            const side = Math.floor(Math.random() * 4);
-            let x, y;
-
-            switch (side) {
-                case 0: /* top */ x = Math.random() * window.innerWidth; y = 0; break;
-                case 1: /* right */ x = window.innerWidth; y = Math.random() * window.innerHeight; break;
-                case 2: /* bottom */ x = Math.random() * window.innerWidth; y = window.innerHeight; break;
-                case 3: /* left */ x = 0; y = Math.random() * window.innerHeight; break;
-            }
-            teleporterEnemyRef.current.push({
-                x: x, y: y, width: 150, height: 120, color: "cyan",
-                teleporting: false,
-                teleportStartTime: 0,
-            });
         }
 
 
@@ -4541,7 +4595,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     createKillEffect(enemyCenterX, enemyCenterY, 30);
                     
                     score.current += 30;
-                    difficulty.current += Math.floor(score.current / 100);
+                    updateDifficulty(); // Balanced difficulty progression
                 }
             })
         });
@@ -5317,6 +5371,71 @@ const textMarginY = margin + (Math.min(window.innerHeight / 3, 400) * 0.33); // 
 ctx.fillText(`Score: ${score.current}`, textMarginX, textMarginY);
 ctx.fillText(`Difficulty: ${difficulty.current}`, textMarginX, textMarginY + (fontSize * 1.5));
 
+// TIER SYSTEM INDICATORS
+const playerScore = score.current;
+let tierText = "Tier 1: Basic Enemies";
+let tierColor = "#4CAF50"; // Green
+
+if (playerScore >= TIER_3_THRESHOLD) {
+    tierText = "Tier 3: All Enemies Active!";
+    tierColor = "#F44336"; // Red
+} else if (playerScore >= TIER_2_THRESHOLD) {
+    tierText = "Tier 2: Advanced Enemies";
+    tierColor = "#FF9800"; // Orange
+}
+
+// Display current tier
+ctx.fillStyle = tierColor;
+ctx.fillText(tierText, textMarginX, textMarginY + (fontSize * 3));
+
+// Display next tier info
+ctx.fillStyle = "white";
+if (playerScore < TIER_2_THRESHOLD) {
+    const remaining = TIER_2_THRESHOLD - playerScore;
+    ctx.fillText(`Next: ${remaining} points to Tier 2`, textMarginX, textMarginY + (fontSize * 4.5));
+} else if (playerScore < TIER_3_THRESHOLD) {
+    const remaining = TIER_3_THRESHOLD - playerScore;
+    ctx.fillText(`Next: ${remaining} points to Tier 3`, textMarginX, textMarginY + (fontSize * 4.5));
+} else {
+    ctx.fillText("Maximum Tier Reached!", textMarginX, textMarginY + (fontSize * 4.5));
+}
+
+// Draw tier unlock notifications
+tierNotifications.current = tierNotifications.current.filter(notification => {
+    const elapsed = currentTime - notification.startTime;
+    if (elapsed > notification.duration) {
+        return false; // Remove expired notifications
+    }
+    
+    // Calculate fade effect
+    const fadeProgress = elapsed / notification.duration;
+    const alpha = fadeProgress < 0.8 ? 1 : (1 - (fadeProgress - 0.8) / 0.2);
+    
+    // Position notification in center of screen
+    const notifX = window.innerWidth / 2;
+    const notifY = window.innerHeight / 2 - 100;
+    
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.textAlign = 'center';
+    ctx.font = `bold ${fontSize * 1.5}px 'MedievalSharp', cursive`;
+    
+    // Add glow effect
+    ctx.shadowColor = notification.color;
+    ctx.shadowBlur = 20;
+    ctx.fillStyle = notification.color;
+    ctx.fillText(notification.text, notifX, notifY);
+    
+    // White outline for better visibility
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 3;
+    ctx.strokeText(notification.text, notifX, notifY);
+    
+    ctx.restore();
+    
+    return true; // Keep notification
+});
+
 
        
 
@@ -5695,7 +5814,7 @@ ctx.fillText(`Difficulty: ${difficulty.current}`, textMarginX, textMarginY + (fo
                   try {
                     // Wait for both rewards to be saved to database
                     await Promise.all([addGold(goldToAdd), addExp(expToAdd)]);
-                    console.log('Rewards given successfully');
+                    console.log('xwRewards given successfully');
                     
                     // Reload data after rewards are saved to database
                     if (reloadGameData) {

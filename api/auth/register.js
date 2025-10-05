@@ -1,5 +1,5 @@
-import { Client } from 'pg';
-import bcrypt from 'bcryptjs';
+import { Client } from "pg";
+import bcrypt from "bcryptjs";
 
 export default async function handler(req, res) {
   if (req.method === "POST") {
@@ -13,18 +13,19 @@ export default async function handler(req, res) {
           .json({ error: "Username and password are required" });
       }
 
-      const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
-      
+      const connectionString =
+        process.env.DATABASE_URL || process.env.POSTGRES_URL;
+
       client = new Client({
         connectionString,
-        ssl: { rejectUnauthorized: false }
+        ssl: { rejectUnauthorized: false },
       });
 
       await client.connect();
 
       // Zkontrolujeme jestli uživatel už existuje
       const existingUser = await client.query(
-        'SELECT id FROM users WHERE username = $1',
+        "SELECT id FROM users WHERE username = $1",
         [username]
       );
 
@@ -37,7 +38,7 @@ export default async function handler(req, res) {
 
       // Vytvoříme uživatele
       const result = await client.query(
-        'INSERT INTO users (username, password_hash, email) VALUES ($1, $2, $3) RETURNING id, username, email, created_at',
+        "INSERT INTO users (username, password_hash, email) VALUES ($1, $2, $3) RETURNING id, username, email, created_at",
         [username, passwordHash, email]
       );
 
@@ -49,14 +50,14 @@ export default async function handler(req, res) {
           id: user.id,
           username: user.username,
           email: user.email,
-          created_at: user.created_at
+          created_at: user.created_at,
         },
       });
     } catch (error) {
       console.error("Registration error:", error);
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: "Internal server error",
-        details: error.message 
+        details: error.message,
       });
     } finally {
       if (client) {

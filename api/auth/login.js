@@ -1,6 +1,6 @@
-import { Client } from 'pg';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { Client } from "pg";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 export default async function handler(req, res) {
   if (req.method === "POST") {
@@ -9,21 +9,24 @@ export default async function handler(req, res) {
       const { username, password } = req.body;
 
       if (!username || !password) {
-        return res.status(400).json({ error: "Username and password are required" });
+        return res
+          .status(400)
+          .json({ error: "Username and password are required" });
       }
 
-      const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
-      
+      const connectionString =
+        process.env.DATABASE_URL || process.env.POSTGRES_URL;
+
       client = new Client({
         connectionString,
-        ssl: { rejectUnauthorized: false }
+        ssl: { rejectUnauthorized: false },
       });
 
       await client.connect();
 
       // Najdeme uživatele
       const result = await client.query(
-        'SELECT id, username, password_hash, email FROM users WHERE username = $1',
+        "SELECT id, username, password_hash, email FROM users WHERE username = $1",
         [username]
       );
 
@@ -34,7 +37,10 @@ export default async function handler(req, res) {
       const user = result.rows[0];
 
       // Ověříme heslo
-      const isValidPassword = await bcrypt.compare(password, user.password_hash);
+      const isValidPassword = await bcrypt.compare(
+        password,
+        user.password_hash
+      );
 
       if (!isValidPassword) {
         return res.status(401).json({ error: "Invalid username or password" });
@@ -44,7 +50,7 @@ export default async function handler(req, res) {
       const token = jwt.sign(
         { userId: user.id, username: user.username },
         process.env.JWT_SECRET,
-        { expiresIn: '7d' }
+        { expiresIn: "7d" }
       );
 
       return res.status(200).json({
@@ -52,15 +58,15 @@ export default async function handler(req, res) {
         user: {
           id: user.id,
           username: user.username,
-          email: user.email
+          email: user.email,
         },
         token: token,
       });
     } catch (error) {
       console.error("Login error:", error);
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: "Internal server error",
-        details: error.message 
+        details: error.message,
       });
     } finally {
       if (client) {

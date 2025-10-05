@@ -1,49 +1,50 @@
-import { Client } from 'pg';
-import jwt from 'jsonwebtoken';
+import { Client } from "pg";
+import jwt from "jsonwebtoken";
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   let client;
 
   try {
-    console.log('🏆 Leaderboard API called');
-    
+    console.log("🏆 Leaderboard API called");
+
     // Verify JWT token
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('🏆 No token provided');
-      return res.status(401).json({ error: 'No token provided' });
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      console.log("🏆 No token provided");
+      return res.status(401).json({ error: "No token provided" });
     }
 
     const token = authHeader.substring(7);
-    console.log('🏆 Token received, verifying...');
-    
+    console.log("🏆 Token received, verifying...");
+
     if (!process.env.JWT_SECRET) {
-      console.error('🏆 JWT_SECRET not set in environment variables');
-      return res.status(500).json({ error: 'Server configuration error' });
+      console.error("🏆 JWT_SECRET not set in environment variables");
+      return res.status(500).json({ error: "Server configuration error" });
     }
-    
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('🏆 Token verified for user:', decoded.userId);
+    console.log("🏆 Token verified for user:", decoded.userId);
 
     if (!decoded.userId) {
-      console.log('🏆 Invalid token - no userId');
-      return res.status(401).json({ error: 'Invalid token' });
+      console.log("🏆 Invalid token - no userId");
+      return res.status(401).json({ error: "Invalid token" });
     }
 
-    const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
-    console.log('🏆 Connecting to database...');
-    
+    const connectionString =
+      process.env.DATABASE_URL || process.env.POSTGRES_URL;
+    console.log("🏆 Connecting to database...");
+
     client = new Client({
       connectionString,
-      ssl: { rejectUnauthorized: false }
+      ssl: { rejectUnauthorized: false },
     });
 
     await client.connect();
-    console.log('🏆 Database connected, fetching leaderboard...');
+    console.log("🏆 Database connected, fetching leaderboard...");
 
     // Get top 50 players by best score
     const result = await client.query(`
@@ -60,19 +61,18 @@ export default async function handler(req, res) {
       LIMIT 50
     `);
 
-    console.log('🏆 Leaderboard fetched, rows:', result.rows.length);
+    console.log("🏆 Leaderboard fetched, rows:", result.rows.length);
 
     return res.status(200).json({
       success: true,
       leaderboard: result.rows,
-      total: result.rows.length
+      total: result.rows.length,
     });
-
   } catch (error) {
-    console.error('Leaderboard API error:', error);
-    return res.status(500).json({ 
-      error: 'Internal server error',
-      details: error.message
+    console.error("Leaderboard API error:", error);
+    return res.status(500).json({
+      error: "Internal server error",
+      details: error.message,
     });
   } finally {
     if (client) {
