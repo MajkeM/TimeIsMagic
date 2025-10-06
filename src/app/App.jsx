@@ -582,6 +582,40 @@ function AuthenticatedApp() {
     setShowCollision((prev) => !prev);
   };
 
+  // Combined function to add both gold and exp in one database operation
+  const addGoldAndExp = async (goldAmount, expAmount) => {
+    console.log('🎁 === COMBINED GOLD+EXP OPERATION START ===');
+    console.log('🎁 Adding gold:', goldAmount, 'exp:', expAmount);
+    console.log('🎁 Current gold:', gold, 'exp:', exp);
+    
+    try {
+      const newGold = gold + goldAmount;
+      const newExp = exp + expAmount;
+      console.log('🎁 New gold will be:', newGold, 'new exp:', newExp);
+      
+      // Check if player should level up (every 100 exp points)
+      const newLevel = Math.floor(newExp / 100) + 1;
+      const dataToSave = { gold: newGold, exp: newExp };
+      
+      if (newLevel > level) {
+        console.log('🎁 Level up detected! New level:', newLevel);
+        dataToSave.level = newLevel;
+        await saveGameData(dataToSave);
+        console.log('🎁 Updating character availability for new level...');
+        updateAvailabilityBasedOnLevel(newLevel);
+      } else {
+        console.log('🎁 No level up, saving gold and exp...');
+        await saveGameData(dataToSave);
+      }
+      
+      console.log('🎁 === COMBINED GOLD+EXP OPERATION SUCCESS ===');
+    } catch (error) {
+      console.error('🎁 === COMBINED GOLD+EXP OPERATION ERROR ===');
+      console.error('🎁 Failed to save gold and exp:', error);
+      throw error;
+    }
+  };
+
   const addGold = async (amount) => {
     console.log('🪙 === GOLD OPERATION START ===');
     console.log('🪙 addGold called with amount:', amount);
@@ -698,7 +732,8 @@ function AuthenticatedApp() {
           T_ability={T_ability || 'teleport'} 
           character={character || 'wizard'} 
           addGold={addGold} 
-          addExp={addExp} 
+          addExp={addExp}
+          addGoldAndExp={addGoldAndExp} 
           gold={gold || 0} 
           level={level || 1} 
           exp={exp || 0} 
