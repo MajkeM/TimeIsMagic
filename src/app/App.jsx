@@ -583,10 +583,10 @@ function AuthenticatedApp() {
   };
 
   // Combined function to add both gold and exp in one database operation
-  const addGoldAndExp = async (goldAmount, expAmount) => {
+  const addGoldAndExp = async (goldAmount, expAmount, currentScore = 0) => {
     console.log('🎁 === COMBINED GOLD+EXP OPERATION START ===');
-    console.log('🎁 Adding gold:', goldAmount, 'exp:', expAmount);
-    console.log('🎁 Current gold:', gold, 'exp:', exp);
+    console.log('🎁 Adding gold:', goldAmount, 'exp:', expAmount, 'current score:', currentScore);
+    console.log('🎁 Current gold:', gold, 'exp:', exp, 'best score:', gameData.bestScore);
     
     try {
       const newGold = gold + goldAmount;
@@ -597,6 +597,14 @@ function AuthenticatedApp() {
       const newLevel = Math.floor(newExp / 100) + 1;
       const dataToSave = { gold: newGold, exp: newExp };
       
+      // Check if current score is a new best score
+      if (currentScore > (gameData.bestScore || 0)) {
+        console.log('🏆 New best score!', currentScore, '(previous:', gameData.bestScore, ')');
+        dataToSave.bestScore = currentScore;
+      } else {
+        console.log('🎁 No new best score. Current:', currentScore, 'Best:', gameData.bestScore);
+      }
+      
       if (newLevel > level) {
         console.log('🎁 Level up detected! New level:', newLevel);
         dataToSave.level = newLevel;
@@ -604,7 +612,7 @@ function AuthenticatedApp() {
         console.log('🎁 Updating character availability for new level...');
         updateAvailabilityBasedOnLevel(newLevel);
       } else {
-        console.log('🎁 No level up, saving gold and exp...');
+        console.log('🎁 No level up, saving gold, exp, and best score...');
         await saveGameData(dataToSave);
       }
       

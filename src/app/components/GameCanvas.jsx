@@ -5814,10 +5814,10 @@ tierNotifications.current = tierNotifications.current.filter(notification => {
                   try {
                     console.log('🎁 === REWARD GIVING START ===');
                     
-                    // Use combined function to save gold and exp in ONE database operation
-                    console.log('🎁 Adding gold and exp together...');
-                    await addGoldAndExp(goldToAdd, expToAdd);
-                    console.log('🎁 Gold and exp saved to database in single operation');
+                    // Use combined function to save gold, exp, and best score in ONE database operation
+                    console.log('🎁 Adding gold, exp, and checking best score...');
+                    await addGoldAndExp(goldToAdd, expToAdd, score.current);
+                    console.log('🎁 Gold, exp, and best score saved to database in single operation');
                     
                     console.log('🎁 Waiting for database operations to settle...');
                     // Small delay to ensure database operations are fully committed
