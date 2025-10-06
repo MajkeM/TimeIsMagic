@@ -78,13 +78,19 @@ function AuthenticatedApp() {
       console.log('Raw data from database:', data);
       
       // Parsujeme JSON stringy z databáze
+      const abilitiesData = JSON.parse(data.abilities || '{}');
       const parsedData = {
         gold: data.score || 0, // score v databázi = gold v aplikaci
         level: data.level || 1,
         exp: data.exp || 0, // přidáme exp z databáze
         bestScore: data.best_score || 0, // přidáme best score
-        characters: JSON.parse(data.abilities || '{}').characters || { selected: 'wizard' },
-        abilities: JSON.parse(data.abilities || '{}').abilities || {},
+        characters: abilitiesData.characters || { selected: 'wizard' },
+        abilities: {
+          R: abilitiesData.R || 'reload',
+          F: abilitiesData.F || 'flash',
+          T: abilitiesData.T || 'teleport'
+          // abilityAvailability will be initialized separately
+        },
         settings: JSON.parse(data.settings || '{}')
       };
       
@@ -110,13 +116,18 @@ function AuthenticatedApp() {
         settings: {}
       });
       
+      const abilitiesReloadData = JSON.parse(data.abilities || '{}');
       const parsedData = {
         gold: data.score || 0,
         level: data.level || 1,
         exp: data.exp || 0,
         bestScore: data.best_score || 0,
-        characters: JSON.parse(data.abilities || '{}').characters || { selected: 'wizard' },
-        abilities: JSON.parse(data.abilities || '{}').abilities || {},
+        characters: abilitiesReloadData.characters || { selected: 'wizard' },
+        abilities: {
+          R: abilitiesReloadData.R || 'reload',
+          F: abilitiesReloadData.F || 'flash',
+          T: abilitiesReloadData.T || 'teleport'
+        },
         settings: JSON.parse(data.settings || '{}')
       };
       
@@ -143,11 +154,14 @@ function AuthenticatedApp() {
         best_score: Math.max(updatedData.bestScore || 0, updatedData.gold || 0), // Update best score if current gold is higher
         exp: updatedData.exp,
         abilities: JSON.stringify({
-          characters: updatedData.characters,
-          abilities: updatedData.abilities
+          characters: updatedData.characters || { selected: 'wizard' },
+          R: updatedData.abilities?.R || 'reload',
+          F: updatedData.abilities?.F || 'flash', 
+          T: updatedData.abilities?.T || 'teleport',
+          // Don't save the huge abilityAvailability object - it will be recalculated
         }),
         achievements: JSON.stringify([]),
-        settings: JSON.stringify(updatedData.settings)
+        settings: JSON.stringify(updatedData.settings || {})
       };
       console.log('💾 Database payload:', dbPayload);
       
@@ -338,9 +352,7 @@ function AuthenticatedApp() {
       );
       
       if (hasChanges) {
-        saveGameData({ 
-          abilities: { ...gameData.abilities, characterAvailability: newCharacterAvailability }
-        });
+        // Don't save characterAvailability to database - it's calculated locally based on level
         return newCharacterAvailability;
       }
       
@@ -356,9 +368,7 @@ function AuthenticatedApp() {
         newCharacterAvailability[char] = 
           prev[char] || newLevel >= levelRequirements.characters[char];
       });
-      saveGameData({ 
-        abilities: { ...gameData.abilities, characterAvailability: newCharacterAvailability }
-      });
+      // Don't save characterAvailability to database - it's calculated locally
       return newCharacterAvailability;
     });
   }, [gameData.abilities]);
@@ -373,9 +383,7 @@ function AuthenticatedApp() {
       }
     };
     setAbilityAvailability(newAvailability);
-    await saveGameData({ 
-      abilities: { ...gameData.abilities, abilityAvailability: newAvailability }
-    });
+    // Don't save abilityAvailability to database - it's managed locally
   };
 
 
@@ -392,10 +400,8 @@ function AuthenticatedApp() {
       };
       setAbilityAvailability(newAvailability);
       const newGold = gold - cost;
-      await saveGameData({ 
-        gold: newGold,
-        abilities: { ...gameData.abilities, abilityAvailability: newAvailability }
-      });
+      await saveGameData({ gold: newGold });
+      // abilityAvailability is managed locally, not saved to database
     } else {
       alert("Not enough gold to unlock this ability!");
     }
