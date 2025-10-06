@@ -232,7 +232,7 @@ function AuthenticatedApp() {
       const dbPayload = {
         level: updatedData.level || 1,
         score: updatedData.gold || 0, // Gold se ukládá jako score
-        best_score: updatedData.bestScore || 0, // Best score se ukládá pouze pokud se mění
+        best_score: newData.bestScore, // Pošle se pouze pokud je v newData, jinak undefined
         exp: updatedData.exp || 0,
         abilities: JSON.stringify({
           characters: cleanCharacters,
@@ -249,6 +249,8 @@ function AuthenticatedApp() {
       };
       console.log('💾 Database payload:', dbPayload);
       console.log('💾 Database payload size (bytes):', JSON.stringify(dbPayload).length);
+      console.log('💾 best_score being sent:', dbPayload.best_score);
+      console.log('💾 score (gold) being sent:', dbPayload.score);
       
       // Uložíme do databáze ve správném formátu
       const saveResult = await saveToDatabase(dbPayload);

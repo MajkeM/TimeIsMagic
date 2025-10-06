@@ -133,7 +133,10 @@ export default async function handler(req, res) {
       console.log("📝 Attempting UPDATE...");
       const updateResult = await client.query(
         `UPDATE user_progress 
-         SET level = $2, score = $3, best_score = COALESCE($8, GREATEST(best_score, $3)), exp = $4, abilities = $5, achievements = $6, settings = $7, last_played = NOW(), updated_at = NOW()
+         SET level = $2, score = $3, best_score = CASE 
+           WHEN $8 IS NOT NULL THEN $8 
+           ELSE best_score 
+         END, exp = $4, abilities = $5, achievements = $6, settings = $7, last_played = NOW(), updated_at = NOW()
          WHERE user_id = $1
          RETURNING *`,
         [
@@ -144,7 +147,7 @@ export default async function handler(req, res) {
           JSON.stringify(progressData.abilities || {}),
           JSON.stringify(progressData.achievements || []),
           JSON.stringify(progressData.settings || {}),
-          progressData.best_score, // Add best_score as parameter
+          progressData.best_score // Will be null/undefined for gold operations, actual value for game score
         ]
       );
       console.log("📝 UPDATE result rows:", updateResult.rows.length);
