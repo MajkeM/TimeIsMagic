@@ -79,6 +79,7 @@ export function AuthProvider({ children }) {
     if (!token) return { success: false, error: "Not authenticated" };
 
     try {
+      console.log('🔄 AuthContext: Sending data to /api/progress:', progressData);
       const response = await fetch("/api/progress", {
         method: "POST",
         headers: {
@@ -88,8 +89,19 @@ export function AuthProvider({ children }) {
         body: JSON.stringify(progressData),
       });
 
-      return response.ok ? { success: true } : { success: false };
+      console.log('🔄 AuthContext: Response status:', response.status, response.statusText);
+      
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log('🔄 AuthContext: Response data:', responseData);
+        return { success: true, data: responseData };
+      } else {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('🔄 AuthContext: API error:', errorData);
+        return { success: false, error: errorData.error || 'Server error' };
+      }
     } catch (error) {
+      console.error('🔄 AuthContext: Network error:', error);
       return { success: false, error: "Network error" };
     }
   };

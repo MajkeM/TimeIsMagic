@@ -31,9 +31,13 @@ function AuthenticatedApp() {
   // Database helper functions - replaces localStorage
   const saveToDatabase = async (data) => {
     try {
-      await saveProgress(data);
+      console.log('💾 saveToDatabase called with:', data);
+      const result = await saveProgress(data);
+      console.log('💾 saveProgress returned:', result);
+      return result; // Return the result from saveProgress
     } catch (error) {
-      console.error('Failed to save to database:', error);
+      console.error('💾 saveToDatabase error:', error);
+      return { success: false, error: error.message };
     }
   };
 
@@ -151,14 +155,15 @@ function AuthenticatedApp() {
       const saveResult = await saveToDatabase(dbPayload);
       console.log('💾 Database save result:', saveResult);
       
-      // Only update state AFTER successful database save
-      if (saveResult.success !== false) {
+      // Check if save was successful - handle undefined result
+      if (saveResult && saveResult.success !== false) {
         console.log('💾 Database save successful, updating React state...');
         setGameData(updatedData);
         console.log('💾 React state updated successfully');
       } else {
         console.error('💾 Database save failed, keeping old state');
-        throw new Error('Database save failed');
+        const errorMsg = saveResult?.error || 'Unknown database error';
+        throw new Error(`Database save failed: ${errorMsg}`);
       }
       
       console.log('💾 === DATABASE SAVE SUCCESS ===');
