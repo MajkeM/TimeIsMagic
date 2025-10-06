@@ -172,10 +172,10 @@ function AuthenticatedApp() {
   const levelRequirements = {
     characters: {
       wizard: 1,
-      rapunzel: 3,
-      archer: 7,
-      mage: 12,
-      king: 18
+      rapunzel: 2,
+      archer: 3,
+      mage: 4,
+      king: 5
     }
   };
 
