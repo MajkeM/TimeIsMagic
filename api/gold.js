@@ -31,17 +31,29 @@ export default async function handler(req, res) {
 
     await client.connect();
 
+    // Check if gold column exists, fallback to score if not
+    const columnCheck = await client.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'user_progress' AND column_name = 'gold'
+    `);
+    
+    const useGoldColumn = columnCheck.rows.length > 0;
+    const columnName = useGoldColumn ? 'gold' : 'score';
+    
+    console.log(`🪙 Using column: ${columnName}`);
+
     let result;
     if (operation === "add") {
       // Add gold
       result = await client.query(
-        `UPDATE user_progress SET gold = gold + $2, updated_at = NOW() WHERE user_id = $1 RETURNING gold`,
+        `UPDATE user_progress SET ${columnName} = ${columnName} + $2, updated_at = NOW() WHERE user_id = $1 RETURNING ${columnName} as gold`,
         [decoded.userId, amount]
       );
     } else if (operation === "subtract") {
       // Subtract gold (for purchases)
       result = await client.query(
-        `UPDATE user_progress SET gold = GREATEST(gold - $2, 0), updated_at = NOW() WHERE user_id = $1 RETURNING gold`,
+        `UPDATE user_progress SET ${columnName} = GREATEST(${columnName} - $2, 0), updated_at = NOW() WHERE user_id = $1 RETURNING ${columnName} as gold`,
         [decoded.userId, amount]
       );
     } else {

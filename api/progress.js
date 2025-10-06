@@ -41,6 +41,14 @@ export default async function handler(req, res) {
 
       await client.connect();
 
+      // Check if gold column exists
+      const columnCheck = await client.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'user_progress' AND column_name = 'gold'
+      `);
+      const hasGoldColumn = columnCheck.rows.length > 0;
+
       // Získáme progress konkrétního uživatele
       const result = await client.query(
         "SELECT * FROM user_progress WHERE user_id = $1 ORDER BY updated_at DESC LIMIT 1",
@@ -60,9 +68,10 @@ export default async function handler(req, res) {
           settings: JSON.stringify({}),
         };
 
-        const insertResult = await client.query(
-          "INSERT INTO user_progress (user_id, level, gold, score, best_score, exp, abilities, achievements, settings) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
-          [
+        let insertQuery, insertParams;
+        if (hasGoldColumn) {
+          insertQuery = "INSERT INTO user_progress (user_id, level, gold, score, best_score, exp, abilities, achievements, settings) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *";
+          insertParams = [
             decoded.userId,
             defaultProgress.level,
             defaultProgress.gold,
@@ -72,8 +81,22 @@ export default async function handler(req, res) {
             defaultProgress.abilities,
             defaultProgress.achievements,
             defaultProgress.settings,
-          ]
-        );
+          ];
+        } else {
+          insertQuery = "INSERT INTO user_progress (user_id, level, score, best_score, exp, abilities, achievements, settings) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *";
+          insertParams = [
+            decoded.userId,
+            defaultProgress.level,
+            defaultProgress.score,
+            defaultProgress.best_score,
+            defaultProgress.exp,
+            defaultProgress.abilities,
+            defaultProgress.achievements,
+            defaultProgress.settings,
+          ];
+        }
+
+        const insertResult = await client.query(insertQuery, insertParams);
 
         return res.status(200).json({ progress: insertResult.rows[0] });
       }
@@ -128,40 +151,70 @@ export default async function handler(req, res) {
 
       await client.connect();
 
+      // Check if gold column exists
+      const columnCheck = await client.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'user_progress' AND column_name = 'gold'
+      `);
+      const hasGoldColumn = columnCheck.rows.length > 0;
+
       // Uložíme progress pro konkrétního uživatele - použijeme UPDATE nebo INSERT
       let result;
 
       // Nejdříve zkusíme UPDATE
       console.log("📝 Attempting UPDATE...");
       console.log("📝 progressData:", progressData);
+      console.log("📝 hasGoldColumn:", hasGoldColumn);
 
-      const updateResult = await client.query(
-        `UPDATE user_progress 
+      let updateQuery, updateParams;
+      if (hasGoldColumn) {
+        updateQuery = `UPDATE user_progress 
          SET level = $2, gold = $3, score = $4, best_score = COALESCE($5, best_score), exp = $6, abilities = $7, achievements = $8, settings = $9, last_played = NOW(), updated_at = NOW()
          WHERE user_id = $1
-         RETURNING *`,
-        [
+         RETURNING *`;
+        updateParams = [
           decoded.userId,
           progressData.level || 1,
           progressData.gold || 0,
           progressData.score || 0,
-          progressData.best_score, // Only update if provided
+          progressData.best_score,
           progressData.exp || 0,
           JSON.stringify(progressData.abilities || {}),
           JSON.stringify(progressData.achievements || []),
-          JSON.stringify(progressData.settings || {}),
-        ]
-      );
+          JSON.stringify(progressData.settings || {})
+        ];
+      } else {
+        // Use score as gold if gold column doesn't exist
+        updateQuery = `UPDATE user_progress 
+         SET level = $2, score = $3, best_score = COALESCE($4, best_score), exp = $5, abilities = $6, achievements = $7, settings = $8, last_played = NOW(), updated_at = NOW()
+         WHERE user_id = $1
+         RETURNING *`;
+        updateParams = [
+          decoded.userId,
+          progressData.level || 1,
+          progressData.gold || progressData.score || 0,
+          progressData.best_score,
+          progressData.exp || 0,
+          JSON.stringify(progressData.abilities || {}),
+          JSON.stringify(progressData.achievements || []),
+          JSON.stringify(progressData.settings || {})
+        ];
+      }
+
+      const updateResult = await client.query(updateQuery, updateParams);
       console.log("📝 UPDATE result rows:", updateResult.rows.length);
 
       if (updateResult.rows.length === 0) {
         // Pokud UPDATE neaktualizoval nic, vytvoříme nový záznam
         console.log("📝 No rows updated, attempting INSERT...");
-        result = await client.query(
-          `INSERT INTO user_progress (user_id, level, gold, score, best_score, exp, abilities, achievements, settings) 
+        
+        let insertQuery, insertParams;
+        if (hasGoldColumn) {
+          insertQuery = `INSERT INTO user_progress (user_id, level, gold, score, best_score, exp, abilities, achievements, settings) 
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
-           RETURNING *`,
-          [
+           RETURNING *`;
+          insertParams = [
             decoded.userId,
             progressData.level || 1,
             progressData.gold || 0,
@@ -171,8 +224,24 @@ export default async function handler(req, res) {
             JSON.stringify(progressData.abilities || {}),
             JSON.stringify(progressData.achievements || []),
             JSON.stringify(progressData.settings || {}),
-          ]
-        );
+          ];
+        } else {
+          insertQuery = `INSERT INTO user_progress (user_id, level, score, best_score, exp, abilities, achievements, settings) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+           RETURNING *`;
+          insertParams = [
+            decoded.userId,
+            progressData.level || 1,
+            progressData.gold || progressData.score || 0,
+            progressData.best_score || 0,
+            progressData.exp || 0,
+            JSON.stringify(progressData.abilities || {}),
+            JSON.stringify(progressData.achievements || []),
+            JSON.stringify(progressData.settings || {}),
+          ];
+        }
+        
+        result = await client.query(insertQuery, insertParams);
         console.log("📝 INSERT result:", result.rows[0]);
       } else {
         result = updateResult;

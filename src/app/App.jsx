@@ -140,7 +140,7 @@ function AuthenticatedApp() {
       const abilitiesData = JSON.parse(data.abilities || '{}');
       const unlockedAbilitiesList = abilitiesData.unlocked || [];
       const parsedData = {
-        gold: data.gold || 0, // Gold z vlastní kolony
+        gold: data.gold || data.score || 0, // Fallback: gold z vlastní kolony nebo ze score
         level: data.level || 1,
         exp: data.exp || 0, // přidáme exp z databáze
         bestScore: data.best_score || 0, // přidáme best score
@@ -184,7 +184,7 @@ function AuthenticatedApp() {
       console.log('🔄 Unlocked abilities from DB:', unlockedAbilitiesReloadList);
       
       const parsedData = {
-        gold: data.gold || 0, // Gold z vlastní kolony
+        gold: data.gold || data.score || 0, // Fallback: gold z vlastní kolony nebo ze score
         level: data.level || 1,
         exp: data.exp || 0,
         bestScore: data.best_score || 0,
