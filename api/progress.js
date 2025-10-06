@@ -133,7 +133,7 @@ export default async function handler(req, res) {
       console.log("📝 Attempting UPDATE...");
       const updateResult = await client.query(
         `UPDATE user_progress 
-         SET level = $2, score = $3, best_score = GREATEST(best_score, $3), exp = $4, abilities = $5, achievements = $6, settings = $7, last_played = NOW(), updated_at = NOW()
+         SET level = $2, score = $3, best_score = COALESCE($8, GREATEST(best_score, $3)), exp = $4, abilities = $5, achievements = $6, settings = $7, last_played = NOW(), updated_at = NOW()
          WHERE user_id = $1
          RETURNING *`,
         [
@@ -144,6 +144,7 @@ export default async function handler(req, res) {
           JSON.stringify(progressData.abilities || {}),
           JSON.stringify(progressData.achievements || []),
           JSON.stringify(progressData.settings || {}),
+          progressData.best_score // Add best_score as parameter
         ]
       );
       console.log("📝 UPDATE result rows:", updateResult.rows.length);
@@ -159,7 +160,7 @@ export default async function handler(req, res) {
             decoded.userId,
             progressData.level || 1,
             progressData.score || 0,
-            progressData.score || 0, // best_score = current score for new users
+            progressData.best_score || progressData.score || 0, // Use provided best_score or current score
             progressData.exp || 0,
             JSON.stringify(progressData.abilities || {}),
             JSON.stringify(progressData.achievements || []),

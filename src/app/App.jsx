@@ -223,8 +223,8 @@ function AuthenticatedApp() {
       
       const dbPayload = {
         level: updatedData.level || 1,
-        score: updatedData.gold || 0,
-        best_score: Math.max(updatedData.bestScore || 0, updatedData.gold || 0),
+        score: updatedData.gold || 0, // Gold se ukládá jako score
+        best_score: updatedData.bestScore || 0, // Best score se ukládá pouze pokud se mění
         exp: updatedData.exp || 0,
         abilities: JSON.stringify({
           characters: cleanCharacters,
