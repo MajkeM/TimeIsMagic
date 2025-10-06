@@ -5809,20 +5809,35 @@ tierNotifications.current = tierNotifications.current.filter(notification => {
                 console.log('Gold to add:', goldToAdd);
                 console.log('Exp to add:', expToAdd);
                 
-                // Add rewards and reload data for UI update
+                // Add rewards and reload data for UI update - FIXED SEQUENTIAL APPROACH
                 const giveRewards = async () => {
                   try {
-                    // Wait for both rewards to be saved to database
-                    await Promise.all([addGold(goldToAdd), addExp(expToAdd)]);
-                    console.log('xwRewards given successfully');
+                    console.log('🎁 === REWARD GIVING START ===');
+                    
+                    // SEQUENTIAL saving to prevent race conditions
+                    console.log('🎁 Step 1: Adding gold...');
+                    await addGold(goldToAdd);
+                    console.log('🎁 Step 1 completed: Gold saved to database');
+                    
+                    console.log('🎁 Step 2: Adding exp...');
+                    await addExp(expToAdd);
+                    console.log('🎁 Step 2 completed: Exp saved to database');
+                    
+                    console.log('🎁 Step 3: Waiting for database operations to settle...');
+                    // Small delay to ensure database operations are fully committed
+                    await new Promise(resolve => setTimeout(resolve, 100));
                     
                     // Reload data after rewards are saved to database
                     if (reloadGameData) {
-                      console.log('Reloading game data after rewards...');
-                      await reloadGameData(); // Use await instead of setTimeout
+                      console.log('🎁 Step 4: Reloading fresh game data from database...');
+                      await reloadGameData();
+                      console.log('🎁 Step 4 completed: Fresh data loaded from database');
                     }
+                    
+                    console.log('🎁 === REWARD GIVING COMPLETED SUCCESSFULLY ===');
                   } catch (error) {
-                    console.error('Error giving rewards:', error);
+                    console.error('🎁 === REWARD GIVING ERROR ===');
+                    console.error('🎁 Error giving rewards:', error);
                   }
                 };
                 

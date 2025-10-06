@@ -131,8 +131,6 @@ function AuthenticatedApp() {
       console.log('💾 Current gameData before merge:', gameData);
       const updatedData = { ...gameData, ...newData };
       console.log('💾 Updated data will be:', updatedData);
-      console.log('💾 Setting gameData state (this will trigger re-render)...');
-      setGameData(updatedData);
       
       console.log('💾 Preparing database payload...');
       const dbPayload = {
@@ -150,14 +148,26 @@ function AuthenticatedApp() {
       console.log('💾 Database payload:', dbPayload);
       
       // Uložíme do databáze ve správném formátu
-      await saveToDatabase(dbPayload);
+      const saveResult = await saveToDatabase(dbPayload);
+      console.log('💾 Database save result:', saveResult);
+      
+      // Only update state AFTER successful database save
+      if (saveResult.success !== false) {
+        console.log('💾 Database save successful, updating React state...');
+        setGameData(updatedData);
+        console.log('💾 React state updated successfully');
+      } else {
+        console.error('💾 Database save failed, keeping old state');
+        throw new Error('Database save failed');
+      }
+      
       console.log('💾 === DATABASE SAVE SUCCESS ===');
     } catch (error) {
       console.error('💾 === DATABASE SAVE ERROR ===');
       console.error('💾 Error saving to database:', error);
-      // V případě chyby, vrátíme gameData na původní stav
-      setGameData(gameData);
-      console.log('💾 Reverted gameData to original state due to error');
+      // Show user-friendly error message
+      alert('Nepodařilo se uložit data do databáze. Zkuste to prosím znovu.');
+      throw error; // Re-throw so calling functions know about the failure
     }
   };
 
@@ -424,28 +434,45 @@ function AuthenticatedApp() {
     console.log('🪙 Current gameData.gold:', gameData.gold);
     const newGold = gold + amount;
     console.log('🪙 New gold will be:', newGold);
-    console.log('🪙 Saving to database...');
-    await saveGameData({ gold: newGold });
-    console.log('🪙 === GOLD OPERATION END ===');
+    
+    try {
+      console.log('🪙 Saving to database...');
+      await saveGameData({ gold: newGold });
+      console.log('🪙 === GOLD OPERATION SUCCESS ===');
+    } catch (error) {
+      console.error('🪙 === GOLD OPERATION ERROR ===');
+      console.error('🪙 Failed to save gold:', error);
+      throw error; // Re-throw so calling functions know about the failure
+    }
   };
 
   const addExp = async (amount) => {
-    console.log('addExp called with amount:', amount);
-    console.log('Current exp:', exp);
+    console.log('⭐ === EXP OPERATION START ===');
+    console.log('⭐ addExp called with amount:', amount);
+    console.log('⭐ Current exp before operation:', exp);
+    console.log('⭐ Current gameData.exp:', gameData.exp);
     const newExp = exp + amount;
-    console.log('New exp will be:', newExp);
+    console.log('⭐ New exp will be:', newExp);
     
-    // Check if player should level up (every 100 exp points)
-    const newLevel = Math.floor(newExp / 100) + 1;
-    if (newLevel > level) {
-      console.log('Level up! New level:', newLevel);
-      await saveGameData({ exp: newExp, level: newLevel });
-      updateAvailabilityBasedOnLevel(newLevel);
-    } else {
-      console.log('No level up, just adding exp');
-      await saveGameData({ exp: newExp });
+    try {
+      // Check if player should level up (every 100 exp points)
+      const newLevel = Math.floor(newExp / 100) + 1;
+      if (newLevel > level) {
+        console.log('⭐ Level up detected! New level:', newLevel);
+        console.log('⭐ Saving both exp and level to database...');
+        await saveGameData({ exp: newExp, level: newLevel });
+        console.log('⭐ Updating character availability for new level...');
+        updateAvailabilityBasedOnLevel(newLevel);
+      } else {
+        console.log('⭐ No level up, saving only exp to database...');
+        await saveGameData({ exp: newExp });
+      }
+      console.log('⭐ === EXP OPERATION SUCCESS ===');
+    } catch (error) {
+      console.error('⭐ === EXP OPERATION ERROR ===');
+      console.error('⭐ Failed to save exp:', error);
+      throw error; // Re-throw so calling functions know about the failure
     }
-    console.log('Exp saved to database');
   };
 
   const resetXp = async () => {

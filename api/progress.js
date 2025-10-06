@@ -51,11 +51,13 @@ export default async function handler(req, res) {
         };
 
         const insertResult = await client.query(
-          "INSERT INTO user_progress (user_id, level, score, abilities, achievements, settings) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+          "INSERT INTO user_progress (user_id, level, score, best_score, exp, abilities, achievements, settings) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
           [
             decoded.userId,
             defaultProgress.level,
             defaultProgress.score,
+            defaultProgress.best_score,
+            defaultProgress.exp,
             defaultProgress.abilities,
             defaultProgress.achievements,
             defaultProgress.settings,
