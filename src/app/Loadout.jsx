@@ -97,16 +97,8 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
 
     // unlock ability for gold
    const unlockOrAlert = (abilityType, abilityName) => {
-       const cost = abilityCosts[abilityType][abilityName];
-       
-       if (gold >= cost) {
-           // Unlock the ability
-           handleAbilityChangeAvailability(abilityType, abilityName);
-           // Deduct gold
-           handleGoldChange(cost);
-       } else {
-           alert("Not enough gold to unlock this ability!");
-       }
+       // Use the proper function that saves to database
+       checkEnoghGoldandUnlock(abilityType, abilityName);
    };
 
     useEffect(() => {

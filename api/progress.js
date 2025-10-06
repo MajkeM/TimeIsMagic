@@ -144,7 +144,7 @@ export default async function handler(req, res) {
           JSON.stringify(progressData.abilities || {}),
           JSON.stringify(progressData.achievements || []),
           JSON.stringify(progressData.settings || {}),
-          progressData.best_score // Add best_score as parameter
+          progressData.best_score, // Add best_score as parameter
         ]
       );
       console.log("📝 UPDATE result rows:", updateResult.rows.length);

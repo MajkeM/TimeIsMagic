@@ -166,7 +166,8 @@ function AuthenticatedApp() {
   // Funkce pro reload dat z databáze (pro použití po hře)
   const reloadGameData = async () => {
     try {
-      console.log('Reloading game data from database...');
+      console.log('🔄 === DATA RELOAD START ===');
+      console.log('🔄 Reloading game data from database...');
       const data = await loadFromDatabase({
         gold: 0,
         level: 1,
@@ -176,8 +177,12 @@ function AuthenticatedApp() {
         settings: {}
       });
       
+      console.log('🔄 Raw reloaded data:', data);
+      
       const abilitiesReloadData = JSON.parse(data.abilities || '{}');
       const unlockedAbilitiesReloadList = abilitiesReloadData.unlocked || [];
+      console.log('🔄 Unlocked abilities from DB:', unlockedAbilitiesReloadList);
+      
       const parsedData = {
         gold: data.score || 0,
         level: data.level || 1,
@@ -193,10 +198,13 @@ function AuthenticatedApp() {
         settings: JSON.parse(data.settings || '{}')
       };
       
-      console.log('Reloaded data:', parsedData);
+      console.log('🔄 Parsed reloaded data:', parsedData);
+      console.log('🔄 Setting new gameData...');
       setGameData(parsedData);
+      console.log('🔄 === DATA RELOAD SUCCESS ===');
     } catch (error) {
-      console.error('Error reloading game data:', error);
+      console.error('🔄 === DATA RELOAD ERROR ===');
+      console.error('🔄 Error reloading game data:', error);
     }
   };
 
@@ -231,8 +239,10 @@ function AuthenticatedApp() {
           R: updatedData.abilities?.R || 'reload',
           F: updatedData.abilities?.F || 'flash', 
           T: updatedData.abilities?.T || 'teleport',
-          // Save current unlocked abilities from React state
-          unlocked: getUnlockedAbilitiesList(updatedData.unlockedAbilities || abilityAvailability)
+          // FIXED: Priority for updatedData.unlockedAbilities when saving purchased abilities
+          unlocked: getUnlockedAbilitiesList(
+            updatedData.unlockedAbilities ? updatedData.unlockedAbilities : abilityAvailability
+          )
         }),
         achievements: JSON.stringify([]),
         settings: JSON.stringify(cleanSettings)
@@ -350,6 +360,9 @@ function AuthenticatedApp() {
   const [character, setCharacter] = useState(gameData.characters?.selected || 'wizard');
 
   const handleGoldChange = async (cost) => {
+    // WARNING: This function only changes gold, not abilities!
+    // For ability purchases, use checkEnoghGoldandUnlock instead
+    console.log('⚠️  handleGoldChange called - this should only be used for simple gold operations');
     const newGold = gold - cost;
     await saveGameData({ gold: newGold });
   };
@@ -474,6 +487,10 @@ function AuthenticatedApp() {
   const checkEnoghGoldandUnlock = async (abilityType, abilityName) => {
     const cost = abilityCosts[abilityType][abilityName];
     if (gold >= cost) {
+      console.log('🛒 === ABILITY PURCHASE START ===');
+      console.log('🛒 Purchasing:', abilityType, abilityName, 'for', cost, 'gold');
+      console.log('🛒 Current gold:', gold);
+      
       const newAvailability = {
         ...abilityAvailability,
         [abilityType]: {
@@ -481,14 +498,29 @@ function AuthenticatedApp() {
           [abilityName]: true
         }
       };
+      
+      console.log('🛒 New availability state:', newAvailability);
+      
+      // Update local state immediately
       setAbilityAvailability(newAvailability);
       const newGold = gold - cost;
       
+      console.log('🛒 New gold after purchase:', newGold);
+      
       // Save both gold and unlocked abilities to database
-      await saveGameData({ 
-        gold: newGold,
-        unlockedAbilities: newAvailability
-      });
+      try {
+        await saveGameData({ 
+          gold: newGold,
+          unlockedAbilities: newAvailability
+        });
+        console.log('🛒 === ABILITY PURCHASE SUCCESS ===');
+      } catch (error) {
+        console.error('🛒 === ABILITY PURCHASE ERROR ===');
+        console.error('🛒 Failed to save purchase:', error);
+        // Revert local state if save failed
+        setAbilityAvailability(abilityAvailability);
+        throw error;
+      }
     } else {
       alert("Not enough gold to unlock this ability!");
     }
@@ -537,6 +569,7 @@ function AuthenticatedApp() {
       console.log('🪙 Saving to database...');
       await saveGameData({ gold: newGold });
       console.log('🪙 === GOLD OPERATION SUCCESS ===');
+      console.log('🪙 Gold should now be:', newGold);
     } catch (error) {
       console.error('🪙 === GOLD OPERATION ERROR ===');
       console.error('🪙 Failed to save gold:', error);
