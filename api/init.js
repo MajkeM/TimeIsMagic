@@ -47,6 +47,7 @@ export default async function handler(req, res) {
           id SERIAL PRIMARY KEY,
           user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
           level INTEGER DEFAULT 1,
+          gold INTEGER DEFAULT 0,
           score INTEGER DEFAULT 0,
           best_score INTEGER DEFAULT 0,
           exp INTEGER DEFAULT 0,

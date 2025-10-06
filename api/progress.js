@@ -51,6 +51,7 @@ export default async function handler(req, res) {
         // Vytvoříme výchozí progress pro nového uživatele
         const defaultProgress = {
           level: 1,
+          gold: 0,
           score: 0,
           best_score: 0,
           exp: 0,
@@ -60,10 +61,11 @@ export default async function handler(req, res) {
         };
 
         const insertResult = await client.query(
-          "INSERT INTO user_progress (user_id, level, score, best_score, exp, abilities, achievements, settings) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
+          "INSERT INTO user_progress (user_id, level, gold, score, best_score, exp, abilities, achievements, settings) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
           [
             decoded.userId,
             defaultProgress.level,
+            defaultProgress.gold,
             defaultProgress.score,
             defaultProgress.best_score,
             defaultProgress.exp,
@@ -142,12 +144,13 @@ export default async function handler(req, res) {
       if (shouldUpdateBestScore) {
         // Aktualizace s best_score (po hře)
         updateQuery = `UPDATE user_progress 
-         SET level = $2, score = $3, best_score = $4, exp = $5, abilities = $6, achievements = $7, settings = $8, last_played = NOW(), updated_at = NOW()
+         SET level = $2, gold = $3, score = $4, best_score = $5, exp = $6, abilities = $7, achievements = $8, settings = $9, last_played = NOW(), updated_at = NOW()
          WHERE user_id = $1
          RETURNING *`;
         updateParams = [
           decoded.userId,
           progressData.level || 1,
+          progressData.gold || 0,
           progressData.score || 0,
           progressData.best_score,
           progressData.exp || 0,
@@ -158,12 +161,13 @@ export default async function handler(req, res) {
       } else {
         // Aktualizace bez best_score (gold/exp operace)
         updateQuery = `UPDATE user_progress 
-         SET level = $2, score = $3, exp = $4, abilities = $5, achievements = $6, settings = $7, last_played = NOW(), updated_at = NOW()
+         SET level = $2, gold = $3, score = $4, exp = $5, abilities = $6, achievements = $7, settings = $8, last_played = NOW(), updated_at = NOW()
          WHERE user_id = $1
          RETURNING *`;
         updateParams = [
           decoded.userId,
           progressData.level || 1,
+          progressData.gold || 0,
           progressData.score || 0,
           progressData.exp || 0,
           JSON.stringify(progressData.abilities || {}),
@@ -180,12 +184,13 @@ export default async function handler(req, res) {
         // Pokud UPDATE neaktualizoval nic, vytvoříme nový záznam
         console.log("📝 No rows updated, attempting INSERT...");
         result = await client.query(
-          `INSERT INTO user_progress (user_id, level, score, best_score, exp, abilities, achievements, settings) 
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+          `INSERT INTO user_progress (user_id, level, gold, score, best_score, exp, abilities, achievements, settings) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
            RETURNING *`,
           [
             decoded.userId,
             progressData.level || 1,
+            progressData.gold || 0,
             progressData.score || 0,
             progressData.best_score || progressData.score || 0, // For new records, use best_score or current score
             progressData.exp || 0,

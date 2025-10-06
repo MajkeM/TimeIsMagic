@@ -140,7 +140,7 @@ function AuthenticatedApp() {
       const abilitiesData = JSON.parse(data.abilities || '{}');
       const unlockedAbilitiesList = abilitiesData.unlocked || [];
       const parsedData = {
-        gold: data.score || 0, // score v databázi = gold v aplikaci
+        gold: data.gold || 0, // Gold z vlastní kolony
         level: data.level || 1,
         exp: data.exp || 0, // přidáme exp z databáze
         bestScore: data.best_score || 0, // přidáme best score
@@ -184,7 +184,7 @@ function AuthenticatedApp() {
       console.log('🔄 Unlocked abilities from DB:', unlockedAbilitiesReloadList);
       
       const parsedData = {
-        gold: data.score || 0,
+        gold: data.gold || 0, // Gold z vlastní kolony
         level: data.level || 1,
         exp: data.exp || 0,
         bestScore: data.best_score || 0,
@@ -231,7 +231,8 @@ function AuthenticatedApp() {
       
       const dbPayload = {
         level: updatedData.level || 1,
-        score: updatedData.gold || 0, // Gold se ukládá jako score
+        gold: updatedData.gold || 0, // Gold má vlastní kolonu
+        score: updatedData.score || 0, // Score je samostatný (herní skóre)
         best_score: newData.bestScore, // Pošle se pouze pokud je v newData, jinak undefined
         exp: updatedData.exp || 0,
         abilities: JSON.stringify({
@@ -250,7 +251,8 @@ function AuthenticatedApp() {
       console.log('💾 Database payload:', dbPayload);
       console.log('💾 Database payload size (bytes):', JSON.stringify(dbPayload).length);
       console.log('💾 best_score being sent:', dbPayload.best_score);
-      console.log('💾 score (gold) being sent:', dbPayload.score);
+      console.log('💾 gold being sent:', dbPayload.gold);
+      console.log('💾 score being sent:', dbPayload.score);
       console.log('💾 abilities.unlocked being sent:', JSON.parse(dbPayload.abilities).unlocked);
       
       // Uložíme do databáze ve správném formátu
