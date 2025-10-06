@@ -131,25 +131,49 @@ export default async function handler(req, res) {
 
       // Nejdříve zkusíme UPDATE
       console.log("📝 Attempting UPDATE...");
-      const updateResult = await client.query(
-        `UPDATE user_progress 
-         SET level = $2, score = $3, best_score = CASE 
-           WHEN $8 IS NOT NULL THEN $8 
-           ELSE best_score 
-         END, exp = $4, abilities = $5, achievements = $6, settings = $7, last_played = NOW(), updated_at = NOW()
+      console.log("📝 progressData:", progressData);
+      
+      // Pro gold operace: pouze aktualizuj score, zachovej best_score
+      // Pro herní skóre: aktualizuj obojí
+      const shouldUpdateBestScore = progressData.best_score !== undefined && progressData.best_score !== null;
+      
+      let updateQuery, updateParams;
+      
+      if (shouldUpdateBestScore) {
+        // Aktualizace s best_score (po hře)
+        updateQuery = `UPDATE user_progress 
+         SET level = $2, score = $3, best_score = $4, exp = $5, abilities = $6, achievements = $7, settings = $8, last_played = NOW(), updated_at = NOW()
          WHERE user_id = $1
-         RETURNING *`,
-        [
+         RETURNING *`;
+        updateParams = [
+          decoded.userId,
+          progressData.level || 1,
+          progressData.score || 0,
+          progressData.best_score,
+          progressData.exp || 0,
+          JSON.stringify(progressData.abilities || {}),
+          JSON.stringify(progressData.achievements || []),
+          JSON.stringify(progressData.settings || {})
+        ];
+      } else {
+        // Aktualizace bez best_score (gold/exp operace)
+        updateQuery = `UPDATE user_progress 
+         SET level = $2, score = $3, exp = $4, abilities = $5, achievements = $6, settings = $7, last_played = NOW(), updated_at = NOW()
+         WHERE user_id = $1
+         RETURNING *`;
+        updateParams = [
           decoded.userId,
           progressData.level || 1,
           progressData.score || 0,
           progressData.exp || 0,
           JSON.stringify(progressData.abilities || {}),
           JSON.stringify(progressData.achievements || []),
-          JSON.stringify(progressData.settings || {}),
-          progressData.best_score // Will be null/undefined for gold operations, actual value for game score
-        ]
-      );
+          JSON.stringify(progressData.settings || {})
+        ];
+      }
+      
+      console.log("📝 Using query:", shouldUpdateBestScore ? "WITH best_score" : "WITHOUT best_score");
+      const updateResult = await client.query(updateQuery, updateParams);
       console.log("📝 UPDATE result rows:", updateResult.rows.length);
 
       if (updateResult.rows.length === 0) {
@@ -163,7 +187,7 @@ export default async function handler(req, res) {
             decoded.userId,
             progressData.level || 1,
             progressData.score || 0,
-            progressData.best_score || progressData.score || 0, // Use provided best_score or current score
+            progressData.best_score || progressData.score || 0, // For new records, use best_score or current score
             progressData.exp || 0,
             JSON.stringify(progressData.abilities || {}),
             JSON.stringify(progressData.achievements || []),

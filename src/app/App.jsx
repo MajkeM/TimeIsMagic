@@ -251,6 +251,7 @@ function AuthenticatedApp() {
       console.log('💾 Database payload size (bytes):', JSON.stringify(dbPayload).length);
       console.log('💾 best_score being sent:', dbPayload.best_score);
       console.log('💾 score (gold) being sent:', dbPayload.score);
+      console.log('💾 abilities.unlocked being sent:', JSON.parse(dbPayload.abilities).unlocked);
       
       // Uložíme do databáze ve správném formátu
       const saveResult = await saveToDatabase(dbPayload);
