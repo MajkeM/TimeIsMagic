@@ -5,10 +5,10 @@ import jwt from "jsonwebtoken";
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: '1mb', // Increase body size limit
+      sizeLimit: "1mb", // Increase body size limit
     },
   },
-}
+};
 
 export default async function handler(req, res) {
   if (req.method === "GET") {

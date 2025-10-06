@@ -28,6 +28,64 @@ function AuthenticatedApp() {
   // Initialize loading for the entire app
   const { isLoading, progress, message } = useLoading(loadingSteps.app);
 
+  // Helper function to convert abilityAvailability to simple list
+  const getUnlockedAbilitiesList = (unlockedAbilities) => {
+    if (!unlockedAbilities) return [];
+    const unlocked = [];
+    Object.keys(unlockedAbilities).forEach(type => {
+      Object.keys(unlockedAbilities[type]).forEach(ability => {
+        if (unlockedAbilities[type][ability] === true) {
+          unlocked.push(`${type}.${ability}`);
+        }
+      });
+    });
+    return unlocked;
+  };
+
+  // Helper function to convert simple list back to abilityAvailability format
+  const buildAbilityAvailabilityFromList = (unlockedList) => {
+    const baseAvailability = {
+      R: {
+        reload: true, // Always available
+        splash: false,
+        gravitywell: false,
+        freeze: false,
+        lightningstorm: false,
+        poisoncloud: false,
+        meteor: false
+      },
+      F: {
+        flash: true, // Always available
+        speed: false,
+        phasewalk: false,
+        shield: false,
+        dash: false,
+        wallcreation: false
+      },
+      T: {
+        teleport: true, // Always available
+        immortality: false,
+        scoreboost: false,
+        soldierHelp: false,
+        magnet: false,
+        mirrorclone: false,
+        berserkermode: false
+      }
+    };
+
+    // Mark unlocked abilities as available
+    if (unlockedList && Array.isArray(unlockedList)) {
+      unlockedList.forEach(item => {
+        const [type, ability] = item.split('.');
+        if (baseAvailability[type] && baseAvailability[type].hasOwnProperty(ability)) {
+          baseAvailability[type][ability] = true;
+        }
+      });
+    }
+
+    return baseAvailability;
+  };
+
   // Database helper functions - replaces localStorage
   const saveToDatabase = async (data) => {
     try {
@@ -59,6 +117,7 @@ function AuthenticatedApp() {
     bestScore: 0,
     characters: { selected: 'wizard' },
     abilities: {},
+    unlockedAbilities: {}, // Track purchased abilities
     settings: {}
   });
 
@@ -79,6 +138,7 @@ function AuthenticatedApp() {
       
       // Parsujeme JSON stringy z databáze
       const abilitiesData = JSON.parse(data.abilities || '{}');
+      const unlockedAbilitiesList = abilitiesData.unlocked || [];
       const parsedData = {
         gold: data.score || 0, // score v databázi = gold v aplikaci
         level: data.level || 1,
@@ -89,8 +149,8 @@ function AuthenticatedApp() {
           R: abilitiesData.R || 'reload',
           F: abilitiesData.F || 'flash',
           T: abilitiesData.T || 'teleport'
-          // abilityAvailability will be initialized separately
         },
+        unlockedAbilities: buildAbilityAvailabilityFromList(unlockedAbilitiesList),
         settings: JSON.parse(data.settings || '{}')
       };
       
@@ -117,6 +177,7 @@ function AuthenticatedApp() {
       });
       
       const abilitiesReloadData = JSON.parse(data.abilities || '{}');
+      const unlockedAbilitiesReloadList = abilitiesReloadData.unlocked || [];
       const parsedData = {
         gold: data.score || 0,
         level: data.level || 1,
@@ -128,6 +189,7 @@ function AuthenticatedApp() {
           F: abilitiesReloadData.F || 'flash',
           T: abilitiesReloadData.T || 'teleport'
         },
+        unlockedAbilities: buildAbilityAvailabilityFromList(unlockedAbilitiesReloadList),
         settings: JSON.parse(data.settings || '{}')
       };
       
@@ -164,7 +226,14 @@ function AuthenticatedApp() {
         score: updatedData.gold || 0,
         best_score: Math.max(updatedData.bestScore || 0, updatedData.gold || 0),
         exp: updatedData.exp || 0,
-        abilities: JSON.stringify(cleanAbilities),
+        abilities: JSON.stringify({
+          characters: cleanCharacters,
+          R: updatedData.abilities?.R || 'reload',
+          F: updatedData.abilities?.F || 'flash', 
+          T: updatedData.abilities?.T || 'teleport',
+          // Save current unlocked abilities from React state
+          unlocked: getUnlockedAbilitiesList(updatedData.unlockedAbilities || abilityAvailability)
+        }),
         achievements: JSON.stringify([]),
         settings: JSON.stringify(cleanSettings)
       };
@@ -299,7 +368,8 @@ function AuthenticatedApp() {
 
   // Initialize ability availability from gameData or default (only free abilities)
   const initializeAbilityAvailability = () => {
-    return gameData.abilities?.abilityAvailability || {
+    // Use unlockedAbilities from gameData, fallback to default
+    return gameData.unlockedAbilities || {
       R: {
         reload: true,
         splash: false,
@@ -330,6 +400,13 @@ function AuthenticatedApp() {
   };
 
   const [abilityAvailability, setAbilityAvailability] = useState(initializeAbilityAvailability());
+  
+  // Update abilityAvailability when gameData.unlockedAbilities changes
+  useEffect(() => {
+    if (gameData.unlockedAbilities) {
+      setAbilityAvailability(gameData.unlockedAbilities);
+    }
+  }, [gameData.unlockedAbilities]);
   
   // Character availability based on level
   const [characterAvailability, setCharacterAvailability] = useState(
@@ -406,8 +483,12 @@ function AuthenticatedApp() {
       };
       setAbilityAvailability(newAvailability);
       const newGold = gold - cost;
-      await saveGameData({ gold: newGold });
-      // abilityAvailability is managed locally, not saved to database
+      
+      // Save both gold and unlocked abilities to database
+      await saveGameData({ 
+        gold: newGold,
+        unlockedAbilities: newAvailability
+      });
     } else {
       alert("Not enough gold to unlock this ability!");
     }
