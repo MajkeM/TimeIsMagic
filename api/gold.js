@@ -37,10 +37,10 @@ export default async function handler(req, res) {
       FROM information_schema.columns 
       WHERE table_name = 'user_progress' AND column_name = 'gold'
     `);
-    
+
     const useGoldColumn = columnCheck.rows.length > 0;
-    const columnName = useGoldColumn ? 'gold' : 'score';
-    
+    const columnName = useGoldColumn ? "gold" : "score";
+
     console.log(`🪙 Using column: ${columnName}`);
 
     let result;
