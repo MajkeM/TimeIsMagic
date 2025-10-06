@@ -14,7 +14,7 @@ import Auth from "./components/Auth";
 
 // Create wrapper component for authenticated content
 function AuthenticatedApp() {
-  const { isAuthenticated, loading: authLoading, user, logout, saveProgress, loadProgress } = useAuth();
+  const { isAuthenticated, loading: authLoading, user, token, logout, saveProgress, loadProgress } = useAuth();
 
   // Show auth screen if not authenticated
   if (authLoading) {
@@ -506,24 +506,44 @@ function AuthenticatedApp() {
       
       console.log('🛒 New availability state:', newAvailability);
       
-      // Update local state immediately
-      setAbilityAvailability(newAvailability);
-      const newGold = gold - cost;
-      
-      console.log('🛒 New gold after purchase:', newGold);
-      
-      // Save both gold and unlocked abilities to database
       try {
-        await saveGameData({ 
-          gold: newGold,
-          unlockedAbilities: newAvailability
+        // First subtract gold using specialized endpoint
+        console.log('🛒 Step 1: Subtracting gold...');
+        const goldResponse = await fetch('/api/gold', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            operation: 'subtract',
+            amount: cost
+          })
         });
+
+        if (!goldResponse.ok) {
+          throw new Error(`Gold operation failed: ${goldResponse.status}`);
+        }
+
+        const goldResult = await goldResponse.json();
+        console.log('🛒 Gold subtracted, new gold:', goldResult.newGold);
+
+        // Update local state
+        setAbilityAvailability(newAvailability);
+        setGameData(prev => ({
+          ...prev,
+          gold: goldResult.newGold,
+          unlockedAbilities: newAvailability
+        }));
+
+        // Save abilities to database
+        console.log('🛒 Step 2: Saving abilities...');
+        await saveGameData({ unlockedAbilities: newAvailability });
+        
         console.log('🛒 === ABILITY PURCHASE SUCCESS ===');
       } catch (error) {
         console.error('🛒 === ABILITY PURCHASE ERROR ===');
         console.error('🛒 Failed to save purchase:', error);
-        // Revert local state if save failed
-        setAbilityAvailability(abilityAvailability);
         throw error;
       }
     } else {
@@ -566,19 +586,40 @@ function AuthenticatedApp() {
     console.log('🪙 === GOLD OPERATION START ===');
     console.log('🪙 addGold called with amount:', amount);
     console.log('🪙 Current gold before operation:', gold);
-    console.log('🪙 Current gameData.gold:', gameData.gold);
-    const newGold = gold + amount;
-    console.log('🪙 New gold will be:', newGold);
     
     try {
-      console.log('🪙 Saving to database...');
-      await saveGameData({ gold: newGold });
+      console.log('🪙 Calling specialized gold API...');
+      const response = await fetch('/api/gold', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          operation: 'add',
+          amount: amount
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('🪙 Gold API response:', result);
+      
+      // Update local state with new gold value
+      setGameData(prev => ({
+        ...prev,
+        gold: result.newGold
+      }));
+      
       console.log('🪙 === GOLD OPERATION SUCCESS ===');
-      console.log('🪙 Gold should now be:', newGold);
+      console.log('🪙 New gold value:', result.newGold);
     } catch (error) {
       console.error('🪙 === GOLD OPERATION ERROR ===');
       console.error('🪙 Failed to save gold:', error);
-      throw error; // Re-throw so calling functions know about the failure
+      throw error;
     }
   };
 
