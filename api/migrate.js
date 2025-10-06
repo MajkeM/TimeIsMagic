@@ -9,8 +9,9 @@ export default async function handler(req, res) {
   let client;
   try {
     console.log("🔧 MIGRATION: Adding gold column");
-    
-    const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+
+    const connectionString =
+      process.env.DATABASE_URL || process.env.POSTGRES_URL;
     client = new Client({
       connectionString,
       ssl: { rejectUnauthorized: false },
@@ -32,14 +33,14 @@ export default async function handler(req, res) {
         ALTER TABLE user_progress 
         ADD COLUMN gold INTEGER DEFAULT 0
       `);
-      
+
       // Copy score values to gold for existing users
       await client.query(`
         UPDATE user_progress 
         SET gold = score 
         WHERE gold = 0
       `);
-      
+
       console.log("🔧 Migration completed successfully");
     } else {
       console.log("🔧 Gold column already exists");
@@ -48,9 +49,8 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       message: "Migration completed successfully!",
-      hasGoldColumn: columnCheck.rows.length > 0
+      hasGoldColumn: columnCheck.rows.length > 0,
     });
-
   } catch (error) {
     console.error("🔧 Migration error:", error);
     return res.status(500).json({

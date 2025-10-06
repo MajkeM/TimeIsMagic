@@ -140,7 +140,7 @@ function AuthenticatedApp() {
       const abilitiesData = JSON.parse(data.abilities || '{}');
       const unlockedAbilitiesList = abilitiesData.unlocked || [];
       const parsedData = {
-        gold: data.gold || data.score || 0, // Fallback: gold z vlastní kolony nebo ze score
+        gold: data.gold !== undefined ? data.gold : (data.score || 0), // Použij gold pokud existuje, jinak score pro kompatibilitu
         level: data.level || 1,
         exp: data.exp || 0, // přidáme exp z databáze
         bestScore: data.best_score || 0, // přidáme best score
@@ -184,7 +184,7 @@ function AuthenticatedApp() {
       console.log('🔄 Unlocked abilities from DB:', unlockedAbilitiesReloadList);
       
       const parsedData = {
-        gold: data.gold || data.score || 0, // Fallback: gold z vlastní kolony nebo ze score
+        gold: data.gold !== undefined ? data.gold : (data.score || 0), // Použij gold pokud existuje, jinak score pro kompatibilitu
         level: data.level || 1,
         exp: data.exp || 0,
         bestScore: data.best_score || 0,
@@ -588,34 +588,15 @@ function AuthenticatedApp() {
     console.log('🪙 Current gold before operation:', gold);
     
     try {
-      console.log('🪙 Calling specialized gold API...');
-      const response = await fetch('/api/gold', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          operation: 'add',
-          amount: amount
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      console.log('🪙 Gold API response:', result);
+      const newGold = gold + amount;
+      console.log('🪙 New gold will be:', newGold);
       
-      // Update local state with new gold value
-      setGameData(prev => ({
-        ...prev,
-        gold: result.newGold
-      }));
+      // Use saveGameData to keep consistent with addExp
+      console.log('🪙 Using saveGameData...');
+      await saveGameData({ gold: newGold });
       
       console.log('🪙 === GOLD OPERATION SUCCESS ===');
-      console.log('🪙 New gold value:', result.newGold);
+      console.log('🪙 New gold value:', newGold);
     } catch (error) {
       console.error('🪙 === GOLD OPERATION ERROR ===');
       console.error('🪙 Failed to save gold:', error);

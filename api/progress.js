@@ -70,7 +70,8 @@ export default async function handler(req, res) {
 
         let insertQuery, insertParams;
         if (hasGoldColumn) {
-          insertQuery = "INSERT INTO user_progress (user_id, level, gold, score, best_score, exp, abilities, achievements, settings) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *";
+          insertQuery =
+            "INSERT INTO user_progress (user_id, level, gold, score, best_score, exp, abilities, achievements, settings) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *";
           insertParams = [
             decoded.userId,
             defaultProgress.level,
@@ -83,7 +84,8 @@ export default async function handler(req, res) {
             defaultProgress.settings,
           ];
         } else {
-          insertQuery = "INSERT INTO user_progress (user_id, level, score, best_score, exp, abilities, achievements, settings) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *";
+          insertQuery =
+            "INSERT INTO user_progress (user_id, level, score, best_score, exp, abilities, achievements, settings) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *";
           insertParams = [
             decoded.userId,
             defaultProgress.level,
@@ -182,7 +184,7 @@ export default async function handler(req, res) {
           progressData.exp || 0,
           JSON.stringify(progressData.abilities || {}),
           JSON.stringify(progressData.achievements || []),
-          JSON.stringify(progressData.settings || {})
+          JSON.stringify(progressData.settings || {}),
         ];
       } else {
         // Use score as gold if gold column doesn't exist
@@ -198,7 +200,7 @@ export default async function handler(req, res) {
           progressData.exp || 0,
           JSON.stringify(progressData.abilities || {}),
           JSON.stringify(progressData.achievements || []),
-          JSON.stringify(progressData.settings || {})
+          JSON.stringify(progressData.settings || {}),
         ];
       }
 
@@ -208,7 +210,7 @@ export default async function handler(req, res) {
       if (updateResult.rows.length === 0) {
         // Pokud UPDATE neaktualizoval nic, vytvoříme nový záznam
         console.log("📝 No rows updated, attempting INSERT...");
-        
+
         let insertQuery, insertParams;
         if (hasGoldColumn) {
           insertQuery = `INSERT INTO user_progress (user_id, level, gold, score, best_score, exp, abilities, achievements, settings) 
@@ -240,7 +242,7 @@ export default async function handler(req, res) {
             JSON.stringify(progressData.settings || {}),
           ];
         }
-        
+
         result = await client.query(insertQuery, insertParams);
         console.log("📝 INSERT result:", result.rows[0]);
       } else {
