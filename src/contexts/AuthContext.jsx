@@ -80,6 +80,8 @@ export function AuthProvider({ children }) {
 
     try {
       console.log('🔄 AuthContext: Sending data to /api/progress:', progressData);
+      console.log('🔄 AuthContext: Data size:', JSON.stringify(progressData).length, 'bytes');
+      
       const response = await fetch("/api/progress", {
         method: "POST",
         headers: {
@@ -96,13 +98,18 @@ export function AuthProvider({ children }) {
         console.log('🔄 AuthContext: Response data:', responseData);
         return { success: true, data: responseData };
       } else {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
+        }
         console.error('🔄 AuthContext: API error:', errorData);
-        return { success: false, error: errorData.error || 'Server error' };
+        return { success: false, error: errorData.error || `HTTP ${response.status}` };
       }
     } catch (error) {
       console.error('🔄 AuthContext: Network error:', error);
-      return { success: false, error: "Network error" };
+      return { success: false, error: "Network error: " + error.message };
     }
   };
 

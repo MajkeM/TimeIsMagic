@@ -148,22 +148,28 @@ function AuthenticatedApp() {
       console.log('💾 Updated data will be:', updatedData);
       
       console.log('💾 Preparing database payload...');
+      
+      // Create clean, minimal payload to avoid 413 errors
+      const cleanSettings = {};
+      const cleanCharacters = { selected: updatedData.characters?.selected || 'wizard' };
+      const cleanAbilities = {
+        characters: cleanCharacters,
+        R: updatedData.abilities?.R || 'reload',
+        F: updatedData.abilities?.F || 'flash', 
+        T: updatedData.abilities?.T || 'teleport'
+      };
+      
       const dbPayload = {
-        level: updatedData.level,
-        score: updatedData.gold, // gold = score v databázi
-        best_score: Math.max(updatedData.bestScore || 0, updatedData.gold || 0), // Update best score if current gold is higher
-        exp: updatedData.exp,
-        abilities: JSON.stringify({
-          characters: updatedData.characters || { selected: 'wizard' },
-          R: updatedData.abilities?.R || 'reload',
-          F: updatedData.abilities?.F || 'flash', 
-          T: updatedData.abilities?.T || 'teleport',
-          // Don't save the huge abilityAvailability object - it will be recalculated
-        }),
+        level: updatedData.level || 1,
+        score: updatedData.gold || 0,
+        best_score: Math.max(updatedData.bestScore || 0, updatedData.gold || 0),
+        exp: updatedData.exp || 0,
+        abilities: JSON.stringify(cleanAbilities),
         achievements: JSON.stringify([]),
-        settings: JSON.stringify(updatedData.settings || {})
+        settings: JSON.stringify(cleanSettings)
       };
       console.log('💾 Database payload:', dbPayload);
+      console.log('💾 Database payload size (bytes):', JSON.stringify(dbPayload).length);
       
       // Uložíme do databáze ve správném formátu
       const saveResult = await saveToDatabase(dbPayload);

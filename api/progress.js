@@ -1,6 +1,15 @@
 import { Client } from "pg";
 import jwt from "jsonwebtoken";
 
+// Configure for Vercel
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '1mb', // Increase body size limit
+    },
+  },
+}
+
 export default async function handler(req, res) {
   if (req.method === "GET") {
     let client;
