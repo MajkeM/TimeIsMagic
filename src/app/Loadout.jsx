@@ -163,21 +163,65 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
             );
         } else {
             return (
-                <div key={abilityName} className="fantasy-card" style={{ opacity: 0.6, padding: '1rem', textAlign: 'center', userSelect: 'none' }}>
-                    <img src={abilityImage} alt={`${abilityName} Ability`} style={{ width: '80px', height: '80px', marginBottom: '0.5rem', filter: 'grayscale(100%)', pointerEvents: 'none' }} />
-                    <div style={{ color: 'var(--medieval-silver)', fontSize: '1.2rem', fontWeight: 'bold', textTransform: 'capitalize' }}>{abilityName}</div>
-                    <div style={{ color: 'var(--parchment)', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                <div 
+                    key={abilityName} 
+                    className="fantasy-card" 
+                    style={{ 
+                        opacity: 0.6, 
+                        padding: '1rem', 
+                        textAlign: 'center', 
+                        userSelect: 'none',
+                        position: 'relative',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center'
+                    }}
+                >
+                    <img 
+                        src={abilityImage} 
+                        alt={`${abilityName} Ability`} 
+                        style={{ 
+                            width: '80px', 
+                            height: '80px', 
+                            marginBottom: '0.5rem', 
+                            filter: 'grayscale(100%)'
+                        }} 
+                    />
+                    <div style={{ 
+                        color: 'var(--medieval-silver)', 
+                        fontSize: '1.2rem', 
+                        fontWeight: 'bold', 
+                        textTransform: 'capitalize' 
+                    }}>
+                        {abilityName}
+                    </div>
+                    <div style={{ 
+                        color: 'var(--parchment)', 
+                        fontSize: '0.85rem', 
+                        marginTop: '0.5rem',
+                        width: '100%'
+                    }}>
                         {status.status === 'can-unlock' ? (
                             <>
-                                <div style={{ marginBottom: '0.5rem' }}>💰 {abilityCosts[abilityType][abilityName]} gold</div>
+                                <div style={{ marginBottom: '0.5rem' }}>
+                                    💰 {abilityCosts[abilityType][abilityName]} gold
+                                </div>
                                 <button 
                                     className="medieval-button" 
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
+                                    onClick={() => {
+                                        console.log('🔴 BUTTON CLICKED DIRECTLY!');
                                         unlockOrAlert(abilityType, abilityName);
                                     }}
-                                    style={{ fontSize: '0.9rem', padding: '0.5rem 1rem', cursor: 'pointer', pointerEvents: 'auto' }}
+                                    style={{ 
+                                        fontSize: '0.9rem', 
+                                        padding: '0.5rem 1rem', 
+                                        cursor: 'pointer',
+                                        position: 'relative',
+                                        zIndex: 10,
+                                        width: 'auto',
+                                        display: 'inline-block'
+                                    }}
+                                    type="button"
                                 >
                                     🔓 Unlock
                                 </button>
