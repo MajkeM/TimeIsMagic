@@ -559,6 +559,55 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     const tier3Unlocked = useRef(false);
     const tierNotifications = useRef([]);
 
+    // 🎁 POWER-UP SYSTEM
+    const POWERUP_DROP_CHANCE = 0.15; // 15% chance to drop from enemy
+    const POWERUP_SIZE = 50;
+    const POWERUP_DURATION = 10000; // 10 seconds on ground before disappearing
+    const POWERUP_LIFETIME = 8000; // 8 seconds effect duration after pickup
+    
+    const powerups = useRef([]); // Power-ups on the ground
+    const activePowerups = useRef([]); // Active power-ups affecting player
+    
+    // Power-up types with their effects
+    const POWERUP_TYPES = {
+        SPEED: { 
+            name: 'Speed Boost', 
+            color: '#00ffff', 
+            emoji: '⚡',
+            effect: { movementSpeed: 1.5 }
+        },
+        FIRE_RATE: { 
+            name: 'Rapid Fire', 
+            color: '#ff4500', 
+            emoji: '🔥',
+            effect: { fireRate: 2.0 }
+        },
+        SHIELD: { 
+            name: 'Shield', 
+            color: '#4169e1', 
+            emoji: '🛡️',
+            effect: { invincible: true }
+        },
+        DOUBLE_GOLD: { 
+            name: 'Gold Rush', 
+            color: '#ffd700', 
+            emoji: '💰',
+            effect: { goldMultiplier: 2.0 }
+        },
+        MEGA_BULLETS: { 
+            name: 'Mega Bullets', 
+            color: '#9370db', 
+            emoji: '💥',
+            effect: { bulletSize: 2.0, bulletSpeed: 1.3 }
+        },
+        SLOW_TIME: { 
+            name: 'Slow Time', 
+            color: '#87ceeb', 
+            emoji: '⏰',
+            effect: { enemySlowdown: 0.5 }
+        }
+    };
+
     // Slash combat system constants and refs
     const SLASH_RANGE = 400; // Range of slash attack
     const SLASH_DURATION = 300; // Duration of slash animation in ms
@@ -618,6 +667,80 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     const looseRef = useRef(false);
     const rewardsGivenRef = useRef(false); // Track if rewards have been given
     const [loose, setLoose] = useState(false);
+
+    // 🎁 POWER-UP HELPER FUNCTIONS
+    const spawnPowerup = (x, y) => {
+        if (Math.random() > POWERUP_DROP_CHANCE) return; // 15% chance
+        
+        const types = Object.keys(POWERUP_TYPES);
+        const randomType = types[Math.floor(Math.random() * types.length)];
+        const powerupData = POWERUP_TYPES[randomType];
+        
+        powerups.current.push({
+            x: x,
+            y: y,
+            type: randomType,
+            spawnTime: performance.now(),
+            ...powerupData
+        });
+        
+        console.log(`🎁 Power-up spawned: ${powerupData.name} at (${Math.floor(x)}, ${Math.floor(y)})`);
+    };
+    
+    const pickupPowerup = (powerup) => {
+        activePowerups.current.push({
+            ...powerup,
+            activatedTime: performance.now()
+        });
+        
+        // Show floating text
+        floatingTexts.current.push({
+            x: playerRef.current.x + playerRef.current.width / 2,
+            y: playerRef.current.y,
+            text: `${powerup.emoji} ${powerup.name}!`,
+            color: powerup.color,
+            spawnTime: performance.now(),
+            velocity: { x: 0, y: -2 }
+        });
+        
+        console.log(`✨ Power-up activated: ${powerup.name}`);
+    };
+    
+    const applyPowerupEffects = () => {
+        const currentTime = performance.now();
+        let effects = {
+            movementSpeed: 1.0,
+            fireRate: 1.0,
+            invincible: false,
+            goldMultiplier: 1.0,
+            bulletSize: 1.0,
+            bulletSpeed: 1.0,
+            enemySlowdown: 1.0
+        };
+        
+        // Remove expired power-ups
+        activePowerups.current = activePowerups.current.filter(powerup => {
+            const elapsed = currentTime - powerup.activatedTime;
+            if (elapsed > POWERUP_LIFETIME) {
+                console.log(`⏱️ Power-up expired: ${powerup.name}`);
+                return false;
+            }
+            return true;
+        });
+        
+        // Apply all active power-up effects
+        activePowerups.current.forEach(powerup => {
+            if (powerup.effect.movementSpeed) effects.movementSpeed *= powerup.effect.movementSpeed;
+            if (powerup.effect.fireRate) effects.fireRate *= powerup.effect.fireRate;
+            if (powerup.effect.invincible) effects.invincible = true;
+            if (powerup.effect.goldMultiplier) effects.goldMultiplier *= powerup.effect.goldMultiplier;
+            if (powerup.effect.bulletSize) effects.bulletSize *= powerup.effect.bulletSize;
+            if (powerup.effect.bulletSpeed) effects.bulletSpeed *= powerup.effect.bulletSpeed;
+            if (powerup.effect.enemySlowdown) effects.enemySlowdown *= powerup.effect.enemySlowdown;
+        });
+        
+        return effects;
+    };
 
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -1263,17 +1386,23 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 const bulletAngle = Math.atan2(dy, dx);
                 lastShotTime.current = performance.now();
 
+                // Apply power-up effects to bullet and cooldown
+                const powerupEffects = applyPowerupEffects();
+                
                 bullets.current.push({
                     x: playerCenterX - 15,
                     y: playerCenterY - 15,
                     dirX: dirX,
                     dirY: dirY,
                     angle: bulletAngle,
+                    size: 100 * powerupEffects.bulletSize, // Default size is 100
+                    speedMultiplier: powerupEffects.bulletSpeed
                 })
                 canShoot.current = false;
 
                 // Capture cooldown value to avoid race conditions
-                const wizardCooldownToUse = reloadAbilityActive.current ? RELOADTIME_ABILITY_BOOST : reloadTimeRef.current;
+                const baseCooldown = reloadAbilityActive.current ? RELOADTIME_ABILITY_BOOST : reloadTimeRef.current;
+                const wizardCooldownToUse = baseCooldown / powerupEffects.fireRate;
 
                 setTimeout(() => {
                     canShoot.current = true;
@@ -3376,20 +3505,23 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
 
         // Draw bullets
         bullets.current.forEach((bullet, index) => {
-            bullet.x += bullet.dirX * bulletSpeed.current;
-            bullet.y += bullet.dirY * bulletSpeed.current;
+            // Apply power-up speed multiplier
+            const speedMultiplier = bullet.speedMultiplier || 1.0;
+            bullet.x += bullet.dirX * bulletSpeed.current * speedMultiplier;
+            bullet.y += bullet.dirY * bulletSpeed.current * speedMultiplier;
 
             if (bulletImageRef.current) {
-                // Otočit střelu podle směru letu - větší velikost
-                const bulletSize = 100; // Nová velikost bullet sprite
+                // Use power-up size or default
+                const bulletSize = bullet.size || 100;
                 ctx.save();
-                ctx.translate(bullet.x + bulletSize/2, bullet.y + bulletSize/2); // Střed větší střely
+                ctx.translate(bullet.x + bulletSize/2, bullet.y + bulletSize/2);
                 ctx.rotate(bullet.angle);
-                ctx.drawImage(bulletImageRef.current, -bulletSize/2, -bulletSize/2, bulletSize, bulletSize); // Větší bullet ze středu
+                ctx.drawImage(bulletImageRef.current, -bulletSize/2, -bulletSize/2, bulletSize, bulletSize);
                 ctx.restore();
             } else {
+                const bulletSize = bullet.size || 100;
                 ctx.beginPath();
-                ctx.arc(bullet.x, bullet.y, 10, 0, 2 * Math.PI);
+                ctx.arc(bullet.x, bullet.y, bulletSize/10, 0, 2 * Math.PI);
                 ctx.fillStyle = "white";
                 ctx.fill();
             }
@@ -3945,9 +4077,13 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 const dirX = length > 0 ? dx / length : 0;
                 const dirY = length > 0 ? dy / length : 0;
 
+                // Apply power-up slow time effect
+                const powerupEffects = applyPowerupEffects();
+                const effectiveSpeed = basicEnemySpeed.current * powerupEffects.enemySlowdown;
+
                 // Calculate new position
-                const newX = enemy.x + dirX * basicEnemySpeed.current;
-                const newY = enemy.y + dirY * basicEnemySpeed.current;
+                const newX = enemy.x + dirX * effectiveSpeed;
+                const newY = enemy.y + dirY * effectiveSpeed;
                 
                 // Check wall collision before moving
                 let canMove = true;
@@ -4046,9 +4182,13 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 const dirX = length > 0 ? dx / length : 0;
                 const dirY = length > 0 ? dy / length : 0;
 
+                // Apply power-up slow time effect
+                const powerupEffects = applyPowerupEffects();
+                const effectiveSpeed = trippleShootEnemySpeed.current * powerupEffects.enemySlowdown;
+
                 // Calculate new position
-                const newX = enemy.x + dirX * trippleShootEnemySpeed.current;
-                const newY = enemy.y + dirY * trippleShootEnemySpeed.current;
+                const newX = enemy.x + dirX * effectiveSpeed;
+                const newY = enemy.y + dirY * effectiveSpeed;
                 
                 // Check wall collision before moving
                 let canMove = true;
@@ -4610,8 +4750,10 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             
             if (circularCollision(playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS, bullet.x, bullet.y, 10)) {
                 trippleShootEnemyBulletsRef.current.splice(index, 1);
-                // Only lose if not immortal or phase walking
-                if (!immortalityAbilityActive.current && !phaseWalkActive.current) {
+                // Check power-up invincibility
+                const powerupEffects = applyPowerupEffects();
+                // Only lose if not immortal, phase walking, or has power-up shield
+                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !powerupEffects.invincible) {
                     // Check shield protection
                     if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
                         shieldHitsRemaining.current--;
@@ -4704,8 +4846,9 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             
             if (circularCollision(playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS, bullet.x, bullet.y, GOBLIN_BULLET_RADIUS)) {
                 basicEnemyBulletsRef.current.splice(index, 1);
-                // Only lose if not immortal or phase walking
-                if (!immortalityAbilityActive.current && !phaseWalkActive.current) {
+                // Only lose if not immortal, phase walking, or power-up invincible
+                const powerupEffects = applyPowerupEffects();
+                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !powerupEffects.invincible) {
                     // Check shield protection
                     if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
                         shieldHitsRemaining.current--;
@@ -4737,6 +4880,9 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     // Create kill effects
                     createKillEffect(enemyHeadX, enemyHeadY, 10);
                     
+                    // 🎁 Try to spawn power-up at enemy position
+                    spawnPowerup(enemyHeadX, enemyHeadY);
+                    
                     score.current += 10;
                     killCount.current++; // Count kill for achievements
                     difficulty.current += Math.floor(score.current / 100);
@@ -4767,6 +4913,9 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                         // Create kill effects
                         createKillEffect(enemyHeadX, enemyHeadY, 10);
                         
+                        // 🎁 Try to spawn power-up
+                        spawnPowerup(enemyHeadX, enemyHeadY);
+                        
                         score.current += 10;
                         killCount.current++; // Count kill for achievements
                         difficulty.current += Math.floor(score.current / 100);
@@ -4790,6 +4939,9 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                         
                         // Create kill effects
                         createKillEffect(enemyCenterX, enemyCenterY, 15);
+                        
+                        // 🎁 Try to spawn power-up
+                        spawnPowerup(enemyCenterX, enemyCenterY);
                         
                         score.current += 15;
                         killCount.current++; // Count kill for achievements
@@ -5416,6 +5568,83 @@ if (scoreBackgroundImageRef.current) {
     
     ctx.drawImage(scoreBackgroundImageRef.current, bgX, bgY, scoreBgWidth, scoreBgHeight);
 }
+
+// 🎁 POWER-UP SYSTEM UPDATE & RENDER
+const powerupEffects = applyPowerupEffects();
+
+// Update and draw power-ups on ground
+powerups.current = powerups.current.filter(powerup => {
+    const elapsed = currentTime - powerup.spawnTime;
+    if (elapsed > POWERUP_DURATION) return false; // Remove expired power-ups
+    
+    // Draw power-up
+    const alpha = elapsed > POWERUP_DURATION - 2000 ? (POWERUP_DURATION - elapsed) / 2000 : 1.0;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    
+    // Pulsing animation
+    const pulse = 1 + Math.sin(currentTime / 200) * 0.2;
+    const size = POWERUP_SIZE * pulse;
+    
+    // Draw glow
+    const gradient = ctx.createRadialGradient(powerup.x, powerup.y, 0, powerup.x, powerup.y, size);
+    gradient.addColorStop(0, powerup.color + 'AA');
+    gradient.addColorStop(0.5, powerup.color + '44');
+    gradient.addColorStop(1, powerup.color + '00');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(powerup.x - size, powerup.y - size, size * 2, size * 2);
+    
+    // Draw emoji
+    ctx.font = `${size}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'white';
+    ctx.fillText(powerup.emoji, powerup.x, powerup.y);
+    
+    ctx.restore();
+    
+    // Check pickup collision
+    const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+    const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+    const distance = Math.sqrt((playerCenterX - powerup.x) ** 2 + (playerCenterY - powerup.y) ** 2);
+    
+    if (distance < POWERUP_SIZE + PLAYER_COLLISION_RADIUS) {
+        pickupPowerup(powerup);
+        return false; // Remove picked up power-up
+    }
+    
+    return true;
+});
+
+// Apply power-up effects to player (always apply to ensure proper reset)
+playerSpeed.current = PLAYER_SPEED * bonuses.movementSpeed * powerupEffects.movementSpeed;
+
+// Draw active power-up indicators
+let powerupY = 150;
+activePowerups.current.forEach(powerup => {
+    const timeLeft = POWERUP_LIFETIME - (currentTime - powerup.activatedTime);
+    const barWidth = 150;
+    const barHeight = 30;
+    const powerupX = window.innerWidth - barWidth - 20;
+    
+    // Background
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(powerupX, powerupY, barWidth, barHeight);
+    
+    // Progress bar
+    const progress = timeLeft / POWERUP_LIFETIME;
+    ctx.fillStyle = powerup.color;
+    ctx.fillRect(powerupX, powerupY, barWidth * progress, barHeight);
+    
+    // Icon and text
+    ctx.font = '20px Arial';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'white';
+    ctx.fillText(`${powerup.emoji} ${powerup.name}`, powerupX + 5, powerupY + barHeight / 2);
+    
+    powerupY += barHeight + 5;
+});
 
 // Fix font usage and make text fully responsive
 ctx.fillStyle = "white";
