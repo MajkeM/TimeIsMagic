@@ -55,6 +55,9 @@ import kingSprite from "./Sprites/kingPlayerSprite.png";
 
 export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ability, character, handleCharacterChange, gold, level, exp , resetXp, addLevel, handleGoldChange, abilityAvailability, checkEnoghGoldandUnlock, handleAbilityChangeAvailability, characterAvailability, levelRequirements, abilityCosts}) {
 
+    console.log('📊 LOADOUT PROPS:', { level, gold, character });
+    console.log('📋 Level Requirements:', levelRequirements);
+
     useEffect(() => {
         // Set the radio buttons based on the current abilities
         document.querySelectorAll('input[name="R"]').forEach((input) => {
@@ -247,7 +250,18 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
     const renderCharacterCard = (characterName, characterImage) => {
         const status = getCharacterStatus(characterName);
         const isActive = character === characterName;
-        const displayName = characterName === 'king' ? 'Danious' : characterName.charAt(0).toUpperCase() + characterName.slice(1);
+        
+        // Display names for characters
+        const displayNames = {
+            wizard: 'Gandalf',
+            rapunzel: 'Lucious',
+            archer: 'Elven',
+            mage: 'Darko',
+            king: 'Danious'
+        };
+        const displayName = displayNames[characterName] || characterName.charAt(0).toUpperCase() + characterName.slice(1);
+        
+        console.log(`🎴 Rendering ${displayName} (${characterName}):`, status);
         
         if (status.status === 'unlocked') {
             return (
@@ -359,11 +373,11 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
                         👤 Champions of the Realm 👤
                     </h2>
                     <div className = "character-options" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-                    {renderCharacterCard('Gandalf', wizardSprite)}
-                        {renderCharacterCard('lucious', rapunzelSprite)}
-                        {renderCharacterCard('Elven', archerSprite)}
-                        {renderCharacterCard('Darko', mageSprite)}
-                        {renderCharacterCard('The King', kingSprite)}
+                    {renderCharacterCard('wizard', wizardSprite)}
+                        {renderCharacterCard('rapunzel', rapunzelSprite)}
+                        {renderCharacterCard('archer', archerSprite)}
+                        {renderCharacterCard('mage', mageSprite)}
+                        {renderCharacterCard('king', kingSprite)}
                     </div>
                     </div>
                 </div>
