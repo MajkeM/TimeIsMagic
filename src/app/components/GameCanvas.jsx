@@ -2193,7 +2193,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     // load sniperEnemySprite image
     useEffect(() => {
         const sniperEnemySprite = new Image();
-        sniperEnemySprite.src = sniperSprite; // Use the imported sprite
+        sniperEnemySprite.src = sniperSpriteEnemy; // Use the imported sprite
         sniperEnemySprite.onload = () => {
             sniperEnemySpriteRef.current = sniperEnemySprite;
         };
