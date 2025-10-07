@@ -4643,6 +4643,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     createKillEffect(enemyCenterX, enemyCenterY, 30);
                     
                     score.current += 30;
+                    killCount.current++; // Count kill for achievements
                     updateDifficulty(); // Balanced difficulty progression
                 }
             })
@@ -4737,6 +4738,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     createKillEffect(enemyHeadX, enemyHeadY, 10);
                     
                     score.current += 10;
+                    killCount.current++; // Count kill for achievements
                     difficulty.current += Math.floor(score.current / 100);
                 }
             })
@@ -4766,6 +4768,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                         createKillEffect(enemyHeadX, enemyHeadY, 10);
                         
                         score.current += 10;
+                        killCount.current++; // Count kill for achievements
                         difficulty.current += Math.floor(score.current / 100);
                     }
                 }
@@ -4789,6 +4792,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                         createKillEffect(enemyCenterX, enemyCenterY, 15);
                         
                         score.current += 15;
+                        killCount.current++; // Count kill for achievements
                         difficulty.current += Math.floor(score.current / 100);
                     }
                 }
@@ -4905,6 +4909,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                         createKillEffect(enemyHeadX, enemyHeadY, 10);
                         
                         score.current += 10;
+                        killCount.current++; // Count kill for achievements
                         difficulty.current += Math.floor(score.current / 100);
                         
                         arrow.pierceCount++;
@@ -4926,6 +4931,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                         createKillEffect(enemyCenterX, enemyCenterY, 15);
                         
                         score.current += 15;
+                        killCount.current++; // Count kill for achievements
                         difficulty.current += Math.floor(score.current / 100);
                         
                         arrow.pierceCount++;
@@ -5004,6 +5010,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                             createKillEffect(enemyHeadX, enemyHeadY, 12);
                             
                             score.current += 12; // Slightly higher score for spell kills
+                            killCount.current++; // Count kill for achievements
                             difficulty.current += Math.floor(score.current / 100);
                         }
                     });
@@ -5021,6 +5028,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                             createKillEffect(enemyCenterX, enemyCenterY, 18);
                             
                             score.current += 18;
+                            killCount.current++; // Count kill for achievements
                             difficulty.current += Math.floor(score.current / 100);
                         }
                     });
@@ -5255,6 +5263,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     createKillEffect(enemyHeadX, enemyHeadY, 10);
                     
                     score.current += 10;
+                    killCount.current++; // Count kill for achievements
                     difficulty.current += Math.floor(score.current / 100);
                 }
             });
@@ -5272,6 +5281,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     createKillEffect(enemyCenterX, enemyCenterY, 30);
                     
                     score.current += 30;
+                    killCount.current++; // Count kill for achievements
                     difficulty.current += Math.floor(score.current / 100);
                 }
             });
