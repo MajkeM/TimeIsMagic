@@ -5687,6 +5687,48 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                         }
                     }
                 });
+                
+                // 🔥 TIER 4 - Check collision with Tank enemies (damage but not kill)
+                tankEnemyRef.current.forEach((enemy, eIndex) => {
+                    const enemyCenterX = enemy.x + enemy.width / 2;
+                    const enemyCenterY = enemy.y + enemy.height / 2;
+                    
+                    if (circularCollision(arrow.x, arrow.y, 20, enemyCenterX, enemyCenterY, 80)) {
+                        enemy.hp--;
+                        createKillEffect(enemyCenterX, enemyCenterY, 20);
+                        
+                        if (enemy.hp <= 0) {
+                            tankEnemyRef.current.splice(eIndex, 1);
+                            spawnPowerup(enemyCenterX, enemyCenterY);
+                            score.current += 50;
+                            killCount.current++;
+                        }
+                        
+                        arrow.pierceCount++;
+                        if (arrow.pierceCount >= arrow.maxPierce) {
+                            arrows.current.splice(arrowIndex, 1);
+                        }
+                    }
+                });
+                
+                // 🔥 TIER 4 - Check collision with Sniper enemies
+                sniperEnemyRef.current.forEach((enemy, eIndex) => {
+                    const enemyCenterX = enemy.x + enemy.width / 2;
+                    const enemyCenterY = enemy.y + enemy.height / 2;
+                    
+                    if (circularCollision(arrow.x, arrow.y, 20, enemyCenterX, enemyCenterY, 30)) {
+                        sniperEnemyRef.current.splice(eIndex, 1);
+                        createKillEffect(enemyCenterX, enemyCenterY, 25);
+                        spawnPowerup(enemyCenterX, enemyCenterY);
+                        score.current += 40;
+                        killCount.current++;
+                        
+                        arrow.pierceCount++;
+                        if (arrow.pierceCount >= arrow.maxPierce) {
+                            arrows.current.splice(arrowIndex, 1);
+                        }
+                    }
+                });
             });
         }
 
@@ -5772,6 +5814,41 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                         }
                     });
                     
+                    // 🔥 TIER 4 - Check collision with Tank enemies (damage but not kill)
+                    tankEnemyRef.current.forEach((enemy, eIndex) => {
+                        const enemyCenterX = enemy.x + enemy.width / 2;
+                        const enemyCenterY = enemy.y + enemy.height / 2;
+                        const distance = Math.sqrt((enemyCenterX - spell.x) ** 2 + (enemyCenterY - spell.y) ** 2);
+                        
+                        if (distance <= currentSpellRadius && !enemy.hitByThisSpell) {
+                            enemy.hp--;
+                            enemy.hitByThisSpell = true; // Prevent multiple hits from same spell
+                            createKillEffect(enemyCenterX, enemyCenterY, 25);
+                            
+                            if (enemy.hp <= 0) {
+                                tankEnemyRef.current.splice(eIndex, 1);
+                                spawnPowerup(enemyCenterX, enemyCenterY);
+                                score.current += 50;
+                                killCount.current++;
+                            }
+                        }
+                    });
+                    
+                    // 🔥 TIER 4 - Check collision with Sniper enemies
+                    sniperEnemyRef.current.forEach((enemy, eIndex) => {
+                        const enemyCenterX = enemy.x + enemy.width / 2;
+                        const enemyCenterY = enemy.y + enemy.height / 2;
+                        const distance = Math.sqrt((enemyCenterX - spell.x) ** 2 + (enemyCenterY - spell.y) ** 2);
+                        
+                        if (distance <= currentSpellRadius) {
+                            sniperEnemyRef.current.splice(eIndex, 1);
+                            createKillEffect(enemyCenterX, enemyCenterY, 30);
+                            spawnPowerup(enemyCenterX, enemyCenterY);
+                            score.current += 40;
+                            killCount.current++;
+                        }
+                    });
+                    
                     // Spells destroy enemy bullets in their radius
                     basicEnemyBulletsRef.current.forEach((bullet, bIndex) => {
                         const distance = Math.sqrt((bullet.x - spell.x) ** 2 + (bullet.y - spell.y) ** 2);
@@ -5791,6 +5868,22 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                         const distance = Math.sqrt((bullet.x - spell.x) ** 2 + (bullet.y - spell.y) ** 2);
                         if (distance <= currentSpellRadius) {
                             trippleShootEnemyBulletsRef.current.splice(bIndex, 1);
+                        }
+                    });
+                    
+                    // 🔥 TIER 4 - Spells destroy Tank bullets
+                    tankEnemyBulletsRef.current.forEach((bullet, bIndex) => {
+                        const distance = Math.sqrt((bullet.x - spell.x) ** 2 + (bullet.y - spell.y) ** 2);
+                        if (distance <= currentSpellRadius) {
+                            tankEnemyBulletsRef.current.splice(bIndex, 1);
+                        }
+                    });
+                    
+                    // 🔥 TIER 4 - Spells destroy Sniper bullets
+                    sniperEnemyBulletsRef.current.forEach((bullet, bIndex) => {
+                        const distance = Math.sqrt((bullet.x - spell.x) ** 2 + (bullet.y - spell.y) ** 2);
+                        if (distance <= currentSpellRadius) {
+                            sniperEnemyBulletsRef.current.splice(bIndex, 1);
                         }
                     });
                 }
@@ -6112,6 +6205,58 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     difficulty.current += Math.floor(score.current / 100);
                 }
             });
+            
+            // 🔥 TIER 4 - Collisions with Tank enemies
+            tankEnemyRef.current.forEach((enemy, eIndex) => {
+                const enemyCenterX = enemy.x + enemy.width / 2;
+                const enemyCenterY = enemy.y + enemy.height / 2;
+                
+                if (circularCollision(enemyCenterX, enemyCenterY, 80, soldierBulletCenterX, soldierBulletCenterY, 5)) {
+                    soldierBullets.current.splice(sbIndex, 1);
+                    
+                    // Tank has HP system - damage it
+                    enemy.hp--;
+                    
+                    if (enemy.hp <= 0) {
+                        tankEnemyRef.current.splice(eIndex, 1);
+                        
+                        // Create kill effects
+                        createKillEffect(enemyCenterX, enemyCenterY, 50);
+                        
+                        // Chance to spawn power-up
+                        if (Math.random() < 0.15) {
+                            spawnPowerUp(enemyCenterX, enemyCenterY);
+                        }
+                        
+                        score.current += 50;
+                        killCount.current++;
+                        difficulty.current += Math.floor(score.current / 100);
+                    }
+                }
+            });
+            
+            // 🔥 TIER 4 - Collisions with Sniper enemies
+            sniperEnemyRef.current.forEach((enemy, eIndex) => {
+                const enemyCenterX = enemy.x + enemy.width / 2;
+                const enemyCenterY = enemy.y + enemy.height / 2;
+                
+                if (circularCollision(enemyCenterX, enemyCenterY, 30, soldierBulletCenterX, soldierBulletCenterY, 5)) {
+                    soldierBullets.current.splice(sbIndex, 1);
+                    sniperEnemyRef.current.splice(eIndex, 1);
+                    
+                    // Create kill effects
+                    createKillEffect(enemyCenterX, enemyCenterY, 40);
+                    
+                    // Chance to spawn power-up
+                    if (Math.random() < 0.15) {
+                        spawnPowerUp(enemyCenterX, enemyCenterY);
+                    }
+                    
+                    score.current += 40;
+                    killCount.current++;
+                    difficulty.current += Math.floor(score.current / 100);
+                }
+            });
         });
 
         // Soldier Ability bullet collision detection with all enemy types
@@ -6185,6 +6330,56 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     createKillEffect(enemyCenterX, enemyCenterY, 30);
                     
                     score.current += 30;
+                    difficulty.current += Math.floor(score.current / 100);
+                }
+            });
+            
+            // 🔥 TIER 4 - Collisions with Tank enemies
+            tankEnemyRef.current.forEach((enemy, eIndex) => {
+                const enemyCenterX = enemy.x + enemy.width / 2;
+                const enemyCenterY = enemy.y + enemy.height / 2;
+                
+                if (circularCollision(enemyCenterX, enemyCenterY, 80, soldierBulletCenterX, soldierBulletCenterY, 5)) {
+                    soldierAbilitySoldierBullets.current.splice(sbIndex, 1);
+                    
+                    // Tank has HP system - damage it
+                    enemy.hp--;
+                    
+                    if (enemy.hp <= 0) {
+                        tankEnemyRef.current.splice(eIndex, 1);
+                        
+                        // Create kill effects
+                        createKillEffect(enemyCenterX, enemyCenterY, 50);
+                        
+                        // Chance to spawn power-up
+                        if (Math.random() < 0.15) {
+                            spawnPowerUp(enemyCenterX, enemyCenterY);
+                        }
+                        
+                        score.current += 50;
+                        difficulty.current += Math.floor(score.current / 100);
+                    }
+                }
+            });
+            
+            // 🔥 TIER 4 - Collisions with Sniper enemies
+            sniperEnemyRef.current.forEach((enemy, eIndex) => {
+                const enemyCenterX = enemy.x + enemy.width / 2;
+                const enemyCenterY = enemy.y + enemy.height / 2;
+                
+                if (circularCollision(enemyCenterX, enemyCenterY, 30, soldierBulletCenterX, soldierBulletCenterY, 5)) {
+                    soldierAbilitySoldierBullets.current.splice(sbIndex, 1);
+                    sniperEnemyRef.current.splice(eIndex, 1);
+                    
+                    // Create kill effects
+                    createKillEffect(enemyCenterX, enemyCenterY, 40);
+                    
+                    // Chance to spawn power-up
+                    if (Math.random() < 0.15) {
+                        spawnPowerUp(enemyCenterX, enemyCenterY);
+                    }
+                    
+                    score.current += 40;
                     difficulty.current += Math.floor(score.current / 100);
                 }
             });
