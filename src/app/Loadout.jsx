@@ -98,6 +98,11 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
 
     // unlock ability for gold
    const unlockOrAlert = (abilityType, abilityName) => {
+       console.log('🔓 UNLOCK BUTTON CLICKED!');
+       console.log('🔓 Ability type:', abilityType);
+       console.log('🔓 Ability name:', abilityName);
+       console.log('🔓 Current gold:', gold);
+       console.log('🔓 Cost:', abilityCosts[abilityType][abilityName]);
        // Use the proper function that saves to database
        checkEnoghGoldandUnlock(abilityType, abilityName);
    };
@@ -302,11 +307,11 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
                         👤 Champions of the Realm 👤
                     </h2>
                     <div className = "character-options" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-                    {renderCharacterCard('wizard', wizardSprite)}
-                        {renderCharacterCard('rapunzel', rapunzelSprite)}
-                        {renderCharacterCard('archer', archerSprite)}
-                        {renderCharacterCard('mage', mageSprite)}
-                        {renderCharacterCard('king', kingSprite)}
+                    {renderCharacterCard('Gandalf', wizardSprite)}
+                        {renderCharacterCard('lucious', rapunzelSprite)}
+                        {renderCharacterCard('Elven', archerSprite)}
+                        {renderCharacterCard('Darko', mageSprite)}
+                        {renderCharacterCard('The King', kingSprite)}
                     </div>
                     </div>
                 </div>

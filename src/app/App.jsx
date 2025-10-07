@@ -643,10 +643,14 @@ function AuthenticatedApp() {
       dataToSave.stats = newStats;
       
       // Check achievements
+      console.log('🏆 Current achievements before check:', gameData.achievements);
+      console.log('🏆 Stats for achievement check:', newStats);
       const newAchievements = checkAndUnlockAchievements(newStats, newLevel, currentScore);
+      console.log('🏆 checkAndUnlockAchievements returned:', newAchievements);
       if (Object.keys(newAchievements).length > 0) {
         dataToSave.achievements = { ...gameData.achievements, ...newAchievements };
         console.log('🏆 New achievements unlocked:', Object.keys(newAchievements));
+        console.log('🏆 Combined achievements to save:', dataToSave.achievements);
       }
       
       // Check if current score is a new best score
@@ -679,19 +683,30 @@ function AuthenticatedApp() {
 
   // Check and unlock achievements based on stats
   const checkAndUnlockAchievements = (stats, currentLevel, bestScore) => {
+    console.log('🏆 === CHECKING ACHIEVEMENTS ===');
+    console.log('🏆 Stats:', stats);
+    console.log('🏆 Current Level:', currentLevel);
+    console.log('🏆 Best Score:', bestScore);
+    console.log('🏆 Current gameData.achievements:', gameData.achievements);
+    
     const newAchievements = {};
     
     // Kill achievements
+    console.log('🏆 Checking kill achievements - totalKills:', stats.totalKills);
     if (stats.totalKills >= 1 && !gameData.achievements?.first_kill) {
+      console.log('🏆 UNLOCKING: first_kill');
       newAchievements.first_kill = true;
     }
     if (stats.totalKills >= 10 && !gameData.achievements?.killer_10) {
+      console.log('🏆 UNLOCKING: killer_10');
       newAchievements.killer_10 = true;
     }
     if (stats.totalKills >= 50 && !gameData.achievements?.killer_50) {
+      console.log('🏆 UNLOCKING: killer_50');
       newAchievements.killer_50 = true;
     }
     if (stats.totalKills >= 100 && !gameData.achievements?.killer_100) {
+      console.log('🏆 UNLOCKING: killer_100');
       newAchievements.killer_100 = true;
     }
     
@@ -730,10 +745,17 @@ function AuthenticatedApp() {
     }
     
     // Show notifications for new achievements
+    console.log('🏆 newAchievements to show notifications for:', Object.keys(newAchievements));
     Object.keys(newAchievements).forEach(achievementId => {
-      setActiveNotifications(prev => [...prev, { id: achievementId, timestamp: Date.now() }]);
+      console.log('🏆 Adding notification for:', achievementId);
+      setActiveNotifications(prev => {
+        const updated = [...prev, { id: achievementId, timestamp: Date.now() }];
+        console.log('🏆 Active notifications updated:', updated);
+        return updated;
+      });
     });
     
+    console.log('🏆 === ACHIEVEMENTS CHECK COMPLETE ===');
     return newAchievements;
   };
 

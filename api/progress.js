@@ -64,7 +64,7 @@ export default async function handler(req, res) {
           best_score: 0,
           exp: 0,
           abilities: JSON.stringify({}),
-          achievements: JSON.stringify([]),
+          achievements: JSON.stringify({}),
           settings: JSON.stringify({}),
         };
 
@@ -183,7 +183,7 @@ export default async function handler(req, res) {
           progressData.best_score,
           progressData.exp || 0,
           progressData.abilities || '{}',
-          progressData.achievements || '[]',
+          progressData.achievements || '{}',
           progressData.settings || '{}',
         ];
       } else {
@@ -199,7 +199,7 @@ export default async function handler(req, res) {
           progressData.best_score,
           progressData.exp || 0,
           progressData.abilities || '{}',
-          progressData.achievements || '[]',
+          progressData.achievements || '{}',
           progressData.settings || '{}',
         ];
       }
@@ -224,7 +224,7 @@ export default async function handler(req, res) {
             progressData.best_score || 0,
             progressData.exp || 0,
             progressData.abilities || '{}',
-            progressData.achievements || '[]',
+            progressData.achievements || '{}',
             progressData.settings || '{}',
           ];
         } else {
@@ -238,7 +238,7 @@ export default async function handler(req, res) {
             progressData.best_score || 0,
             progressData.exp || 0,
             progressData.abilities || '{}',
-            progressData.achievements || '[]',
+            progressData.achievements || '{}',
             progressData.settings || '{}',
           ];
         }
