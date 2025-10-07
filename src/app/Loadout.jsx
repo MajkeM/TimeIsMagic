@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import "./globals.css";
+import "./medieval-theme.css";
 import Navbar from "./components/Navbar";
 import UserGoldLevelBar from "./components/UserGoldLevelBar";
 import PageWrapper from "./components/PageWrapper";
@@ -121,48 +122,174 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
         });
     }, [character]);
 
+    // Helper function to render ability card
+    const renderAbilityCard = (abilityType, abilityName, abilityImage, activeAbility) => {
+        const status = getAbilityStatus(abilityType, abilityName);
+        const isActive = activeAbility === abilityName;
+        
+        if (status.status === 'unlocked') {
+            return (
+                <label key={abilityName} className="fantasy-card" style={{ cursor: 'pointer', padding: '1rem', transition: 'all 0.3s ease' }}>
+                    <input 
+                        type="radio" 
+                        name={abilityType} 
+                        value={abilityName} 
+                        onChange={handleAbilityChange}
+                        style={{ display: 'none' }}
+                    />
+                    <div style={{ textAlign: 'center' }}>
+                        <img src={abilityImage} alt={`${abilityName} Ability`} style={{ width: '80px', height: '80px', marginBottom: '0.5rem' }} />
+                        <div className="gold-text" style={{ fontSize: '1.2rem', fontWeight: 'bold', textTransform: 'capitalize' }}>{abilityName}</div>
+                        <div style={{ color: 'var(--parchment)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                            {isActive && <span style={{ color: 'var(--medieval-gold)' }}>✓ Active</span>}
+                        </div>
+                    </div>
+                </label>
+            );
+        } else {
+            return (
+                <div key={abilityName} className="fantasy-card" style={{ opacity: 0.6, padding: '1rem', textAlign: 'center' }}>
+                    <img src={abilityImage} alt={`${abilityName} Ability`} style={{ width: '80px', height: '80px', marginBottom: '0.5rem', filter: 'grayscale(100%)' }} />
+                    <div style={{ color: 'var(--medieval-silver)', fontSize: '1.2rem', fontWeight: 'bold', textTransform: 'capitalize' }}>{abilityName}</div>
+                    <div style={{ color: 'var(--parchment)', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                        {status.status === 'can-unlock' ? (
+                            <>
+                                <div style={{ marginBottom: '0.5rem' }}>💰 {abilityCosts[abilityType][abilityName]} gold</div>
+                                <button 
+                                    className="medieval-button" 
+                                    onClick={() => unlockOrAlert(abilityType, abilityName)}
+                                    style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
+                                >
+                                    🔓 Unlock
+                                </button>
+                            </>
+                        ) : (
+                            <div style={{ color: '#888' }}>🔒 {status.text}</div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+    };
 
-
+    // Helper function to render character card
+    const renderCharacterCard = (characterName, characterImage) => {
+        const status = getCharacterStatus(characterName);
+        const isActive = character === characterName;
+        const displayName = characterName === 'king' ? 'Danious' : characterName.charAt(0).toUpperCase() + characterName.slice(1);
+        
+        if (status.status === 'unlocked') {
+            return (
+                <label key={characterName} className="fantasy-card" style={{ cursor: 'pointer', padding: '1rem', transition: 'all 0.3s ease' }}>
+                    <input 
+                        type="radio" 
+                        name="character" 
+                        value={characterName} 
+                        onChange={handleCharacterChange}
+                        style={{ display: 'none' }}
+                    />
+                    <div style={{ textAlign: 'center' }}>
+                        <img src={characterImage} alt={`${displayName} Character`} style={{ width: '80px', height: '80px', marginBottom: '0.5rem' }} />
+                        <div className="gold-text" style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{displayName}</div>
+                        <div style={{ color: 'var(--parchment)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                            {isActive && <span style={{ color: 'var(--medieval-gold)' }}>✓ Active</span>}
+                        </div>
+                    </div>
+                </label>
+            );
+        } else {
+            return (
+                <div key={characterName} className="fantasy-card" style={{ opacity: 0.6, padding: '1rem', textAlign: 'center' }}>
+                    <img src={characterImage} alt={`${displayName} Character`} style={{ width: '80px', height: '80px', marginBottom: '0.5rem', filter: 'grayscale(100%)' }} />
+                    <div style={{ color: 'var(--medieval-silver)', fontSize: '1.2rem', fontWeight: 'bold' }}>{displayName}</div>
+                    <div style={{ color: '#888', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                        🔒 {status.text}
+                    </div>
+                </div>
+            );
+        }
+    };
 
     return (
         <PageWrapper loadingSteps={loadingSteps.loadout}>
             <div className="loadout-page">
                 <Navbar />
                 <UserGoldLevelBar gold={gold} level={level} exp={exp} resetXp={resetXp} addLevel={addLevel} />
-                <div className="loadout-content">
-                    <h1>Loadout Page</h1>
-                    <p>Choose your loadout here and collect points to unlock new abilities.</p>
+                <div className="loadout-content" style={{ maxWidth: '1400px', margin: '2rem auto', padding: '0 1rem' }}>
+                    <div className="medieval-container">
+                        <h1 className="medieval-heading">⚔️ Armory & Arsenal ⚔️</h1>
+                        <div className="scroll-decoration"></div>
+                        <p style={{ textAlign: 'center', color: 'var(--ink)', fontSize: '1.1rem', marginBottom: '2rem' }}>
+                            Choose your champion and master the ancient arts of combat
+                        </p>
 
-                    <h2>Abilities</h2>
-                    <p>R abilities</p>
-                    <div className = "R abilities">
+                        <h2 className="gold-text" style={{ fontSize: '2rem', marginBottom: '1.5rem', textAlign: 'center' }}>
+                            ⚡ R Abilities - Reload Arts ⚡
+                        </h2>
+                        <div className = "R abilities" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
                         
                         {/* Reload - always available */}
-                        <span className="ability-option">
-                            <input type="radio" name="R" value="reload" onChange={handleAbilityChange} disabled={!abilityAvailability.R.reload} />
-                            <label htmlFor ="R">Reload <img className="ability-icon" src={reloadAbility} alt="Reload Ability" /></label>
-                        </span>
+                        <label className="fantasy-card" style={{ cursor: 'pointer', padding: '1rem', transition: 'all 0.3s ease' }}>
+                            <input 
+                                type="radio" 
+                                name="R" 
+                                value="reload" 
+                                onChange={handleAbilityChange} 
+                                disabled={!abilityAvailability.R.reload}
+                                style={{ display: 'none' }}
+                            />
+                            <div style={{ textAlign: 'center' }}>
+                                <img className="ability-icon" src={reloadAbility} alt="Reload Ability" style={{ width: '80px', height: '80px', marginBottom: '0.5rem' }} />
+                                <div className="gold-text" style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>Reload</div>
+                                <div style={{ color: 'var(--parchment)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                                    {R_ability === 'reload' && <span style={{ color: 'var(--medieval-gold)' }}>✓ Active</span>}
+                                </div>
+                            </div>
+                        </label>
 
                         {/* Splash */}
-                        <span className="ability-option">
-                            {(() => {
-                                const status = getAbilityStatus('R', 'splash');
-                                return status.status === 'unlocked' ? (
-                                    <>
-                                        <input type="radio" name="R" value="splash" onChange={handleAbilityChange} />
-                                        <label htmlFor="R">Splash <img className="ability-icon" src={splashAbility} alt="Splash Ability" /></label>
-                                    </>
-                                ) : (
-                                    <div className={`ability-locked ${status.status}`}>
-                                        <span>Splash <img className="ability-icon grayscale" src={splashAbility} alt="Splash Ability" /></span>
-                                        <span className="ability-status">{status.text}</span>
-                                        {status.status === 'can-unlock' && (
-                                            <button onClick={() => unlockOrAlert("R", "splash")}>Unlock</button>
+                        {(() => {
+                            const status = getAbilityStatus('R', 'splash');
+                            return status.status === 'unlocked' ? (
+                                <label className="fantasy-card" style={{ cursor: 'pointer', padding: '1rem', transition: 'all 0.3s ease' }}>
+                                    <input 
+                                        type="radio" 
+                                        name="R" 
+                                        value="splash" 
+                                        onChange={handleAbilityChange}
+                                        style={{ display: 'none' }}
+                                    />
+                                    <div style={{ textAlign: 'center' }}>
+                                        <img className="ability-icon" src={splashAbility} alt="Splash Ability" style={{ width: '80px', height: '80px', marginBottom: '0.5rem' }} />
+                                        <div className="gold-text" style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>Splash</div>
+                                        <div style={{ color: 'var(--parchment)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                                            {R_ability === 'splash' && <span style={{ color: 'var(--medieval-gold)' }}>✓ Active</span>}
+                                        </div>
+                                    </div>
+                                </label>
+                            ) : (
+                                <div className="fantasy-card" style={{ opacity: 0.6, padding: '1rem', textAlign: 'center' }}>
+                                    <img className="ability-icon" src={splashAbility} alt="Splash Ability" style={{ width: '80px', height: '80px', marginBottom: '0.5rem', filter: 'grayscale(100%)' }} />
+                                    <div style={{ color: 'var(--medieval-silver)', fontSize: '1.2rem', fontWeight: 'bold' }}>Splash</div>
+                                    <div style={{ color: 'var(--parchment)', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                                        {status.status === 'can-unlock' ? (
+                                            <>
+                                                <div style={{ marginBottom: '0.5rem' }}>💰 {abilityCosts.R.splash} gold</div>
+                                                <button 
+                                                    className="medieval-button" 
+                                                    onClick={() => unlockOrAlert("R", "splash")}
+                                                    style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
+                                                >
+                                                    🔓 Unlock
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <div style={{ color: '#888' }}>🔒 {status.text}</div>
                                         )}
                                     </div>
-                                );
-                            })()}
-                        </span>
+                                </div>
+                            );
+                        })()}
 
                         {/* Gravity Well */}
                         <span className="ability-option">
@@ -269,8 +396,13 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
                             })()}
                         </span>
                     </div>
-                    <p>F abilities</p>
-                     <div className = "F abilities">
+
+                    <div className="scroll-decoration"></div>
+
+                    <h2 className="gold-text" style={{ fontSize: '2rem', marginBottom: '1.5rem', textAlign: 'center', marginTop: '2rem' }}>
+                        💨 F Abilities - Flash Arts 💨
+                    </h2>
+                     <div className = "F abilities" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
                         
                         {/* Flash - always available */}
                         <span className="ability-option">
@@ -384,8 +516,13 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
                         </span>
                        
                     </div>
-                    <p>T abilities</p>
-                     <div className = "T abilities">
+
+                    <div className="scroll-decoration"></div>
+
+                    <h2 className="gold-text" style={{ fontSize: '2rem', marginBottom: '1.5rem', textAlign: 'center', marginTop: '2rem' }}>
+                        🌀 T Abilities - Teleport Arts 🌀
+                    </h2>
+                     <div className = "T abilities" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
                         
                         {/* Teleport - always available */}
                         <span className="ability-option">
@@ -519,9 +656,13 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
                             })()} 
                         </span>
                     </div>
-                </div>
-                <h2>Characters</h2>
-                <div className = "character-options">
+
+                    <div className="scroll-decoration"></div>
+
+                    <h2 className="gold-text" style={{ fontSize: '2rem', marginBottom: '1.5rem', textAlign: 'center', marginTop: '2rem' }}>
+                        👤 Champions of the Realm 👤
+                    </h2>
+                    <div className = "character-options" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
                     {/* Wizard - always available */}
                     <span className="character-option">
                         <input type="radio" name="character" value="wizard" onChange={handleCharacterChange} disabled={!characterAvailability.wizard} />
@@ -599,6 +740,8 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
                                 );
                             })()} 
                         </span>
+                    </div>
+                    </div>
                 </div>
             </div>
         </PageWrapper>
