@@ -479,6 +479,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     
     const difficulty = useRef(1);
     const score = useRef(0);
+    const killCount = useRef(0); // Track kills for achievements
 
     const previousPosition = useRef({x:0, y:0});
 
@@ -521,9 +522,9 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     const tierNotifications = useRef([]);
 
     // Slash combat system constants and refs
-    const SLASH_RANGE = 300; // Range of slash attack
+    const SLASH_RANGE = 200; // Range of slash attack
     const SLASH_DURATION = 300; // Duration of slash animation in ms
-    const SLASH_COOLDOWN = 600; // Cooldown between slashes
+    const SLASH_COOLDOWN = 400; // Cooldown between slashes
     const SLASH_COOLDOWN_BOOSTED = 100; // Reduced cooldown with reload ability
     const SLASH_ANGLE_SPREAD = Math.PI / 3; // 60 degree slash arc
     
@@ -692,6 +693,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                                 const distance = Math.sqrt((enemyCenterX - gravityX) ** 2 + (enemyCenterY - gravityY) ** 2);
                                 if (distance <= GRAVITY_EXPLOSION_RADIUS) {
                                     score.current += 10;
+                                    killCount.current++;
                                     return false;
                                 }
                                 return true;
@@ -704,6 +706,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                                 const distance = Math.sqrt((enemyCenterX - gravityX) ** 2 + (enemyCenterY - gravityY) ** 2);
                                 if (distance <= GRAVITY_EXPLOSION_RADIUS) {
                                     score.current += 30;
+                                    killCount.current++;
                                     return false;
                                 }
                                 return true;
@@ -716,6 +719,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                                 const distance = Math.sqrt((enemyCenterX - gravityX) ** 2 + (enemyCenterY - gravityY) ** 2);
                                 if (distance <= GRAVITY_EXPLOSION_RADIUS) {
                                     score.current += 25;
+                                    killCount.current++;
                                     return false;
                                 }
                                 return true;
@@ -728,6 +732,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                                 const distance = Math.sqrt((enemyCenterX - gravityX) ** 2 + (enemyCenterY - gravityY) ** 2);
                                 if (distance <= GRAVITY_EXPLOSION_RADIUS) {
                                     score.current += 35;
+                                    killCount.current++;
                                     return false;
                                 }
                                 return true;
@@ -949,6 +954,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                                 const distance = Math.sqrt((checkX - enemyCenterX) ** 2 + (checkY - enemyCenterY) ** 2);
                                 if (distance < 50) {
                                     score.current += 10;
+                                    killCount.current++;
                                     return false; // Kill the enemy
                                 }
                                 return true;
@@ -961,6 +967,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                                 const distance = Math.sqrt((checkX - enemyCenterX) ** 2 + (checkY - enemyCenterY) ** 2);
                                 if (distance < 50) {
                                     score.current += 30;
+                                    killCount.current++;
                                     return false; // Kill the enemy
                                 }
                                 return true;
@@ -973,6 +980,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                                 const distance = Math.sqrt((checkX - enemyCenterX) ** 2 + (checkY - enemyCenterY) ** 2);
                                 if (distance < 50) {
                                     score.current += 35;
+                                    killCount.current++;
                                     return false; // Kill the enemy
                                 }
                                 return true;
@@ -985,6 +993,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                                 const distance = Math.sqrt((checkX - enemyCenterX) ** 2 + (checkY - enemyCenterY) ** 2);
                                 if (distance < 50) {
                                     score.current += 25;
+                                    killCount.current++;
                                     return false; // Kill the enemy
                                 }
                                 return true;
@@ -5808,15 +5817,16 @@ tierNotifications.current = tierNotifications.current.filter(notification => {
                 console.log('Game ended! Score:', score.current);
                 console.log('Gold to add:', goldToAdd);
                 console.log('Exp to add:', expToAdd);
+                console.log('Kills:', killCount.current);
                 
                 // Add rewards and reload data for UI update - USING COMBINED OPERATION
                 const giveRewards = async () => {
                   try {
                     console.log('🎁 === REWARD GIVING START ===');
                     
-                    // Use combined function to save gold, exp, and best score in ONE database operation
-                    console.log('🎁 Adding gold, exp, and checking best score...');
-                    await addGoldAndExp(goldToAdd, expToAdd, score.current);
+                    // Use combined function to save gold, exp, stats, and best score in ONE database operation
+                    console.log('🎁 Adding gold, exp, kills, and checking best score...');
+                    await addGoldAndExp(goldToAdd, expToAdd, score.current, killCount.current);
                     console.log('🎁 Gold, exp, and best score saved to database in single operation');
                     
                     console.log('🎁 Waiting for database operations to settle...');

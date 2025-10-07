@@ -14,7 +14,8 @@ export default function Navbar() {
                                 <img src={playButtonImage} alt="Play" />
                             </Link>
                         </button>
-                        <Link className="side-link" to="/leaderboard">🏆 Leaderboard</Link>
+                        <Link className="side-link" to="/achievements">🏆 Achievements</Link>
+                        <Link className="side-link" to="/leaderboard">📊 Leaderboard</Link>
                         <Link className="side-link" to="/settings">Settings</Link>
                         <Link className="side-link" to="/credits">Credits</Link>
                     </nav>

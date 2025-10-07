@@ -7,6 +7,7 @@ import Loadout from "./Loadout";
 import Settings from "./Settings";
 import Credits from "./Credits";
 import Leaderboard from "./Leaderboard";
+import Achievements from "./Achievements";
 import LoadingScreen from "./components/LoadingScreen";
 import { useLoading, loadingSteps } from "./hooks/useLoading";
 import { AuthProvider, useAuth } from "../contexts/AuthContext.jsx";
@@ -118,7 +119,14 @@ function AuthenticatedApp() {
     characters: { selected: 'wizard' },
     abilities: {},
     unlockedAbilities: {}, // Track purchased abilities
-    settings: {}
+    settings: {},
+    achievements: {}, // Achievement unlocks
+    stats: { // Player statistics
+      totalKills: 0,
+      gamesPlayed: 0,
+      totalGoldEarned: 0,
+      abilitiesUnlocked: 3 // Default 3 free abilities
+    }
   });
 
   // Načtení dat z databáze při startu
@@ -139,6 +147,15 @@ function AuthenticatedApp() {
       // Parsujeme JSON stringy z databáze
       const abilitiesData = JSON.parse(data.abilities || '{}');
       const unlockedAbilitiesList = abilitiesData.unlocked || [];
+      const achievementsData = JSON.parse(data.achievements || '{}');
+      const settingsData = JSON.parse(data.settings || '{}');
+      const statsData = settingsData.stats || {
+        totalKills: 0,
+        gamesPlayed: 0,
+        totalGoldEarned: 0,
+        abilitiesUnlocked: 3
+      };
+      
       const parsedData = {
         gold: data.gold !== undefined ? data.gold : (data.score || 0), // Použij gold pokud existuje, jinak score pro kompatibilitu
         level: data.level || 1,
@@ -151,7 +168,9 @@ function AuthenticatedApp() {
           T: abilitiesData.T || 'teleport'
         },
         unlockedAbilities: buildAbilityAvailabilityFromList(unlockedAbilitiesList),
-        settings: JSON.parse(data.settings || '{}')
+        settings: settingsData,
+        achievements: achievementsData,
+        stats: statsData
       };
       
       console.log('Parsed game data:', parsedData);
@@ -183,6 +202,10 @@ function AuthenticatedApp() {
       const unlockedAbilitiesReloadList = abilitiesReloadData.unlocked || [];
       console.log('🔄 Unlocked abilities from DB:', unlockedAbilitiesReloadList);
       
+      const achievementsReloadData = JSON.parse(data.achievements || '{}');
+      const settingsReloadData = JSON.parse(data.settings || '{}');
+      const statsReloadData = settingsReloadData.stats || gameData.stats;
+      
       const parsedData = {
         gold: data.gold !== undefined ? data.gold : (data.score || 0), // Použij gold pokud existuje, jinak score pro kompatibilitu
         level: data.level || 1,
@@ -195,7 +218,9 @@ function AuthenticatedApp() {
           T: abilitiesReloadData.T || 'teleport'
         },
         unlockedAbilities: buildAbilityAvailabilityFromList(unlockedAbilitiesReloadList),
-        settings: JSON.parse(data.settings || '{}')
+        settings: settingsReloadData,
+        achievements: achievementsReloadData,
+        stats: statsReloadData
       };
       
       console.log('🔄 Parsed reloaded data:', parsedData);
@@ -220,7 +245,9 @@ function AuthenticatedApp() {
       console.log('💾 Preparing database payload...');
       
       // Create clean, minimal payload to avoid 413 errors
-      const cleanSettings = {};
+      const cleanSettings = {
+        stats: updatedData.stats || gameData.stats
+      };
       const cleanCharacters = { selected: updatedData.characters?.selected || 'wizard' };
       const cleanAbilities = {
         characters: cleanCharacters,
@@ -245,7 +272,7 @@ function AuthenticatedApp() {
             updatedData.unlockedAbilities ? updatedData.unlockedAbilities : abilityAvailability
           )
         }),
-        achievements: JSON.stringify([]),
+        achievements: JSON.stringify(updatedData.achievements || {}),
         settings: JSON.stringify(cleanSettings)
       };
       console.log('💾 Database payload:', dbPayload);
@@ -495,7 +522,9 @@ function AuthenticatedApp() {
       console.log('🛒 === ABILITY PURCHASE START ===');
       console.log('🛒 Purchasing:', abilityType, abilityName, 'for', cost, 'gold');
       console.log('🛒 Current gold:', gold);
+      console.log('🛒 Current unlocked abilities:', abilityAvailability);
       
+      const newGold = gold - cost;
       const newAvailability = {
         ...abilityAvailability,
         [abilityType]: {
@@ -504,46 +533,40 @@ function AuthenticatedApp() {
         }
       };
       
+      console.log('🛒 New gold will be:', newGold);
       console.log('🛒 New availability state:', newAvailability);
       
       try {
-        // First subtract gold using specialized endpoint
-        console.log('🛒 Step 1: Subtracting gold...');
-        const goldResponse = await fetch('/api/gold', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            operation: 'subtract',
-            amount: cost
-          })
+        // Count total unlocked abilities
+        const totalUnlocked = Object.values(newAvailability).reduce((sum, typeAbilities) => {
+          return sum + Object.values(typeAbilities).filter(unlocked => unlocked).length;
+        }, 0);
+        
+        // Update stats with new ability count
+        const newStats = {
+          ...gameData.stats,
+          abilitiesUnlocked: totalUnlocked
+        };
+        
+        // Save both gold, abilities, and stats in ONE operation to prevent race condition
+        console.log('🛒 Saving gold, abilities, and stats together...');
+        await saveGameData({ 
+          gold: newGold,
+          unlockedAbilities: newAvailability,
+          stats: newStats
         });
 
-        if (!goldResponse.ok) {
-          throw new Error(`Gold operation failed: ${goldResponse.status}`);
-        }
-
-        const goldResult = await goldResponse.json();
-        console.log('🛒 Gold subtracted, new gold:', goldResult.newGold);
-
-        // Update local state
+        // Update local state after successful save
         setAbilityAvailability(newAvailability);
-        setGameData(prev => ({
-          ...prev,
-          gold: goldResult.newGold,
-          unlockedAbilities: newAvailability
-        }));
-
-        // Save abilities to database
-        console.log('🛒 Step 2: Saving abilities...');
-        await saveGameData({ unlockedAbilities: newAvailability });
         
         console.log('🛒 === ABILITY PURCHASE SUCCESS ===');
+        console.log('🛒 New gold:', newGold);
+        console.log('🛒 Ability unlocked:', abilityType, abilityName);
+        console.log('🛒 Total abilities unlocked:', totalUnlocked);
       } catch (error) {
         console.error('🛒 === ABILITY PURCHASE ERROR ===');
         console.error('🛒 Failed to save purchase:', error);
+        alert('Failed to purchase ability. Please try again.');
         throw error;
       }
     } else {
@@ -583,9 +606,9 @@ function AuthenticatedApp() {
   };
 
   // Combined function to add both gold and exp in one database operation
-  const addGoldAndExp = async (goldAmount, expAmount, currentScore = 0) => {
+  const addGoldAndExp = async (goldAmount, expAmount, currentScore = 0, killCount = 0) => {
     console.log('🎁 === COMBINED GOLD+EXP OPERATION START ===');
-    console.log('🎁 Adding gold:', goldAmount, 'exp:', expAmount, 'current score:', currentScore);
+    console.log('🎁 Adding gold:', goldAmount, 'exp:', expAmount, 'current score:', currentScore, 'kills:', killCount);
     console.log('🎁 Current gold:', gold, 'exp:', exp, 'best score:', gameData.bestScore);
     
     try {
@@ -597,10 +620,28 @@ function AuthenticatedApp() {
       const newLevel = Math.floor(newExp / 100) + 1;
       const dataToSave = { gold: newGold, exp: newExp };
       
+      // Update stats
+      const newStats = {
+        ...gameData.stats,
+        totalKills: (gameData.stats?.totalKills || 0) + killCount,
+        gamesPlayed: (gameData.stats?.gamesPlayed || 0) + 1,
+        totalGoldEarned: (gameData.stats?.totalGoldEarned || 0) + goldAmount,
+        abilitiesUnlocked: gameData.stats?.abilitiesUnlocked || 3
+      };
+      dataToSave.stats = newStats;
+      
+      // Check achievements
+      const newAchievements = checkAndUnlockAchievements(newStats, newLevel, currentScore);
+      if (Object.keys(newAchievements).length > 0) {
+        dataToSave.achievements = { ...gameData.achievements, ...newAchievements };
+        console.log('🏆 New achievements unlocked:', Object.keys(newAchievements));
+      }
+      
       // Check if current score is a new best score
       if (currentScore > (gameData.bestScore || 0)) {
         console.log('🏆 New best score!', currentScore, '(previous:', gameData.bestScore, ')');
         dataToSave.bestScore = currentScore;
+        newStats.bestScore = currentScore;
       } else {
         console.log('🎁 No new best score. Current:', currentScore, 'Best:', gameData.bestScore);
       }
@@ -612,7 +653,7 @@ function AuthenticatedApp() {
         console.log('🎁 Updating character availability for new level...');
         updateAvailabilityBasedOnLevel(newLevel);
       } else {
-        console.log('🎁 No level up, saving gold, exp, and best score...');
+        console.log('🎁 No level up, saving gold, exp, stats, and best score...');
         await saveGameData(dataToSave);
       }
       
@@ -622,6 +663,61 @@ function AuthenticatedApp() {
       console.error('🎁 Failed to save gold and exp:', error);
       throw error;
     }
+  };
+
+  // Check and unlock achievements based on stats
+  const checkAndUnlockAchievements = (stats, currentLevel, bestScore) => {
+    const newAchievements = {};
+    
+    // Kill achievements
+    if (stats.totalKills >= 1 && !gameData.achievements?.first_kill) {
+      newAchievements.first_kill = true;
+    }
+    if (stats.totalKills >= 10 && !gameData.achievements?.killer_10) {
+      newAchievements.killer_10 = true;
+    }
+    if (stats.totalKills >= 50 && !gameData.achievements?.killer_50) {
+      newAchievements.killer_50 = true;
+    }
+    if (stats.totalKills >= 100 && !gameData.achievements?.killer_100) {
+      newAchievements.killer_100 = true;
+    }
+    
+    // Games played achievements
+    if (stats.gamesPlayed >= 5 && !gameData.achievements?.survivor_5) {
+      newAchievements.survivor_5 = true;
+    }
+    if (stats.gamesPlayed >= 20 && !gameData.achievements?.survivor_20) {
+      newAchievements.survivor_20 = true;
+    }
+    
+    // Score achievements
+    if (bestScore >= 100 && !gameData.achievements?.score_100) {
+      newAchievements.score_100 = true;
+    }
+    if (bestScore >= 500 && !gameData.achievements?.score_500) {
+      newAchievements.score_500 = true;
+    }
+    
+    // Gold achievement
+    if (stats.totalGoldEarned >= 1000 && !gameData.achievements?.gold_collector) {
+      newAchievements.gold_collector = true;
+    }
+    
+    // Level achievements
+    if (currentLevel >= 5 && !gameData.achievements?.level_5) {
+      newAchievements.level_5 = true;
+    }
+    if (currentLevel >= 10 && !gameData.achievements?.level_10) {
+      newAchievements.level_10 = true;
+    }
+    
+    // Ability master achievement
+    if (stats.abilitiesUnlocked >= 18 && !gameData.achievements?.ability_master) {
+      newAchievements.ability_master = true;
+    }
+    
+    return newAchievements;
   };
 
   const addGold = async (amount) => {
@@ -807,6 +903,19 @@ function AuthenticatedApp() {
           exp={exp || 0} 
           resetXp={resetXp} 
           addLevel={addLevel} 
+        />} 
+        />
+
+        <Route 
+        path="/achievements" 
+        element={<Achievements 
+          gold={gold || 0} 
+          level={level || 1} 
+          exp={exp || 0} 
+          resetXp={resetXp} 
+          addLevel={addLevel}
+          achievements={gameData.achievements || {}}
+          stats={{...gameData.stats, bestScore: gameData.bestScore}}
         />} 
         />
 
