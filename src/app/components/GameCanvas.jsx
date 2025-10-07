@@ -396,6 +396,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     const TIER_1_THRESHOLD = 0;     // Basic enemies from start
     const TIER_2_THRESHOLD = 150;   // Triple shoot and bomber unlock at score 150
     const TIER_3_THRESHOLD = 300;   // Teleporter enemies unlock at score 300
+    const TIER_4_THRESHOLD = 500;   // 🔥 ELITE ENEMIES - Tank and Sniper unlock at score 500
 
     // TIER 1 ENEMIES - Available from start (Score >= 0)
     const SPAWN_BASIC_ENEMY_TIME = 3000;      // Slower spawn rate for balance
@@ -424,6 +425,30 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     const TELEPORTER_BULLET_SPEED_SLOW = 1;
     const TELEPORTER_TELEPORT_INTERVAL = 4000; // Teleports every 4 seconds
     const TELEPORTER_HOMING_STRENGTH = 0.1; // How strongly bullets home
+
+    // 🔥 TIER 4 ENEMIES - ELITE ENEMIES (Score >= 500)
+    
+    // TANK ENEMY - Slow but has HIGH HP (requires multiple hits)
+    const SPAWN_TANK_ENEMY_TIME = 20000; // Rare spawn
+    const SPAWN_TANK_ENEMY_TIME_MIN = 12000;
+    const TANK_ENEMY_SPEED = 1.5; // Very slow
+    const TANK_ENEMY_SPEED_SLOW = 0.5;
+    const TANK_ENEMY_HP = 5; // Takes 5 hits to kill!
+    const TANK_ENEMY_BULLET_SPEED = 10; // Slow bullets
+    const TANK_ENEMY_BULLET_SPEED_SLOW = 1;
+    const TANK_ENEMY_SIZE = 250; // Bigger than normal enemies
+    const TANK_ENEMY_SHOOT_INTERVAL = 4000; // Shoots every 4 seconds
+    
+    // SNIPER ENEMY - Stays far, shoots FAST precise bullets from distance
+    const SPAWN_SNIPER_ENEMY_TIME = 18000; // Rare spawn
+    const SPAWN_SNIPER_ENEMY_TIME_MIN = 10000;
+    const SNIPER_ENEMY_SPEED = 2.0; // Moderate speed, keeps distance
+    const SNIPER_ENEMY_SPEED_SLOW = 0.7;
+    const SNIPER_ENEMY_BULLET_SPEED = 30; // VERY FAST bullets!
+    const SNIPER_ENEMY_BULLET_SPEED_SLOW = 2;
+    const SNIPER_ENEMY_OPTIMAL_RANGE = 400; // Prefers to stay 400px away
+    const SNIPER_ENEMY_SHOOT_INTERVAL = 2500; // Shoots every 2.5 seconds
+    const SNIPER_LASER_CHARGE_TIME = 1000; // 1 second laser sight warning
 
     const PLAYER_SPEED = 4;
     const PLAYER_SPEED_SLOW = 1;
@@ -554,9 +579,29 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     const lastTeleporterEnemySpawnTime = useRef(0);
     const teleporterImageRef = useRef(null);
 
+    // 🔥 TIER 4 - ELITE ENEMIES
+    
+    // Tank enemy - High HP, slow, tanky
+    const tankEnemyRef = useRef([]);
+    const tankEnemyBulletsRef = useRef([]);
+    const tankEnemySpeed = useRef(TANK_ENEMY_SPEED);
+    const tankEnemyBulletSpeed = useRef(TANK_ENEMY_BULLET_SPEED);
+    const lastTankEnemySpawnTime = useRef(0);
+    const tankImageRef = useRef(null);
+    
+    // Sniper enemy - Fast bullets, keeps distance, laser sight warning
+    const sniperEnemyRef = useRef([]);
+    const sniperEnemyBulletsRef = useRef([]);
+    const sniperEnemySpeed = useRef(SNIPER_ENEMY_SPEED);
+    const sniperEnemyBulletSpeed = useRef(SNIPER_ENEMY_BULLET_SPEED);
+    const lastSniperEnemySpawnTime = useRef(0);
+    const sniperImageRef = useRef(null);
+    const sniperLaserSights = useRef([]); // Active laser sights for snipers
+
     // Tier system tracking
     const tier2Unlocked = useRef(false);
     const tier3Unlocked = useRef(false);
+    const tier4Unlocked = useRef(false);
     const tierNotifications = useRef([]);
 
     // 🎁 POWER-UP SYSTEM
@@ -1359,6 +1404,75 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
         };
 
         const intervalId = setInterval(teleportEnemies, TELEPORTER_TELEPORT_INTERVAL);
+        return () => clearInterval(intervalId);
+    }, []);
+
+    // 🔥 TIER 4 - TANK ENEMY SHOOTING (Heavy slow bullets)
+    useEffect(() => {
+        const shootTankEnemyBullets = () => {
+            if (freezeAbilityActive.current) return;
+            
+            tankEnemyRef.current.forEach((enemy) => {
+                const dx = (playerRef.current.x + playerRef.current.width / 2) - (enemy.x + enemy.width / 2);
+                const dy = (playerRef.current.y + playerRef.current.height / 2) - (enemy.y + enemy.height / 2);
+                const length = Math.sqrt(dx * dx + dy * dy);
+                const dirX = dx / length;
+                const dirY = dy / length;
+
+                tankEnemyBulletsRef.current.push({
+                    x: enemy.x + enemy.width / 2,
+                    y: enemy.y + enemy.height / 2,
+                    dirX: dirX,
+                    dirY: dirY,
+                    size: 40 // Bigger bullets
+                });
+            });
+        };
+
+        const intervalId = setInterval(shootTankEnemyBullets, TANK_ENEMY_SHOOT_INTERVAL);
+        return () => clearInterval(intervalId);
+    }, []);
+
+    // 🔥 TIER 4 - SNIPER ENEMY SHOOTING (Fast precise shots with laser warning)
+    useEffect(() => {
+        const shootSniperEnemyBullets = () => {
+            if (freezeAbilityActive.current) return;
+            
+            sniperEnemyRef.current.forEach((enemy) => {
+                const dx = (playerRef.current.x + playerRef.current.width / 2) - (enemy.x + enemy.width / 2);
+                const dy = (playerRef.current.y + playerRef.current.height / 2) - (enemy.y + enemy.height / 2);
+                const length = Math.sqrt(dx * dx + dy * dy);
+                const dirX = dx / length;
+                const dirY = dy / length;
+                const angle = Math.atan2(dy, dx);
+                
+                // Create laser sight warning
+                sniperLaserSights.current.push({
+                    x: enemy.x + enemy.width / 2,
+                    y: enemy.y + enemy.height / 2,
+                    angle: angle,
+                    startTime: performance.now(),
+                    enemyId: enemy
+                });
+                
+                // Shoot after laser charge time
+                setTimeout(() => {
+                    // Check if enemy still exists
+                    if (sniperEnemyRef.current.includes(enemy)) {
+                        sniperEnemyBulletsRef.current.push({
+                            x: enemy.x + enemy.width / 2,
+                            y: enemy.y + enemy.height / 2,
+                            dirX: dirX,
+                            dirY: dirY,
+                            angle: angle,
+                            size: 25
+                        });
+                    }
+                }, SNIPER_LASER_CHARGE_TIME);
+            });
+        };
+
+        const intervalId = setInterval(shootSniperEnemyBullets, SNIPER_ENEMY_SHOOT_INTERVAL);
         return () => clearInterval(intervalId);
     }, []);
     
@@ -3008,6 +3122,16 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             });
         }
         
+        if (currentScore >= TIER_4_THRESHOLD && !tier4Unlocked.current) {
+            tier4Unlocked.current = true;
+            tierNotifications.current.push({
+                text: "🔥 TIER 4 UNLOCKED! ELITE ENEMIES DEPLOYED! 🔥",
+                startTime: currentTime,
+                duration: 5000,
+                color: "#FF0000"
+            });
+        }
+        
         // Get responsive speed multiplier for consistent performance
         const speedMultiplier = getResponsiveSpeedMultiplier();
         
@@ -3105,6 +3229,70 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     x: x, y: y, width: 150, height: 120, color: "cyan",
                     teleporting: false,
                     teleportStartTime: 0,
+                });
+            }
+        }
+
+        // 🔥 TIER 4 ENEMIES (Score >= 500) - ELITE ENEMIES
+        
+        // TANK ENEMY SPAWNING
+        if (currentScore >= TIER_4_THRESHOLD) {
+            const tankSpawnInterval = Math.max(
+                SPAWN_TANK_ENEMY_TIME_MIN,
+                (SPAWN_TANK_ENEMY_TIME / difficulty.current) * speedMultiplier
+            );
+            
+            if (currentTime - lastTankEnemySpawnTime.current > tankSpawnInterval) {
+                lastTankEnemySpawnTime.current = currentTime;
+                const side = Math.floor(Math.random() * 4);
+                let x, y;
+                
+                switch (side) {
+                    case 0: x = Math.random() * window.innerWidth; y = 0; break;
+                    case 1: x = window.innerWidth; y = Math.random() * window.innerHeight; break;
+                    case 2: x = Math.random() * window.innerWidth; y = window.innerHeight; break;
+                    case 3: x = 0; y = Math.random() * window.innerHeight; break;
+                }
+                
+                tankEnemyRef.current.push({
+                    x: x,
+                    y: y,
+                    width: TANK_ENEMY_SIZE,
+                    height: TANK_ENEMY_SIZE,
+                    color: "darkred",
+                    hp: TANK_ENEMY_HP, // Multiple hits needed!
+                    maxHp: TANK_ENEMY_HP,
+                    lastShootTime: currentTime
+                });
+            }
+            
+            // SNIPER ENEMY SPAWNING
+            const sniperSpawnInterval = Math.max(
+                SPAWN_SNIPER_ENEMY_TIME_MIN,
+                (SPAWN_SNIPER_ENEMY_TIME / difficulty.current) * speedMultiplier
+            );
+            
+            if (currentTime - lastSniperEnemySpawnTime.current > sniperSpawnInterval) {
+                lastSniperEnemySpawnTime.current = currentTime;
+                const side = Math.floor(Math.random() * 4);
+                let x, y;
+                
+                switch (side) {
+                    case 0: x = Math.random() * window.innerWidth; y = 0; break;
+                    case 1: x = window.innerWidth; y = Math.random() * window.innerHeight; break;
+                    case 2: x = Math.random() * window.innerWidth; y = window.innerHeight; break;
+                    case 3: x = 0; y = Math.random() * window.innerHeight; break;
+                }
+                
+                sniperEnemyRef.current.push({
+                    x: x,
+                    y: y,
+                    width: 150,
+                    height: 120,
+                    color: "purple",
+                    lastShootTime: currentTime,
+                    chargingShot: false,
+                    chargeStartTime: 0
                 });
             }
         }
@@ -4644,6 +4832,252 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             }
         });
 
+        // 🔥 TIER 4 - DRAW TANK ENEMIES (High HP, slow, tanky)
+        tankEnemyRef.current.forEach((enemy, index) => {
+            if (!freezeAbilityActive.current) {
+                // Move tank enemy towards player (slow)
+                let dx = (playerRef.current.x + playerRef.current.width / 2) - (enemy.x + enemy.width / 2);
+                let dy = (playerRef.current.y + playerRef.current.height / 2) - (enemy.y + enemy.height / 2);
+                
+                const length = Math.sqrt(dx * dx + dy * dy);
+                const dirX = length > 0 ? dx / length : 0;
+                const dirY = length > 0 ? dy / length : 0;
+
+                // Apply power-up slow time effect
+                const powerupEffects = applyPowerupEffects();
+                const effectiveSpeed = tankEnemySpeed.current * powerupEffects.enemySlowdown;
+
+                const newX = enemy.x + dirX * effectiveSpeed;
+                const newY = enemy.y + dirY * effectiveSpeed;
+                
+                // Check wall collision
+                let canMove = true;
+                for (let wall of walls.current) {
+                    if (newX + enemy.width > wall.x && newX < wall.x + wall.width &&
+                        newY + enemy.height > wall.y && newY < wall.y + wall.height) {
+                        canMove = false;
+                        break;
+                    }
+                }
+                
+                if (canMove) {
+                    enemy.x = newX;
+                    enemy.y = newY;
+                }
+            }
+            
+            const enemyCenterX = enemy.x + enemy.width / 2;
+            const enemyCenterY = enemy.y + enemy.height / 2;
+            
+            // Calculate rotation towards player
+            const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+            const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+            const rotationDx = playerCenterX - enemyCenterX;
+            const rotationDy = playerCenterY - enemyCenterY;
+            const tankRotationAngle = Math.atan2(rotationDy, rotationDx);
+            
+            ctx.save();
+            ctx.translate(enemyCenterX, enemyCenterY);
+            ctx.rotate(tankRotationAngle);
+            
+            // Draw tank body (bigger)
+            if (bomberImageRef.current) {
+                ctx.filter = 'hue-rotate(30deg) saturate(2) brightness(0.7)';
+                ctx.drawImage(bomberImageRef.current, -enemy.width / 2, -enemy.height / 2, enemy.width, enemy.height);
+                ctx.filter = 'none';
+            } else {
+                ctx.fillStyle = "darkred";
+                ctx.fillRect(-enemy.width / 2, -enemy.height / 2, enemy.width, enemy.height);
+            }
+            
+            ctx.restore();
+            
+            // Draw HP bar above tank
+            const barWidth = 80;
+            const barHeight = 8;
+            const barX = enemyCenterX - barWidth / 2;
+            const barY = enemy.y - 20;
+            
+            // Background
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(barX, barY, barWidth, barHeight);
+            
+            // HP bar
+            const hpPercent = enemy.hp / enemy.maxHp;
+            ctx.fillStyle = hpPercent > 0.5 ? '#00ff00' : (hpPercent > 0.25 ? '#ffaa00' : '#ff0000');
+            ctx.fillRect(barX, barY, barWidth * hpPercent, barHeight);
+            
+            // Border
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(barX, barY, barWidth, barHeight);
+            
+            // HP text
+            ctx.fillStyle = 'white';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${enemy.hp}/${enemy.maxHp}`, enemyCenterX, barY - 5);
+        });
+        
+        // Draw tank enemy bullets (heavy slow bullets)
+        tankEnemyBulletsRef.current.forEach((bullet, index) => {
+            bullet.x += bullet.dirX * tankEnemyBulletSpeed.current;
+            bullet.y += bullet.dirY * tankEnemyBulletSpeed.current;
+            
+            const bulletAngle = Math.atan2(bullet.dirY, bullet.dirX);
+            const bulletSize = bullet.size || 40;
+            
+            ctx.save();
+            ctx.translate(bullet.x, bullet.y);
+            ctx.rotate(bulletAngle);
+            
+            if (goblinBulletImageRef.current) {
+                ctx.filter = 'hue-rotate(30deg) saturate(2) brightness(0.8)';
+                ctx.drawImage(goblinBulletImageRef.current, -bulletSize/2, -bulletSize/2, bulletSize, bulletSize);
+                ctx.filter = 'none';
+            } else {
+                ctx.fillStyle = "darkred";
+                ctx.fillRect(-bulletSize/2, -bulletSize/2, bulletSize, bulletSize);
+            }
+            
+            ctx.restore();
+        });
+
+        // 🔥 TIER 4 - DRAW SNIPER ENEMIES (Fast bullets, keeps distance, laser warning)
+        sniperEnemyRef.current.forEach((enemy, index) => {
+            if (!freezeAbilityActive.current) {
+                // Sniper AI: Keep optimal distance from player
+                const dx = (playerRef.current.x + playerRef.current.width / 2) - (enemy.x + enemy.width / 2);
+                const dy = (playerRef.current.y + playerRef.current.height / 2) - (enemy.y + enemy.height / 2);
+                const distanceToPlayer = Math.sqrt(dx * dx + dy * dy);
+                
+                let dirX = 0, dirY = 0;
+                
+                if (distanceToPlayer < SNIPER_ENEMY_OPTIMAL_RANGE - 50) {
+                    // Too close, move away
+                    const length = Math.sqrt(dx * dx + dy * dy);
+                    dirX = -(dx / length);
+                    dirY = -(dy / length);
+                } else if (distanceToPlayer > SNIPER_ENEMY_OPTIMAL_RANGE + 50) {
+                    // Too far, move closer
+                    const length = Math.sqrt(dx * dx + dy * dy);
+                    dirX = dx / length;
+                    dirY = dy / length;
+                }
+                // If within optimal range, stay still
+                
+                if (dirX !== 0 || dirY !== 0) {
+                    const powerupEffects = applyPowerupEffects();
+                    const effectiveSpeed = sniperEnemySpeed.current * powerupEffects.enemySlowdown;
+                    
+                    const newX = enemy.x + dirX * effectiveSpeed;
+                    const newY = enemy.y + dirY * effectiveSpeed;
+                    
+                    let canMove = true;
+                    for (let wall of walls.current) {
+                        if (newX + enemy.width > wall.x && newX < wall.x + wall.width &&
+                            newY + enemy.height > wall.y && newY < wall.y + wall.height) {
+                            canMove = false;
+                            break;
+                        }
+                    }
+                    
+                    if (canMove) {
+                        enemy.x = newX;
+                        enemy.y = newY;
+                    }
+                }
+            }
+            
+            const enemyCenterX = enemy.x + enemy.width / 2;
+            const enemyCenterY = enemy.y + enemy.height / 2;
+            
+            const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+            const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+            const rotationDx = playerCenterX - enemyCenterX;
+            const rotationDy = playerCenterY - enemyCenterY;
+            const sniperRotationAngle = Math.atan2(rotationDy, rotationDx);
+            
+            ctx.save();
+            ctx.translate(enemyCenterX, enemyCenterY);
+            ctx.rotate(sniperRotationAngle);
+            
+            // Draw sniper (purple tint)
+            if (basicEnemySpriteRef.current) {
+                ctx.filter = 'hue-rotate(270deg) saturate(1.5) brightness(0.9)';
+                ctx.drawImage(basicEnemySpriteRef.current, -enemy.width / 2, -enemy.height / 2, enemy.width, enemy.height);
+                ctx.filter = 'none';
+            } else {
+                ctx.fillStyle = "purple";
+                ctx.fillRect(-enemy.width / 2, -enemy.height / 2, enemy.width, enemy.height);
+            }
+            
+            ctx.restore();
+        });
+        
+        // Draw sniper laser sights (warning before shot)
+        sniperLaserSights.current = sniperLaserSights.current.filter(laser => {
+            const elapsed = currentTime - laser.startTime;
+            if (elapsed > SNIPER_LASER_CHARGE_TIME) return false;
+            
+            const alpha = Math.min(1, elapsed / 500); // Fade in
+            const laserLength = 2000;
+            
+            ctx.save();
+            ctx.strokeStyle = `rgba(255, 0, 0, ${alpha * 0.8})`;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 5]);
+            ctx.beginPath();
+            ctx.moveTo(laser.x, laser.y);
+            ctx.lineTo(
+                laser.x + Math.cos(laser.angle) * laserLength,
+                laser.y + Math.sin(laser.angle) * laserLength
+            );
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Pulsing dot at laser origin
+            const pulseSize = 5 + Math.sin(currentTime / 50) * 3;
+            ctx.fillStyle = `rgba(255, 0, 0, ${alpha})`;
+            ctx.beginPath();
+            ctx.arc(laser.x, laser.y, pulseSize, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.restore();
+            
+            return true;
+        });
+        
+        // Draw sniper enemy bullets (FAST!)
+        sniperEnemyBulletsRef.current.forEach((bullet, index) => {
+            bullet.x += bullet.dirX * sniperEnemyBulletSpeed.current;
+            bullet.y += bullet.dirY * sniperEnemyBulletSpeed.current;
+            
+            const bulletSize = bullet.size || 25;
+            
+            ctx.save();
+            ctx.translate(bullet.x, bullet.y);
+            ctx.rotate(bullet.angle);
+            
+            if (goblinBulletImageRef.current) {
+                ctx.filter = 'hue-rotate(270deg) saturate(2) brightness(1.2)';
+                ctx.drawImage(goblinBulletImageRef.current, -bulletSize/2, -bulletSize/2, bulletSize, bulletSize);
+                ctx.filter = 'none';
+            } else {
+                ctx.fillStyle = "purple";
+                ctx.fillRect(-bulletSize/2, -bulletSize/2, bulletSize, bulletSize);
+            }
+            
+            // Draw speed trail
+            ctx.strokeStyle = 'rgba(128, 0, 128, 0.5)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-bullet.dirX * 30, -bullet.dirY * 30);
+            ctx.stroke();
+            
+            ctx.restore();
+        });
+
 
         // Draw basic enemy bullets
         basicEnemyBulletsRef.current.forEach((bullet, index) => {
@@ -4742,6 +5176,28 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             return bullet.x >= 0 && bullet.x <= window.innerWidth && bullet.y >= 0 && bullet.y <= window.innerHeight;
         });
 
+        // 🔥 TIER 4 - Remove Tank enemy bullets that are out of bounds
+        tankEnemyBulletsRef.current = tankEnemyBulletsRef.current.filter((bullet) => {
+            for (let wall of walls.current) {
+                if (bullet.x + 20 > wall.x && bullet.x < wall.x + wall.width &&
+                    bullet.y + 20 > wall.y && bullet.y < wall.y + wall.height) {
+                    return false;
+                }
+            }
+            return bullet.x >= 0 && bullet.x <= window.innerWidth && bullet.y >= 0 && bullet.y <= window.innerHeight;
+        });
+
+        // 🔥 TIER 4 - Remove Sniper enemy bullets that are out of bounds
+        sniperEnemyBulletsRef.current = sniperEnemyBulletsRef.current.filter((bullet) => {
+            for (let wall of walls.current) {
+                if (bullet.x + 15 > wall.x && bullet.x < wall.x + wall.width &&
+                    bullet.y + 15 > wall.y && bullet.y < wall.y + wall.height) {
+                    return false;
+                }
+            }
+            return bullet.x >= 0 && bullet.x <= window.innerWidth && bullet.y >= 0 && bullet.y <= window.innerHeight;
+        });
+
 
         // collision beetwen player and tripple shoot enemy bullets (using circular collision)
         trippleShootEnemyBulletsRef.current.forEach((bullet, index) => {
@@ -4789,6 +5245,53 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     updateDifficulty(); // Balanced difficulty progression
                 }
             })
+        });
+
+        // 🔥 TIER 4 - Collisions between player bullets and TANK enemies (multi-hit)
+        bullets.current.forEach((bullet, bIndex) => {
+            tankEnemyRef.current.forEach((enemy, eIndex) => {
+                const enemyCenterX = enemy.x + enemy.width / 2;
+                const enemyCenterY = enemy.y + enemy.height / 2;
+                const bulletCenterX = bullet.x + 15;
+                const bulletCenterY = bullet.y + 15;
+                
+                if (circularCollision(enemyCenterX, enemyCenterY, 80, bulletCenterX, bulletCenterY, 15)) {
+                    bullets.current.splice(bIndex, 1);
+                    enemy.hp--;
+                    
+                    createKillEffect(enemyCenterX, enemyCenterY, 20);
+                    
+                    if (enemy.hp <= 0) {
+                        tankEnemyRef.current.splice(eIndex, 1);
+                        spawnPowerup(enemyCenterX, enemyCenterY);
+                        score.current += 50; // High reward!
+                        killCount.current++;
+                    }
+                    updateDifficulty();
+                }
+            });
+        });
+
+        // 🔥 TIER 4 - Collisions between player bullets and SNIPER enemies
+        bullets.current.forEach((bullet, bIndex) => {
+            sniperEnemyRef.current.forEach((enemy, eIndex) => {
+                const enemyCenterX = enemy.x + enemy.width / 2;
+                const enemyCenterY = enemy.y + enemy.height / 2;
+                const bulletCenterX = bullet.x + 15;
+                const bulletCenterY = bullet.y + 15;
+                
+                if (circularCollision(enemyCenterX, enemyCenterY, 30, bulletCenterX, bulletCenterY, 15)) {
+                    bullets.current.splice(bIndex, 1);
+                    sniperEnemyRef.current.splice(eIndex, 1);
+                    
+                    createKillEffect(enemyCenterX, enemyCenterY, 25);
+                    spawnPowerup(enemyCenterX, enemyCenterY);
+                    
+                    score.current += 40;
+                    killCount.current++;
+                    updateDifficulty();
+                }
+            });
         });
 
         // Collisions between player and basic enemies (goblin collision)
@@ -4996,6 +5499,52 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                             score.current += 25;
                             difficulty.current += Math.floor(score.current / 100);
                         }
+                    }
+                }
+            });
+            
+            // 🔥 TIER 4 - Check slash collision with Tank enemies (damage but not kill)
+            tankEnemyRef.current.forEach((enemy, eIndex) => {
+                const enemyCenterX = enemy.x + enemy.width / 2;
+                const enemyCenterY = enemy.y + enemy.height / 2;
+                const distance = Math.sqrt((enemyCenterX - playerCenterX) ** 2 + (enemyCenterY - playerCenterY) ** 2);
+                
+                if (distance <= SLASH_RANGE) {
+                    const enemyAngle = Math.atan2(enemyCenterY - playerCenterY, enemyCenterX - playerCenterX);
+                    const angleDiff = Math.abs(enemyAngle - slashDirection.current);
+                    const normalizedAngleDiff = Math.min(angleDiff, 2 * Math.PI - angleDiff);
+                    
+                    if (normalizedAngleDiff <= SLASH_ANGLE_SPREAD / 2) {
+                        enemy.hp--;
+                        createKillEffect(enemyCenterX, enemyCenterY, 15);
+                        
+                        if (enemy.hp <= 0) {
+                            tankEnemyRef.current.splice(eIndex, 1);
+                            spawnPowerup(enemyCenterX, enemyCenterY);
+                            score.current += 50; // High value!
+                            killCount.current++;
+                        }
+                    }
+                }
+            });
+            
+            // 🔥 TIER 4 - Check slash collision with Sniper enemies
+            sniperEnemyRef.current.forEach((enemy, eIndex) => {
+                const enemyCenterX = enemy.x + enemy.width / 2;
+                const enemyCenterY = enemy.y + enemy.height / 2;
+                const distance = Math.sqrt((enemyCenterX - playerCenterX) ** 2 + (enemyCenterY - playerCenterY) ** 2);
+                
+                if (distance <= SLASH_RANGE) {
+                    const enemyAngle = Math.atan2(enemyCenterY - playerCenterY, enemyCenterX - playerCenterX);
+                    const angleDiff = Math.abs(enemyAngle - slashDirection.current);
+                    const normalizedAngleDiff = Math.min(angleDiff, 2 * Math.PI - angleDiff);
+                    
+                    if (normalizedAngleDiff <= SLASH_ANGLE_SPREAD / 2) {
+                        sniperEnemyRef.current.splice(eIndex, 1);
+                        createKillEffect(enemyCenterX, enemyCenterY, 25);
+                        spawnPowerup(enemyCenterX, enemyCenterY);
+                        score.current += 40;
+                        killCount.current++;
                     }
                 }
             });
@@ -5275,6 +5824,96 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 // Only lose if not immortal
                 if (!immortalityAbilityActive.current) {
                     // Check shield protection
+                    if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
+                        shieldHitsRemaining.current--;
+                        if (shieldHitsRemaining.current <= 0) {
+                            shieldAbilityActive.current = false;
+                        }
+                    } else {
+                        looseRef.current = true;
+                        setLoose(true);
+                    }
+                }
+            }
+        });
+
+        // 🔥 TIER 4 - Collisions between player and TANK enemy bullets
+        tankEnemyBulletsRef.current.forEach((bullet, index) => {
+            const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+            const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+            
+            if (circularCollision(playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS, bullet.x, bullet.y, 20)) {
+                tankEnemyBulletsRef.current.splice(index, 1);
+                const powerupEffects = applyPowerupEffects();
+                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !powerupEffects.invincible) {
+                    if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
+                        shieldHitsRemaining.current--;
+                        if (shieldHitsRemaining.current <= 0) {
+                            shieldAbilityActive.current = false;
+                        }
+                    } else {
+                        looseRef.current = true;
+                        setLoose(true);
+                    }
+                }
+            }
+        });
+
+        // 🔥 TIER 4 - Collisions between player and SNIPER enemy bullets (FAST!)
+        sniperEnemyBulletsRef.current.forEach((bullet, index) => {
+            const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+            const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+            
+            if (circularCollision(playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS, bullet.x, bullet.y, 15)) {
+                sniperEnemyBulletsRef.current.splice(index, 1);
+                const powerupEffects = applyPowerupEffects();
+                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !powerupEffects.invincible) {
+                    if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
+                        shieldHitsRemaining.current--;
+                        if (shieldHitsRemaining.current <= 0) {
+                            shieldAbilityActive.current = false;
+                        }
+                    } else {
+                        looseRef.current = true;
+                        setLoose(true);
+                    }
+                }
+            }
+        });
+
+        // 🔥 TIER 4 - Collisions between player and TANK enemies
+        tankEnemyRef.current.forEach((enemy, index) => {
+            const enemyCenterX = enemy.x + enemy.width / 2;
+            const enemyCenterY = enemy.y + enemy.height / 2;
+            const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+            const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+            
+            if (circularCollision(playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS, enemyCenterX, enemyCenterY, 100)) {
+                const powerupEffects = applyPowerupEffects();
+                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !powerupEffects.invincible) {
+                    if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
+                        shieldHitsRemaining.current--;
+                        if (shieldHitsRemaining.current <= 0) {
+                            shieldAbilityActive.current = false;
+                        }
+                    } else {
+                        looseRef.current = true;
+                        setLoose(true);
+                    }
+                }
+            }
+        });
+
+        // 🔥 TIER 4 - Collisions between player and SNIPER enemies
+        sniperEnemyRef.current.forEach((enemy, index) => {
+            const enemyCenterX = enemy.x + enemy.width / 2;
+            const enemyCenterY = enemy.y + enemy.height / 2;
+            const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+            const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+            
+            if (circularCollision(playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS, enemyCenterX, enemyCenterY, 40)) {
+                const powerupEffects = applyPowerupEffects();
+                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !powerupEffects.invincible) {
                     if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
                         shieldHitsRemaining.current--;
                         if (shieldHitsRemaining.current <= 0) {
@@ -5663,7 +6302,10 @@ const playerScore = score.current;
 let tierText = "Tier 1: Basic Enemies";
 let tierColor = "#4CAF50"; // Green
 
-if (playerScore >= TIER_3_THRESHOLD) {
+if (playerScore >= TIER_4_THRESHOLD) {
+    tierText = "🔥 Tier 4: ELITE ENEMIES! 🔥";
+    tierColor = "#FF0000"; // Bright Red
+} else if (playerScore >= TIER_3_THRESHOLD) {
     tierText = "Tier 3: All Enemies Active!";
     tierColor = "#F44336"; // Red
 } else if (playerScore >= TIER_2_THRESHOLD) {
@@ -5683,8 +6325,13 @@ if (playerScore < TIER_2_THRESHOLD) {
 } else if (playerScore < TIER_3_THRESHOLD) {
     const remaining = TIER_3_THRESHOLD - playerScore;
     ctx.fillText(`Next: ${remaining} points to Tier 3`, textMarginX, textMarginY + (fontSize * 4.5));
+} else if (playerScore < TIER_4_THRESHOLD) {
+    const remaining = TIER_4_THRESHOLD - playerScore;
+    ctx.fillStyle = "#FF6600";
+    ctx.fillText(`🔥 Next: ${remaining} points to Tier 4 - ELITE! 🔥`, textMarginX, textMarginY + (fontSize * 4.5));
 } else {
-    ctx.fillText("Maximum Tier Reached!", textMarginX, textMarginY + (fontSize * 4.5));
+    ctx.fillStyle = "#FFD700";
+    ctx.fillText("⭐ MAXIMUM TIER - Ultimate Challenge! ⭐", textMarginX, textMarginY + (fontSize * 4.5));
 }
 
 // Draw tier unlock notifications

@@ -95,7 +95,7 @@ body {
     color: #f4e4c1;
     text-decoration: none;
     font-family: "MedievalSharp", cursive;
-    font-size: clamp(6px, 2.5vw, 20px);
+    font-size: clamp(6px, 2vw, 20px);
     font-weight: 600;
     letter-spacing: 1.5px;
     padding: 10px 15px;
