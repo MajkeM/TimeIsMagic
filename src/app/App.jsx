@@ -157,14 +157,18 @@ function AuthenticatedApp() {
       // Parsujeme JSON stringy z databáze
       const abilitiesData = JSON.parse(data.abilities || '{}');
       const unlockedAbilitiesList = abilitiesData.unlocked || [];
+      console.log('📦 Raw achievements string from DB:', data.achievements);
       const achievementsData = JSON.parse(data.achievements || '{}');
+      console.log('📦 Parsed achievements:', achievementsData);
       const settingsData = JSON.parse(data.settings || '{}');
+      console.log('📦 Parsed settings:', settingsData);
       const statsData = settingsData.stats || {
         totalKills: 0,
         gamesPlayed: 0,
         totalGoldEarned: 0,
         abilitiesUnlocked: 3
       };
+      console.log('📦 Stats data:', statsData);
       
       const parsedData = {
         gold: data.gold !== undefined ? data.gold : (data.score || 0), // Použij gold pokud existuje, jinak score pro kompatibilitu
@@ -293,6 +297,8 @@ function AuthenticatedApp() {
       console.log('💾 gold being sent:', dbPayload.gold);
       console.log('💾 score being sent:', dbPayload.score);
       console.log('💾 abilities.unlocked being sent:', JSON.parse(dbPayload.abilities).unlocked);
+      console.log('💾 achievements being sent:', JSON.parse(dbPayload.achievements));
+      console.log('💾 settings (with stats) being sent:', JSON.parse(dbPayload.settings));
       
       // Uložíme do databáze ve správném formátu
       const saveResult = await saveToDatabase(dbPayload);
@@ -622,6 +628,7 @@ function AuthenticatedApp() {
     console.log('🎁 === COMBINED GOLD+EXP OPERATION START ===');
     console.log('🎁 Adding gold:', goldAmount, 'exp:', expAmount, 'current score:', currentScore, 'kills:', killCount);
     console.log('🎁 Current gold:', gold, 'exp:', exp, 'best score:', gameData.bestScore);
+    console.log('🎁 Current stats BEFORE:', gameData.stats);
     
     try {
       const newGold = gold + goldAmount;
@@ -633,13 +640,20 @@ function AuthenticatedApp() {
       const dataToSave = { gold: newGold, exp: newExp };
       
       // Update stats
+      const previousKills = gameData.stats?.totalKills || 0;
+      const newTotalKills = previousKills + killCount;
+      console.log('🎁 Previous total kills:', previousKills);
+      console.log('🎁 Kills this game:', killCount);
+      console.log('🎁 New total kills will be:', newTotalKills);
+      
       const newStats = {
         ...gameData.stats,
-        totalKills: (gameData.stats?.totalKills || 0) + killCount,
+        totalKills: newTotalKills,
         gamesPlayed: (gameData.stats?.gamesPlayed || 0) + 1,
         totalGoldEarned: (gameData.stats?.totalGoldEarned || 0) + goldAmount,
         abilitiesUnlocked: gameData.stats?.abilitiesUnlocked || 3
       };
+      console.log('🎁 New stats object:', newStats);
       dataToSave.stats = newStats;
       
       // Check achievements
