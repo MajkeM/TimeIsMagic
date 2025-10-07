@@ -427,13 +427,16 @@ function AuthenticatedApp() {
 
   const handleCharacterChange = async (event) => {
     const newCharacter = event.target.value;
-    if (characterAvailability[newCharacter]) {
+    const requiredLevel = levelRequirements.characters[newCharacter] || 1;
+    
+    // Check if player has required level
+    if (gameData.level >= requiredLevel) {
       setCharacter(newCharacter);
       await saveGameData({ 
         characters: { ...gameData.characters, selected: newCharacter }
       });
     } else {
-      alert(`Character ${newCharacter} requires level ${levelRequirements.characters[newCharacter]}!`);
+      alert(`Character ${newCharacter} requires level ${requiredLevel}! You are level ${gameData.level}.`);
     }
   }
 
@@ -732,6 +735,16 @@ function AuthenticatedApp() {
       console.log('🏆 UNLOCKING: killer_100 (had:', stats.totalKills, 'kills)');
       newAchievements.killer_100 = true;
     }
+    // NEW: Extreme kill achievements
+    if (stats.totalKills >= 250 && !currentAchievements.killer_250) {
+      newAchievements.killer_250 = true;
+    }
+    if (stats.totalKills >= 500 && !currentAchievements.mass_destroyer) {
+      newAchievements.mass_destroyer = true;
+    }
+    if (stats.totalKills >= 1000 && !currentAchievements.genocide) {
+      newAchievements.genocide = true;
+    }
     
     // Games played achievements
     if (stats.gamesPlayed >= 5 && !currentAchievements.survivor_5) {
@@ -739,6 +752,16 @@ function AuthenticatedApp() {
     }
     if (stats.gamesPlayed >= 20 && !currentAchievements.survivor_20) {
       newAchievements.survivor_20 = true;
+    }
+    // NEW: Extreme survival achievements
+    if (stats.gamesPlayed >= 50 && !currentAchievements.survivor_50) {
+      newAchievements.survivor_50 = true;
+    }
+    if (stats.gamesPlayed >= 100 && !currentAchievements.centurion) {
+      newAchievements.centurion = true;
+    }
+    if (stats.gamesPlayed >= 250 && !currentAchievements.eternal_warrior) {
+      newAchievements.eternal_warrior = true;
     }
     
     // Score achievements
@@ -748,10 +771,30 @@ function AuthenticatedApp() {
     if (bestScore >= 500 && !currentAchievements.score_500) {
       newAchievements.score_500 = true;
     }
+    // NEW: Extreme score achievements
+    if (bestScore >= 1000 && !currentAchievements.score_1000) {
+      newAchievements.score_1000 = true;
+    }
+    if (bestScore >= 2500 && !currentAchievements.score_master) {
+      newAchievements.score_master = true;
+    }
+    if (bestScore >= 5000 && !currentAchievements.score_legend) {
+      newAchievements.score_legend = true;
+    }
     
-    // Gold achievement
+    // Gold achievements
     if (stats.totalGoldEarned >= 1000 && !currentAchievements.gold_collector) {
       newAchievements.gold_collector = true;
+    }
+    // NEW: Extreme gold achievements
+    if (stats.totalGoldEarned >= 5000 && !currentAchievements.gold_hoarder) {
+      newAchievements.gold_hoarder = true;
+    }
+    if (stats.totalGoldEarned >= 10000 && !currentAchievements.gold_tycoon) {
+      newAchievements.gold_tycoon = true;
+    }
+    if (stats.totalGoldEarned >= 25000 && !currentAchievements.gold_emperor) {
+      newAchievements.gold_emperor = true;
     }
     
     // Level achievements
@@ -760,6 +803,16 @@ function AuthenticatedApp() {
     }
     if (currentLevel >= 10 && !currentAchievements.level_10) {
       newAchievements.level_10 = true;
+    }
+    // NEW: Extreme level achievements
+    if (currentLevel >= 20 && !currentAchievements.level_20) {
+      newAchievements.level_20 = true;
+    }
+    if (currentLevel >= 30 && !currentAchievements.level_30) {
+      newAchievements.level_30 = true;
+    }
+    if (currentLevel >= 50 && !currentAchievements.level_50) {
+      newAchievements.level_50 = true;
     }
     
     // Ability master achievement

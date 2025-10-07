@@ -53,6 +53,33 @@ export default function Achievements({
       unlocked: achievements?.killer_100 || false
     },
     {
+      id: 'killer_250',
+      name: 'Reaper',
+      description: 'Kill 250 enemies',
+      icon: '☠️',
+      requirement: stats?.totalKills >= 250,
+      bonus: '+15% bullet speed',
+      unlocked: achievements?.killer_250 || false
+    },
+    {
+      id: 'mass_destroyer',
+      name: 'Mass Destroyer',
+      description: 'Kill 500 enemies',
+      icon: '🔥',
+      requirement: stats?.totalKills >= 500,
+      bonus: '+20% bullet speed',
+      unlocked: achievements?.mass_destroyer || false
+    },
+    {
+      id: 'genocide',
+      name: 'Apocalypse',
+      description: 'Kill 1000 enemies',
+      icon: '💥',
+      requirement: stats?.totalKills >= 1000,
+      bonus: '+25% bullet speed & +10% movement speed',
+      unlocked: achievements?.genocide || false
+    },
+    {
       id: 'survivor_5',
       name: 'Survivor',
       description: 'Play 5 games',
@@ -69,6 +96,33 @@ export default function Achievements({
       requirement: stats?.gamesPlayed >= 20,
       bonus: '+10% dodge chance',
       unlocked: achievements?.survivor_20 || false
+    },
+    {
+      id: 'survivor_50',
+      name: 'Battle Hardened',
+      description: 'Play 50 games',
+      icon: '🏰',
+      requirement: stats?.gamesPlayed >= 50,
+      bonus: '+10% movement speed',
+      unlocked: achievements?.survivor_50 || false
+    },
+    {
+      id: 'centurion',
+      name: 'Centurion',
+      description: 'Play 100 games',
+      icon: '⚔️',
+      requirement: stats?.gamesPlayed >= 100,
+      bonus: '+15% movement speed',
+      unlocked: achievements?.centurion || false
+    },
+    {
+      id: 'eternal_warrior',
+      name: 'Eternal Warrior',
+      description: 'Play 250 games',
+      icon: '👹',
+      requirement: stats?.gamesPlayed >= 250,
+      bonus: '+20% movement speed & +10% fire rate',
+      unlocked: achievements?.eternal_warrior || false
     },
     {
       id: 'score_100',
@@ -89,6 +143,33 @@ export default function Achievements({
       unlocked: achievements?.score_500 || false
     },
     {
+      id: 'score_1000',
+      name: 'Score Champion',
+      description: 'Reach score of 1000',
+      icon: '💎',
+      requirement: stats?.bestScore >= 1000,
+      bonus: '+30% gold gain',
+      unlocked: achievements?.score_1000 || false
+    },
+    {
+      id: 'score_master',
+      name: 'Grandmaster',
+      description: 'Reach score of 2500',
+      icon: '✨',
+      requirement: stats?.bestScore >= 2500,
+      bonus: '+40% gold gain & +15% exp gain',
+      unlocked: achievements?.score_master || false
+    },
+    {
+      id: 'score_legend',
+      name: 'Living Legend',
+      description: 'Reach score of 5000',
+      icon: '⭐',
+      requirement: stats?.bestScore >= 5000,
+      bonus: '+50% gold gain & +25% exp gain',
+      unlocked: achievements?.score_legend || false
+    },
+    {
       id: 'gold_collector',
       name: 'Gold Collector',
       description: 'Earn 1000 total gold',
@@ -96,6 +177,33 @@ export default function Achievements({
       requirement: stats?.totalGoldEarned >= 1000,
       bonus: '+5% exp gain',
       unlocked: achievements?.gold_collector || false
+    },
+    {
+      id: 'gold_hoarder',
+      name: 'Gold Hoarder',
+      description: 'Earn 5000 total gold',
+      icon: '💎',
+      requirement: stats?.totalGoldEarned >= 5000,
+      bonus: '+10% exp gain',
+      unlocked: achievements?.gold_hoarder || false
+    },
+    {
+      id: 'gold_tycoon',
+      name: 'Gold Tycoon',
+      description: 'Earn 10000 total gold',
+      icon: '👑',
+      requirement: stats?.totalGoldEarned >= 10000,
+      bonus: '+15% exp gain & +10% gold gain',
+      unlocked: achievements?.gold_tycoon || false
+    },
+    {
+      id: 'gold_emperor',
+      name: 'Gold Emperor',
+      description: 'Earn 25000 total gold',
+      icon: '🏆',
+      requirement: stats?.totalGoldEarned >= 25000,
+      bonus: '+25% exp gain & +20% gold gain',
+      unlocked: achievements?.gold_emperor || false
     },
     {
       id: 'level_5',
@@ -114,6 +222,33 @@ export default function Achievements({
       requirement: level >= 10,
       bonus: '+15% ability cooldown reduction',
       unlocked: achievements?.level_10 || false
+    },
+    {
+      id: 'level_20',
+      name: 'Elite',
+      description: 'Reach level 20',
+      icon: '💫',
+      requirement: level >= 20,
+      bonus: '+10% movement speed & +5% bullet speed',
+      unlocked: achievements?.level_20 || false
+    },
+    {
+      id: 'level_30',
+      name: 'Master',
+      description: 'Reach level 30',
+      icon: '✨',
+      requirement: level >= 30,
+      bonus: '+15% movement speed & +10% bullet speed',
+      unlocked: achievements?.level_30 || false
+    },
+    {
+      id: 'level_50',
+      name: 'Transcendent',
+      description: 'Reach level 50',
+      icon: '🔮',
+      requirement: level >= 50,
+      bonus: '+25% to all stats',
+      unlocked: achievements?.level_50 || false
     },
     {
       id: 'ability_master',
