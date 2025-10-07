@@ -216,9 +216,17 @@ function AuthenticatedApp() {
       const unlockedAbilitiesReloadList = abilitiesReloadData.unlocked || [];
       console.log('🔄 Unlocked abilities from DB:', unlockedAbilitiesReloadList);
       
+      console.log('🔄 Raw achievements from DB:', data.achievements);
       const achievementsReloadData = JSON.parse(data.achievements || '{}');
+      console.log('🔄 Parsed achievements:', achievementsReloadData);
+      
+      console.log('🔄 Raw settings from DB:', data.settings);
       const settingsReloadData = JSON.parse(data.settings || '{}');
+      console.log('🔄 Parsed settings:', settingsReloadData);
+      
       const statsReloadData = settingsReloadData.stats || gameData.stats;
+      console.log('🔄 Stats from settings:', statsReloadData);
+      console.log('🔄 Total kills after reload:', statsReloadData?.totalKills);
       
       const parsedData = {
         gold: data.gold !== undefined ? data.gold : (data.score || 0), // Použij gold pokud existuje, jinak score pro kompatibilitu
@@ -657,12 +665,12 @@ function AuthenticatedApp() {
       dataToSave.stats = newStats;
       
       // Check achievements
-      console.log('🏆 Current achievements before check:', gameData.achievements);
+      console.log('🏆 Current achievements before check (from ref):', gameDataRef.current.achievements);
       console.log('🏆 Stats for achievement check:', newStats);
       const newAchievements = checkAndUnlockAchievements(newStats, newLevel, currentScore);
       console.log('🏆 checkAndUnlockAchievements returned:', newAchievements);
       if (Object.keys(newAchievements).length > 0) {
-        dataToSave.achievements = { ...gameData.achievements, ...newAchievements };
+        dataToSave.achievements = { ...gameDataRef.current.achievements, ...newAchievements };
         console.log('🏆 New achievements unlocked:', Object.keys(newAchievements));
         console.log('🏆 Combined achievements to save:', dataToSave.achievements);
       }
@@ -701,60 +709,61 @@ function AuthenticatedApp() {
     console.log('🏆 Stats:', stats);
     console.log('🏆 Current Level:', currentLevel);
     console.log('🏆 Best Score:', bestScore);
-    console.log('🏆 Current gameData.achievements:', gameData.achievements);
+    console.log('🏆 Current achievements (from ref):', gameDataRef.current.achievements);
     
+    const currentAchievements = gameDataRef.current.achievements || {};
     const newAchievements = {};
     
     // Kill achievements
     console.log('🏆 Checking kill achievements - totalKills:', stats.totalKills);
-    if (stats.totalKills >= 1 && !gameData.achievements?.first_kill) {
-      console.log('🏆 UNLOCKING: first_kill');
+    if (stats.totalKills >= 1 && !currentAchievements.first_kill) {
+      console.log('🏆 UNLOCKING: first_kill (had:', stats.totalKills, 'kills)');
       newAchievements.first_kill = true;
     }
-    if (stats.totalKills >= 10 && !gameData.achievements?.killer_10) {
-      console.log('🏆 UNLOCKING: killer_10');
+    if (stats.totalKills >= 10 && !currentAchievements.killer_10) {
+      console.log('🏆 UNLOCKING: killer_10 (had:', stats.totalKills, 'kills)');
       newAchievements.killer_10 = true;
     }
-    if (stats.totalKills >= 50 && !gameData.achievements?.killer_50) {
-      console.log('🏆 UNLOCKING: killer_50');
+    if (stats.totalKills >= 50 && !currentAchievements.killer_50) {
+      console.log('🏆 UNLOCKING: killer_50 (had:', stats.totalKills, 'kills)');
       newAchievements.killer_50 = true;
     }
-    if (stats.totalKills >= 100 && !gameData.achievements?.killer_100) {
-      console.log('🏆 UNLOCKING: killer_100');
+    if (stats.totalKills >= 100 && !currentAchievements.killer_100) {
+      console.log('🏆 UNLOCKING: killer_100 (had:', stats.totalKills, 'kills)');
       newAchievements.killer_100 = true;
     }
     
     // Games played achievements
-    if (stats.gamesPlayed >= 5 && !gameData.achievements?.survivor_5) {
+    if (stats.gamesPlayed >= 5 && !currentAchievements.survivor_5) {
       newAchievements.survivor_5 = true;
     }
-    if (stats.gamesPlayed >= 20 && !gameData.achievements?.survivor_20) {
+    if (stats.gamesPlayed >= 20 && !currentAchievements.survivor_20) {
       newAchievements.survivor_20 = true;
     }
     
     // Score achievements
-    if (bestScore >= 100 && !gameData.achievements?.score_100) {
+    if (bestScore >= 100 && !currentAchievements.score_100) {
       newAchievements.score_100 = true;
     }
-    if (bestScore >= 500 && !gameData.achievements?.score_500) {
+    if (bestScore >= 500 && !currentAchievements.score_500) {
       newAchievements.score_500 = true;
     }
     
     // Gold achievement
-    if (stats.totalGoldEarned >= 1000 && !gameData.achievements?.gold_collector) {
+    if (stats.totalGoldEarned >= 1000 && !currentAchievements.gold_collector) {
       newAchievements.gold_collector = true;
     }
     
     // Level achievements
-    if (currentLevel >= 5 && !gameData.achievements?.level_5) {
+    if (currentLevel >= 5 && !currentAchievements.level_5) {
       newAchievements.level_5 = true;
     }
-    if (currentLevel >= 10 && !gameData.achievements?.level_10) {
+    if (currentLevel >= 10 && !currentAchievements.level_10) {
       newAchievements.level_10 = true;
     }
     
     // Ability master achievement
-    if (stats.abilitiesUnlocked >= 18 && !gameData.achievements?.ability_master) {
+    if (stats.abilitiesUnlocked >= 18 && !currentAchievements.ability_master) {
       newAchievements.ability_master = true;
     }
     
