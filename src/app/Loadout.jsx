@@ -168,10 +168,11 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
                                 <button 
                                     className="medieval-button" 
                                     onClick={(e) => {
+                                        e.preventDefault();
                                         e.stopPropagation();
                                         unlockOrAlert(abilityType, abilityName);
                                     }}
-                                    style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
+                                    style={{ fontSize: '0.9rem', padding: '0.5rem 1rem', cursor: 'pointer', pointerEvents: 'auto' }}
                                 >
                                     🔓 Unlock
                                 </button>
