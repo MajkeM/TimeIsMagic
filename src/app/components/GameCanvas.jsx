@@ -560,9 +560,9 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     const tierNotifications = useRef([]);
 
     // Slash combat system constants and refs
-    const SLASH_RANGE = 500; // Range of slash attack
+    const SLASH_RANGE = 400; // Range of slash attack
     const SLASH_DURATION = 300; // Duration of slash animation in ms
-    const SLASH_COOLDOWN = 1000; // Cooldown between slashes
+    const SLASH_COOLDOWN = 2000; // Cooldown between slashes
     const SLASH_COOLDOWN_BOOSTED = 100; // Reduced cooldown with reload ability
     const SLASH_ANGLE_SPREAD = Math.PI / 3; // 60 degree slash arc
     
