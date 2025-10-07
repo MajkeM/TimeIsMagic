@@ -129,16 +129,26 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
         
         if (status.status === 'unlocked') {
             return (
-                <label key={abilityName} className="fantasy-card" style={{ cursor: 'pointer', padding: '1rem', transition: 'all 0.3s ease' }}>
+                <label 
+                    key={abilityName} 
+                    className="fantasy-card" 
+                    style={{ 
+                        cursor: 'pointer', 
+                        padding: '1rem', 
+                        transition: 'all 0.3s ease',
+                        border: isActive ? '3px solid var(--medieval-gold)' : '2px solid var(--medieval-gold)',
+                        boxShadow: isActive ? '0 0 20px rgba(212, 175, 55, 0.5)' : undefined
+                    }}
+                >
                     <input 
                         type="radio" 
                         name={abilityType} 
                         value={abilityName} 
                         onChange={handleAbilityChange}
-                        style={{ display: 'none' }}
+                        style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
                     />
-                    <div style={{ textAlign: 'center' }}>
-                        <img src={abilityImage} alt={`${abilityName} Ability`} style={{ width: '80px', height: '80px', marginBottom: '0.5rem' }} />
+                    <div style={{ textAlign: 'center', userSelect: 'none' }}>
+                        <img src={abilityImage} alt={`${abilityName} Ability`} style={{ width: '80px', height: '80px', marginBottom: '0.5rem', pointerEvents: 'none' }} />
                         <div className="gold-text" style={{ fontSize: '1.2rem', fontWeight: 'bold', textTransform: 'capitalize' }}>{abilityName}</div>
                         <div style={{ color: 'var(--parchment)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
                             {isActive && <span style={{ color: 'var(--medieval-gold)' }}>✓ Active</span>}
@@ -148,8 +158,8 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
             );
         } else {
             return (
-                <div key={abilityName} className="fantasy-card" style={{ opacity: 0.6, padding: '1rem', textAlign: 'center' }}>
-                    <img src={abilityImage} alt={`${abilityName} Ability`} style={{ width: '80px', height: '80px', marginBottom: '0.5rem', filter: 'grayscale(100%)' }} />
+                <div key={abilityName} className="fantasy-card" style={{ opacity: 0.6, padding: '1rem', textAlign: 'center', userSelect: 'none' }}>
+                    <img src={abilityImage} alt={`${abilityName} Ability`} style={{ width: '80px', height: '80px', marginBottom: '0.5rem', filter: 'grayscale(100%)', pointerEvents: 'none' }} />
                     <div style={{ color: 'var(--medieval-silver)', fontSize: '1.2rem', fontWeight: 'bold', textTransform: 'capitalize' }}>{abilityName}</div>
                     <div style={{ color: 'var(--parchment)', fontSize: '0.85rem', marginTop: '0.5rem' }}>
                         {status.status === 'can-unlock' ? (
@@ -157,7 +167,10 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
                                 <div style={{ marginBottom: '0.5rem' }}>💰 {abilityCosts[abilityType][abilityName]} gold</div>
                                 <button 
                                     className="medieval-button" 
-                                    onClick={() => unlockOrAlert(abilityType, abilityName)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        unlockOrAlert(abilityType, abilityName);
+                                    }}
                                     style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
                                 >
                                     🔓 Unlock
@@ -180,16 +193,26 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
         
         if (status.status === 'unlocked') {
             return (
-                <label key={characterName} className="fantasy-card" style={{ cursor: 'pointer', padding: '1rem', transition: 'all 0.3s ease' }}>
+                <label 
+                    key={characterName} 
+                    className="fantasy-card" 
+                    style={{ 
+                        cursor: 'pointer', 
+                        padding: '1rem', 
+                        transition: 'all 0.3s ease',
+                        border: isActive ? '3px solid var(--medieval-gold)' : '2px solid var(--medieval-gold)',
+                        boxShadow: isActive ? '0 0 20px rgba(212, 175, 55, 0.5)' : undefined
+                    }}
+                >
                     <input 
                         type="radio" 
                         name="character" 
                         value={characterName} 
                         onChange={handleCharacterChange}
-                        style={{ display: 'none' }}
+                        style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
                     />
-                    <div style={{ textAlign: 'center' }}>
-                        <img src={characterImage} alt={`${displayName} Character`} style={{ width: '80px', height: '80px', marginBottom: '0.5rem' }} />
+                    <div style={{ textAlign: 'center', userSelect: 'none' }}>
+                        <img src={characterImage} alt={`${displayName} Character`} style={{ width: '80px', height: '80px', marginBottom: '0.5rem', pointerEvents: 'none' }} />
                         <div className="gold-text" style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{displayName}</div>
                         <div style={{ color: 'var(--parchment)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
                             {isActive && <span style={{ color: 'var(--medieval-gold)' }}>✓ Active</span>}
@@ -199,8 +222,8 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
             );
         } else {
             return (
-                <div key={characterName} className="fantasy-card" style={{ opacity: 0.6, padding: '1rem', textAlign: 'center' }}>
-                    <img src={characterImage} alt={`${displayName} Character`} style={{ width: '80px', height: '80px', marginBottom: '0.5rem', filter: 'grayscale(100%)' }} />
+                <div key={characterName} className="fantasy-card" style={{ opacity: 0.6, padding: '1rem', textAlign: 'center', userSelect: 'none' }}>
+                    <img src={characterImage} alt={`${displayName} Character`} style={{ width: '80px', height: '80px', marginBottom: '0.5rem', filter: 'grayscale(100%)', pointerEvents: 'none' }} />
                     <div style={{ color: 'var(--medieval-silver)', fontSize: '1.2rem', fontWeight: 'bold' }}>{displayName}</div>
                     <div style={{ color: '#888', fontSize: '0.85rem', marginTop: '0.5rem' }}>
                         🔒 {status.text}
@@ -228,173 +251,16 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
                         </h2>
                         <div className = "R abilities" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
                         
-                        {/* Reload - always available */}
-                        <label className="fantasy-card" style={{ cursor: 'pointer', padding: '1rem', transition: 'all 0.3s ease' }}>
-                            <input 
-                                type="radio" 
-                                name="R" 
-                                value="reload" 
-                                onChange={handleAbilityChange} 
-                                disabled={!abilityAvailability.R.reload}
-                                style={{ display: 'none' }}
-                            />
-                            <div style={{ textAlign: 'center' }}>
-                                <img className="ability-icon" src={reloadAbility} alt="Reload Ability" style={{ width: '80px', height: '80px', marginBottom: '0.5rem' }} />
-                                <div className="gold-text" style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>Reload</div>
-                                <div style={{ color: 'var(--parchment)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
-                                    {R_ability === 'reload' && <span style={{ color: 'var(--medieval-gold)' }}>✓ Active</span>}
-                                </div>
-                            </div>
-                        </label>
+                        {renderAbilityCard('R', 'reload', reloadAbility, R_ability)}
 
-                        {/* Splash */}
-                        {(() => {
-                            const status = getAbilityStatus('R', 'splash');
-                            return status.status === 'unlocked' ? (
-                                <label className="fantasy-card" style={{ cursor: 'pointer', padding: '1rem', transition: 'all 0.3s ease' }}>
-                                    <input 
-                                        type="radio" 
-                                        name="R" 
-                                        value="splash" 
-                                        onChange={handleAbilityChange}
-                                        style={{ display: 'none' }}
-                                    />
-                                    <div style={{ textAlign: 'center' }}>
-                                        <img className="ability-icon" src={splashAbility} alt="Splash Ability" style={{ width: '80px', height: '80px', marginBottom: '0.5rem' }} />
-                                        <div className="gold-text" style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>Splash</div>
-                                        <div style={{ color: 'var(--parchment)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
-                                            {R_ability === 'splash' && <span style={{ color: 'var(--medieval-gold)' }}>✓ Active</span>}
-                                        </div>
-                                    </div>
-                                </label>
-                            ) : (
-                                <div className="fantasy-card" style={{ opacity: 0.6, padding: '1rem', textAlign: 'center' }}>
-                                    <img className="ability-icon" src={splashAbility} alt="Splash Ability" style={{ width: '80px', height: '80px', marginBottom: '0.5rem', filter: 'grayscale(100%)' }} />
-                                    <div style={{ color: 'var(--medieval-silver)', fontSize: '1.2rem', fontWeight: 'bold' }}>Splash</div>
-                                    <div style={{ color: 'var(--parchment)', fontSize: '0.85rem', marginTop: '0.5rem' }}>
-                                        {status.status === 'can-unlock' ? (
-                                            <>
-                                                <div style={{ marginBottom: '0.5rem' }}>💰 {abilityCosts.R.splash} gold</div>
-                                                <button 
-                                                    className="medieval-button" 
-                                                    onClick={() => unlockOrAlert("R", "splash")}
-                                                    style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
-                                                >
-                                                    🔓 Unlock
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <div style={{ color: '#888' }}>🔒 {status.text}</div>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })()}
+                        {renderAbilityCard('R', 'splash', splashAbility, R_ability)}
 
-                        {/* Gravity Well */}
-                        <span className="ability-option">
-                            {(() => {
-                                const status = getAbilityStatus('R', 'gravitywell');
-                                return status.status === 'unlocked' ? (
-                                    <>
-                                        <input type="radio" name="R" value="gravitywell" onChange={handleAbilityChange} />
-                                        <label htmlFor="R">Gravity Well <img className="ability-icon" src={gravitywellAbility} alt="Gravity Well Ability" /></label>
-                                    </>
-                                ) : (
-                                    <div className={`ability-locked ${status.status}`}>
-                                        <span>Gravity Well <img className="ability-icon grayscale" src={gravitywellAbility} alt="Gravity Well Ability" /></span>
-                                        <span className="ability-status">{status.text}</span>
-                                        {status.status === 'can-unlock' && (
-                                            <button onClick={() => unlockOrAlert("R", "gravitywell")}>Unlock</button>
-                                        )}
-                                    </div>
-                                );
-                            })()}
-                        </span>
+                        {renderAbilityCard('R', 'gravitywell', gravitywellAbility, R_ability)}
 
-                        {/* Freeze */}
-                        <span className="ability-option">
-                            {(() => {
-                                const status = getAbilityStatus('R', 'freeze');
-                                return status.status === 'unlocked' ? (
-                                    <>
-                                        <input type="radio" name="R" value="freeze" onChange={handleAbilityChange} />
-                                        <label htmlFor="R">Freeze <img className="ability-icon" src={freezeAbility} alt="Freeze Ability" /></label>
-                                    </>
-                                ) : (
-                                    <div className={`ability-locked ${status.status}`}>
-                                        <span>Freeze <img className="ability-icon grayscale" src={freezeAbility} alt="Freeze Ability" /></span>
-                                        <span className="ability-status">{status.text}</span>
-                                        {status.status === 'can-unlock' && (
-                                            <button onClick={() => unlockOrAlert("R", "freeze")}>Unlock</button>
-                                        )}
-                                    </div>
-                                );
-                            })()}
-                        </span>
-
-                        {/* Lightning Storm */}
-                        <span className="ability-option">
-                            {(() => {
-                                const status = getAbilityStatus('R', 'lightningstorm');
-                                return status.status === 'unlocked' ? (
-                                    <>
-                                        <input type="radio" name="R" value="lightningstorm" onChange={handleAbilityChange} />
-                                        <label htmlFor="R">Lightning Storm <img className="ability-icon" src={lightningStormAbility} alt="Lightning Storm Ability" /></label>
-                                    </>
-                                ) : (
-                                    <div className={`ability-locked ${status.status}`}>
-                                        <span>Lightning Storm <img className="ability-icon grayscale" src={lightningStormAbility} alt="Lightning Storm Ability" /></span>
-                                        <span className="ability-status">{status.text}</span>
-                                        {status.status === 'can-unlock' && (
-                                            <button onClick={() => unlockOrAlert("R", "lightningstorm")}>Unlock</button>
-                                        )}
-                                    </div>
-                                );
-                            })()}
-                        </span>
-
-                        {/* Poison Cloud */}
-                        <span className="ability-option">
-                            {(() => {
-                                const status = getAbilityStatus('R', 'poisoncloud');
-                                return status.status === 'unlocked' ? (
-                                    <>
-                                        <input type="radio" name="R" value="poisoncloud" onChange={handleAbilityChange} />
-                                        <label htmlFor="R">Poison Cloud <img className="ability-icon" src={poisonCloudAbility} alt="Poison Cloud Ability" /></label>
-                                    </>
-                                ) : (
-                                    <div className={`ability-locked ${status.status}`}>
-                                        <span>Poison Cloud <img className="ability-icon grayscale" src={poisonCloudAbility} alt="Poison Cloud Ability" /></span>
-                                        <span className="ability-status">{status.text}</span>
-                                        {status.status === 'can-unlock' && (
-                                            <button onClick={() => unlockOrAlert("R", "poisoncloud")}>Unlock</button>
-                                        )}
-                                    </div>
-                                );
-                            })()}
-                        </span>
-
-                        {/* Meteor */}
-                        <span className="ability-option">
-                            {(() => {
-                                const status = getAbilityStatus('R', 'meteor');
-                                return status.status === 'unlocked' ? (
-                                    <>
-                                        <input type="radio" name="R" value="meteor" onChange={handleAbilityChange} />
-                                        <label htmlFor="R">Meteor <img className="ability-icon" src={meteorAbility} alt="Meteor Ability" /></label>
-                                    </>
-                                ) : (
-                                    <div className={`ability-locked ${status.status}`}>
-                                        <span>Meteor <img className="ability-icon grayscale" src={meteorAbility} alt="Meteor Ability" /></span>
-                                        <span className="ability-status">{status.text}</span>
-                                        {status.status === 'can-unlock' && (
-                                            <button onClick={() => unlockOrAlert("R", "meteor")}>Unlock</button>
-                                        )}
-                                    </div>
-                                );
-                            })()}
-                        </span>
+                        {renderAbilityCard('R', 'freeze', freezeAbility, R_ability)}
+                        {renderAbilityCard('R', 'lightningstorm', lightningStormAbility, R_ability)}
+                        {renderAbilityCard('R', 'poisoncloud', poisonCloudAbility, R_ability)}
+                        {renderAbilityCard('R', 'meteor', meteorAbility, R_ability)}
                     </div>
 
                     <div className="scroll-decoration"></div>
@@ -404,116 +270,12 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
                     </h2>
                      <div className = "F abilities" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
                         
-                        {/* Flash - always available */}
-                        <span className="ability-option">
-                            <input type="radio" name="F" value="flash" onChange={handleAbilityChange} disabled={!abilityAvailability.F.flash} />
-                            <label htmlFor ="F">Flash <img className="ability-icon" src={flashAbility} alt="Flash Ability" /></label>
-                        </span>
-
-                        {/* Speed */}
-                        <span className="ability-option">
-                            {(() => {
-                                const status = getAbilityStatus('F', 'speed');
-                                return status.status === 'unlocked' ? (
-                                    <>
-                                        <input type="radio" name="F" value="speed" onChange={handleAbilityChange} />
-                                        <label htmlFor="F">Speed <img className="ability-icon" src={speedAbility} alt="Speed Ability" /></label>
-                                    </>
-                                ) : (
-                                    <div className={`ability-locked ${status.status}`}>
-                                        <span>Speed <img className="ability-icon grayscale" src={speedAbility} alt="Speed Ability" /></span>
-                                        <span className="ability-status">{status.text}</span>
-                                        {status.status === 'can-unlock' && (
-                                            <button onClick={() => unlockOrAlert("F", "speed")}>Unlock</button>
-                                        )}
-                                    </div>
-                                );
-                            })()} 
-                        </span>
-
-                        {/* Phase Walk */}
-                        <span className="ability-option">
-                            {(() => {
-                                const status = getAbilityStatus('F', 'phasewalk');
-                                return status.status === 'unlocked' ? (
-                                    <>
-                                        <input type="radio" name="F" value="phasewalk" onChange={handleAbilityChange} />
-                                        <label htmlFor="F">Phase Walk <img className="ability-icon" src={phaseAbility} alt="Phase Walk Ability" /></label>
-                                    </>
-                                ) : (
-                                    <div className={`ability-locked ${status.status}`}>
-                                        <span>Phase Walk <img className="ability-icon grayscale" src={phaseAbility} alt="Phase Walk Ability" /></span>
-                                        <span className="ability-status">{status.text}</span>
-                                        {status.status === 'can-unlock' && (
-                                            <button onClick={() => unlockOrAlert("F", "phasewalk")}>Unlock</button>
-                                        )}
-                                    </div>
-                                );
-                            })()} 
-                        </span>
-
-                        {/* Shield */}
-                        <span className="ability-option">
-                            {(() => {
-                                const status = getAbilityStatus('F', 'shield');
-                                return status.status === 'unlocked' ? (
-                                    <>
-                                        <input type="radio" name="F" value="shield" onChange={handleAbilityChange} />
-                                        <label htmlFor="F">Shield <img className="ability-icon" src={shieldAbility} alt="Shield Ability" /></label>
-                                    </>
-                                ) : (
-                                    <div className={`ability-locked ${status.status}`}>
-                                        <span>Shield <img className="ability-icon grayscale" src={shieldAbility} alt="Shield Ability" /></span>
-                                        <span className="ability-status">{status.text}</span>
-                                        {status.status === 'can-unlock' && (
-                                            <button onClick={() => unlockOrAlert("F", "shield")}>Unlock</button>
-                                        )}
-                                    </div>
-                                );
-                            })()} 
-                        </span>
-
-                        {/* Dash */}
-                        <span className="ability-option">
-                            {(() => {
-                                const status = getAbilityStatus('F', 'dash');
-                                return status.status === 'unlocked' ? (
-                                    <>
-                                        <input type="radio" name="F" value="dash" onChange={handleAbilityChange} />
-                                        <label htmlFor="F">Dash <img className="ability-icon" src={dashAbility} alt="Dash Ability" /></label>
-                                    </>
-                                ) : (
-                                    <div className={`ability-locked ${status.status}`}>
-                                        <span>Dash <img className="ability-icon grayscale" src={dashAbility} alt="Dash Ability" /></span>
-                                        <span className="ability-status">{status.text}</span>
-                                        {status.status === 'can-unlock' && (
-                                            <button onClick={() => unlockOrAlert("F", "dash")}>Unlock</button>
-                                        )}
-                                    </div>
-                                );
-                            })()} 
-                        </span>
-
-                        {/* Wall Creation */}
-                        <span className="ability-option">
-                            {(() => {
-                                const status = getAbilityStatus('F', 'wallcreation');
-                                return status.status === 'unlocked' ? (
-                                    <>
-                                        <input type="radio" name="F" value="wallcreation" onChange={handleAbilityChange} />
-                                        <label htmlFor="F">Wall Creation <img className="ability-icon" src={wallCreationAbility} alt="Wall Creation Ability" /></label>
-                                    </>
-                                ) : (
-                                    <div className={`ability-locked ${status.status}`}>
-                                        <span>Wall Creation <img className="ability-icon grayscale" src={wallCreationAbility} alt="Wall Creation Ability" /></span>
-                                        <span className="ability-status">{status.text}</span>
-                                        {status.status === 'can-unlock' && (
-                                            <button onClick={() => unlockOrAlert("F", "wallcreation")}>Unlock</button>
-                                        )}
-                                    </div>
-                                );
-                            })()} 
-                        </span>
+                        {renderAbilityCard('F', 'flash', flashAbility, F_ability)}
+                        {renderAbilityCard('F', 'speed', speedAbility, F_ability)}
+                        {renderAbilityCard('F', 'phasewalk', phaseAbility, F_ability)}
+                        {renderAbilityCard('F', 'shield', shieldAbility, F_ability)}
+                        {renderAbilityCard('F', 'dash', dashAbility, F_ability)}
+                        {renderAbilityCard('F', 'wallcreation', wallCreationAbility, F_ability)}
                        
                     </div>
 
@@ -524,137 +286,13 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
                     </h2>
                      <div className = "T abilities" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
                         
-                        {/* Teleport - always available */}
-                        <span className="ability-option">
-                            <input type="radio" name="T" value="teleport" onChange={handleAbilityChange} disabled={!abilityAvailability.T.teleport} />
-                            <label htmlFor ="T">Teleport enemies <img className="ability-icon" src={teleportAbility} alt="Teleport Ability" /></label>
-                        </span>
-
-                        {/* Immortality */}
-                        <span className="ability-option">
-                            {(() => {
-                                const status = getAbilityStatus('T', 'immortality');
-                                return status.status === 'unlocked' ? (
-                                    <>
-                                        <input type="radio" name="T" value="immortality" onChange={handleAbilityChange} />
-                                        <label htmlFor="T">Immortality <img className="ability-icon" src={immortalityAbility} alt="Immortality Ability" /></label>
-                                    </>
-                                ) : (
-                                    <div className={`ability-locked ${status.status}`}>
-                                        <span>Immortality <img className="ability-icon grayscale" src={immortalityAbility} alt="Immortality Ability" /></span>
-                                        <span className="ability-status">{status.text}</span>
-                                        {status.status === 'can-unlock' && (
-                                            <button onClick={() => unlockOrAlert("T", "immortality")}>Unlock</button>
-                                        )}
-                                    </div>
-                                );
-                            })()} 
-                        </span>
-
-                        {/* Score Boost */}
-                        <span className="ability-option">
-                            {(() => {
-                                const status = getAbilityStatus('T', 'scoreboost');
-                                return status.status === 'unlocked' ? (
-                                    <>
-                                        <input type="radio" name="T" value="scoreboost" onChange={handleAbilityChange} />
-                                        <label htmlFor="T">Score Boost <img className="ability-icon" src={scoreAbility} alt="Score Boost Ability" /></label>
-                                    </>
-                                ) : (
-                                    <div className={`ability-locked ${status.status}`}>
-                                        <span>Score Boost <img className="ability-icon grayscale" src={scoreAbility} alt="Score Boost Ability" /></span>
-                                        <span className="ability-status">{status.text}</span>
-                                        {status.status === 'can-unlock' && (
-                                            <button onClick={() => unlockOrAlert("T", "scoreboost")}>Unlock</button>
-                                        )}
-                                    </div>
-                                );
-                            })()} 
-                        </span>
-
-                        {/* Soldier Help */}
-                        <span className="ability-option">
-                            {(() => {
-                                const status = getAbilityStatus('T', 'soldierHelp');
-                                return status.status === 'unlocked' ? (
-                                    <>
-                                        <input type="radio" name="T" value="soldierHelp" onChange={handleAbilityChange} />
-                                        <label htmlFor="T">Soldier Help <img className="ability-icon" src={soldierAbility} alt="Soldier Help Ability" /></label>
-                                    </>
-                                ) : (
-                                    <div className={`ability-locked ${status.status}`}>
-                                        <span>Soldier Help <img className="ability-icon grayscale" src={soldierAbility} alt="Soldier Help Ability" /></span>
-                                        <span className="ability-status">{status.text}</span>
-                                        {status.status === 'can-unlock' && (
-                                            <button onClick={() => unlockOrAlert("T", "soldierHelp")}>Unlock</button>
-                                        )}
-                                    </div>
-                                );
-                            })()} 
-                        </span>
-
-                        {/* Magnet */}
-                        <span className="ability-option">
-                            {(() => {
-                                const status = getAbilityStatus('T', 'magnet');
-                                return status.status === 'unlocked' ? (
-                                    <>
-                                        <input type="radio" name="T" value="magnet" onChange={handleAbilityChange} />
-                                        <label htmlFor="T">Magnet <img className="ability-icon" src={magnetAbility} alt="Magnet Ability" /></label>
-                                    </>
-                                ) : (
-                                    <div className={`ability-locked ${status.status}`}>
-                                        <span>Magnet <img className="ability-icon grayscale" src={magnetAbility} alt="Magnet Ability" /></span>
-                                        <span className="ability-status">{status.text}</span>
-                                        {status.status === 'can-unlock' && (
-                                            <button onClick={() => unlockOrAlert("T", "magnet")}>Unlock</button>
-                                        )}
-                                    </div>
-                                );
-                            })()} 
-                        </span>
-
-                        {/* Mirror Clone */}
-                        <span className="ability-option">
-                            {(() => {
-                                const status = getAbilityStatus('T', 'mirrorclone');
-                                return status.status === 'unlocked' ? (
-                                    <>
-                                        <input type="radio" name="T" value="mirrorclone" onChange={handleAbilityChange} />
-                                        <label htmlFor="T">Mirror Clone <img className="ability-icon" src={mirrorCloneAbility} alt="Mirror Clone Ability" /></label>
-                                    </>
-                                ) : (
-                                    <div className={`ability-locked ${status.status}`}>
-                                        <span>Mirror Clone <img className="ability-icon grayscale" src={mirrorCloneAbility} alt="Mirror Clone Ability" /></span>
-                                        <span className="ability-status">{status.text}</span>
-                                        {status.status === 'can-unlock' && (
-                                            <button onClick={() => unlockOrAlert("T", "mirrorclone")}>Unlock</button>
-                                        )}
-                                    </div>
-                                );
-                            })()} 
-                        </span>
-
-                        {/* Berserker Mode */}
-                        <span className="ability-option">
-                            {(() => {
-                                const status = getAbilityStatus('T', 'berserkermode');
-                                return status.status === 'unlocked' ? (
-                                    <>
-                                        <input type="radio" name="T" value="berserkermode" onChange={handleAbilityChange} />
-                                        <label htmlFor="T">Berserker Mode <img className="ability-icon" src={berserkerModeAbility} alt="Berserker Mode Ability" /></label>
-                                    </>
-                                ) : (
-                                    <div className={`ability-locked ${status.status}`}>
-                                        <span>Berserker Mode <img className="ability-icon grayscale" src={berserkerModeAbility} alt="Berserker Mode Ability" /></span>
-                                        <span className="ability-status">{status.text}</span>
-                                        {status.status === 'can-unlock' && (
-                                            <button onClick={() => unlockOrAlert("T", "berserkermode")}>Unlock</button>
-                                        )}
-                                    </div>
-                                );
-                            })()} 
-                        </span>
+                        {renderAbilityCard('T', 'teleport', teleportAbility, T_ability)}
+                        {renderAbilityCard('T', 'immortality', immortalityAbility, T_ability)}
+                        {renderAbilityCard('T', 'scoreboost', scoreAbility, T_ability)}
+                        {renderAbilityCard('T', 'soldierHelp', soldierAbility, T_ability)}
+                        {renderAbilityCard('T', 'magnet', magnetAbility, T_ability)}
+                        {renderAbilityCard('T', 'mirrorclone', mirrorCloneAbility, T_ability)}
+                        {renderAbilityCard('T', 'berserkermode', berserkerModeAbility, T_ability)}
                     </div>
 
                     <div className="scroll-decoration"></div>
@@ -663,83 +301,11 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
                         👤 Champions of the Realm 👤
                     </h2>
                     <div className = "character-options" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-                    {/* Wizard - always available */}
-                    <span className="character-option">
-                        <input type="radio" name="character" value="wizard" onChange={handleCharacterChange} disabled={!characterAvailability.wizard} />
-                        <label htmlFor ="character">Wizard <img className="character-icon" src={wizardSprite} alt="Wizard Character" /></label>
-                    </span>
-
-                        {/* Rapunzel */}
-                        <span className="character-option">
-                            {(() => {
-                                const status = getCharacterStatus('rapunzel');
-                                return status.status === 'unlocked' ? (
-                                    <>
-                                        <input type="radio" name="character" value="rapunzel" onChange={handleCharacterChange} />
-                                        <label htmlFor="character">Lucious <img className="character-icon" src={rapunzelSprite} alt="Rapunzel Character" /></label>
-                                    </>
-                                ) : (
-                                    <div className={`character-locked ${status.status}`}>
-                                        <span>Lucious <img className="character-icon grayscale" src={rapunzelSprite} alt="Rapunzel Character" /></span>
-                                        <span className="character-status">{status.text}</span>
-                                    </div>
-                                );
-                            })()} 
-                        </span>
-
-                        {/* Archer */}
-                        <span className="character-option">
-                            {(() => {
-                                const status = getCharacterStatus('archer');
-                                return status.status === 'unlocked' ? (
-                                    <>
-                                        <input type="radio" name="character" value="archer" onChange={handleCharacterChange} />
-                                        <label htmlFor="character">Archer <img className="character-icon" src={archerSprite} alt="Archer Character" /></label>
-                                    </>
-                                ) : (
-                                    <div className={`character-locked ${status.status}`}>
-                                        <span>Archer <img className="character-icon grayscale" src={archerSprite} alt="Archer Character" /></span>
-                                        <span className="character-status">{status.text}</span>
-                                    </div>
-                                );
-                            })()} 
-                        </span>
-
-                        {/* Mage */}
-                        <span className="character-option">
-                            {(() => {
-                                const status = getCharacterStatus('mage');
-                                return status.status === 'unlocked' ? (
-                                    <>
-                                        <input type="radio" name="character" value="mage" onChange={handleCharacterChange} />
-                                        <label htmlFor="character">Mage <img className="character-icon" src={mageSprite} alt="Mage Character" /></label>
-                                    </>
-                                ) : (
-                                    <div className={`character-locked ${status.status}`}>
-                                        <span>Mage <img className="character-icon grayscale" src={mageSprite} alt="Mage Character" /></span>
-                                        <span className="character-status">{status.text}</span>
-                                    </div>
-                                );
-                            })()} 
-                        </span>
-
-                        {/* King */}
-                        <span className="character-option">
-                            {(() => {
-                                const status = getCharacterStatus('king');
-                                return status.status === 'unlocked' ? (
-                                    <>
-                                        <input type="radio" name="character" value="king" onChange={handleCharacterChange} />
-                                        <label htmlFor="character">Danious <img className="character-icon" src={kingSprite} alt="Danious Character" /></label>
-                                    </>
-                                ) : (
-                                    <div className={`character-locked ${status.status}`}>
-                                        <span>Danious <img className="character-icon grayscale" src={kingSprite} alt="Danious Character" /></span>
-                                        <span className="character-status">{status.text}</span>
-                                    </div>
-                                );
-                            })()} 
-                        </span>
+                    {renderCharacterCard('wizard', wizardSprite)}
+                        {renderCharacterCard('rapunzel', rapunzelSprite)}
+                        {renderCharacterCard('archer', archerSprite)}
+                        {renderCharacterCard('mage', mageSprite)}
+                        {renderCharacterCard('king', kingSprite)}
                     </div>
                     </div>
                 </div>
