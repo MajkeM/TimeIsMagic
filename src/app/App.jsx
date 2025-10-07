@@ -429,13 +429,19 @@ function AuthenticatedApp() {
     const newCharacter = event.target.value;
     const requiredLevel = levelRequirements.characters[newCharacter] || 1;
     
+    console.log(`🎭 Trying to select: ${newCharacter}`);
+    console.log(`🎭 Required Level: ${requiredLevel}`);
+    console.log(`🎭 Current Level: ${gameData.level}`);
+    
     // Check if player has required level
     if (gameData.level >= requiredLevel) {
+      console.log(`✅ Character ${newCharacter} selected!`);
       setCharacter(newCharacter);
       await saveGameData({ 
         characters: { ...gameData.characters, selected: newCharacter }
       });
     } else {
+      console.log(`🔒 Character ${newCharacter} is locked!`);
       alert(`Character ${newCharacter} requires level ${requiredLevel}! You are level ${gameData.level}.`);
     }
   }

@@ -91,12 +91,16 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
     const getCharacterStatus = (characterName) => {
         const requiredLevel = levelRequirements?.characters?.[characterName] || 1;
         
+        console.log(`🎭 Character: ${characterName}, Required Level: ${requiredLevel}, Current Level: ${level}`);
+        
         // Check level first - if player has the required level, character is unlocked
         if (level >= requiredLevel) {
+            console.log(`✅ ${characterName} UNLOCKED (level ${level} >= ${requiredLevel})`);
             return { status: 'unlocked', text: 'Unlocked' };
         }
         
         // If level requirement not met, show level requirement
+        console.log(`🔒 ${characterName} LOCKED (level ${level} < ${requiredLevel})`);
         return { status: 'level-locked', text: `Requires Level ${requiredLevel}` };
     };
 

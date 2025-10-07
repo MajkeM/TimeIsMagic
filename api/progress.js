@@ -182,9 +182,9 @@ export default async function handler(req, res) {
           progressData.score || 0,
           progressData.best_score,
           progressData.exp || 0,
-          progressData.abilities || '{}',
-          progressData.achievements || '{}',
-          progressData.settings || '{}',
+          progressData.abilities || "{}",
+          progressData.achievements || "{}",
+          progressData.settings || "{}",
         ];
       } else {
         // Use score as gold if gold column doesn't exist
@@ -198,9 +198,9 @@ export default async function handler(req, res) {
           progressData.gold || progressData.score || 0,
           progressData.best_score,
           progressData.exp || 0,
-          progressData.abilities || '{}',
-          progressData.achievements || '{}',
-          progressData.settings || '{}',
+          progressData.abilities || "{}",
+          progressData.achievements || "{}",
+          progressData.settings || "{}",
         ];
       }
 
@@ -223,9 +223,9 @@ export default async function handler(req, res) {
             progressData.score || 0,
             progressData.best_score || 0,
             progressData.exp || 0,
-            progressData.abilities || '{}',
-            progressData.achievements || '{}',
-            progressData.settings || '{}',
+            progressData.abilities || "{}",
+            progressData.achievements || "{}",
+            progressData.settings || "{}",
           ];
         } else {
           insertQuery = `INSERT INTO user_progress (user_id, level, score, best_score, exp, abilities, achievements, settings) 
@@ -237,9 +237,9 @@ export default async function handler(req, res) {
             progressData.gold || progressData.score || 0,
             progressData.best_score || 0,
             progressData.exp || 0,
-            progressData.abilities || '{}',
-            progressData.achievements || '{}',
-            progressData.settings || '{}',
+            progressData.abilities || "{}",
+            progressData.achievements || "{}",
+            progressData.settings || "{}",
           ];
         }
 

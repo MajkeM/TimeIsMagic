@@ -1,15 +1,15 @@
 // Particle system for visual effects
-export const createParticles = (x, y, color = '#d4af37', count = 10) => {
+export const createParticles = (x, y, color = "#d4af37", count = 10) => {
   const particles = [];
-  
+
   for (let i = 0; i < count; i++) {
     const angle = (Math.PI * 2 * i) / count;
     const velocity = 2 + Math.random() * 3;
     const tx = Math.cos(angle) * velocity * 50;
     const ty = Math.sin(angle) * velocity * 50;
-    
-    const particle = document.createElement('div');
-    particle.className = 'particle';
+
+    const particle = document.createElement("div");
+    particle.className = "particle";
     particle.style.cssText = `
       left: ${x}px;
       top: ${y}px;
@@ -21,21 +21,21 @@ export const createParticles = (x, y, color = '#d4af37', count = 10) => {
       --tx: ${tx}px;
       --ty: ${ty}px;
     `;
-    
+
     document.body.appendChild(particle);
     particles.push(particle);
-    
+
     setTimeout(() => {
       particle.remove();
     }, 1000);
   }
-  
+
   return particles;
 };
 
 // Flash effect on screen
-export const createFlashEffect = (color = 'rgba(255, 215, 0, 0.3)') => {
-  const flash = document.createElement('div');
+export const createFlashEffect = (color = "rgba(255, 215, 0, 0.3)") => {
+  const flash = document.createElement("div");
   flash.style.cssText = `
     position: fixed;
     top: 0;
@@ -47,8 +47,8 @@ export const createFlashEffect = (color = 'rgba(255, 215, 0, 0.3)') => {
     z-index: 9999;
     animation: flashFade 0.3s ease-out;
   `;
-  
-  const style = document.createElement('style');
+
+  const style = document.createElement("style");
   style.textContent = `
     @keyframes flashFade {
       0% { opacity: 1; }
@@ -56,9 +56,9 @@ export const createFlashEffect = (color = 'rgba(255, 215, 0, 0.3)') => {
     }
   `;
   document.head.appendChild(style);
-  
+
   document.body.appendChild(flash);
-  
+
   setTimeout(() => {
     flash.remove();
     style.remove();
@@ -66,8 +66,8 @@ export const createFlashEffect = (color = 'rgba(255, 215, 0, 0.3)') => {
 };
 
 // Score popup effect
-export const createScorePopup = (x, y, score, color = '#d4af37') => {
-  const popup = document.createElement('div');
+export const createScorePopup = (x, y, score, color = "#d4af37") => {
+  const popup = document.createElement("div");
   popup.textContent = `+${score}`;
   popup.style.cssText = `
     position: absolute;
@@ -84,10 +84,10 @@ export const createScorePopup = (x, y, score, color = '#d4af37') => {
     z-index: 10000;
     animation: scorePopup 1s ease-out forwards;
   `;
-  
-  const style = document.createElement('style');
-  if (!document.getElementById('score-popup-style')) {
-    style.id = 'score-popup-style';
+
+  const style = document.createElement("style");
+  if (!document.getElementById("score-popup-style")) {
+    style.id = "score-popup-style";
     style.textContent = `
       @keyframes scorePopup {
         0% {
@@ -105,9 +105,9 @@ export const createScorePopup = (x, y, score, color = '#d4af37') => {
     `;
     document.head.appendChild(style);
   }
-  
+
   document.body.appendChild(popup);
-  
+
   setTimeout(() => {
     popup.remove();
   }, 1000);
@@ -115,7 +115,7 @@ export const createScorePopup = (x, y, score, color = '#d4af37') => {
 
 // Level up effect
 export const createLevelUpEffect = () => {
-  const effect = document.createElement('div');
+  const effect = document.createElement("div");
   effect.style.cssText = `
     position: fixed;
     top: 50%;
@@ -133,11 +133,11 @@ export const createLevelUpEffect = () => {
     z-index: 10000;
     animation: levelUpAnim 2s ease-out forwards;
   `;
-  effect.textContent = '⬆️ LEVEL UP! ⬆️';
-  
-  const style = document.createElement('style');
-  if (!document.getElementById('levelup-style')) {
-    style.id = 'levelup-style';
+  effect.textContent = "⬆️ LEVEL UP! ⬆️";
+
+  const style = document.createElement("style");
+  if (!document.getElementById("levelup-style")) {
+    style.id = "levelup-style";
     style.textContent = `
       @keyframes levelUpAnim {
         0% {
@@ -160,10 +160,10 @@ export const createLevelUpEffect = () => {
     `;
     document.head.appendChild(style);
   }
-  
+
   document.body.appendChild(effect);
-  createFlashEffect('rgba(212, 175, 55, 0.4)');
-  
+  createFlashEffect("rgba(212, 175, 55, 0.4)");
+
   setTimeout(() => {
     effect.remove();
   }, 2000);
