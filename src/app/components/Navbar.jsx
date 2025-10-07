@@ -9,12 +9,13 @@ export default function Navbar() {
         <nav className ="nav-bar">
                         <Link className="side-link" to="/"> Home </Link>
                         <Link className="side-link" to="/loadout">Loadout</Link>
+                        <Link className="side-link" to="/achievements">🏆 Achievements</Link>
                         <button className="play-button">
                             <Link to="/game">
                                 <img src={playButtonImage} alt="Play" />
                             </Link>
                         </button>
-                        <Link className="side-link" to="/achievements">🏆 Achievements</Link>
+                        
                         <Link className="side-link" to="/leaderboard">📊 Leaderboard</Link>
                         <Link className="side-link" to="/settings">Settings</Link>
                         <Link className="side-link" to="/credits">Credits</Link>

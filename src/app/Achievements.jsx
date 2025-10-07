@@ -30,7 +30,7 @@ export default function Achievements({
       description: 'Kill 10 enemies',
       icon: '🎯',
       requirement: stats?.totalKills >= 10,
-      bonus: '+10% reload speed',
+      bonus: '+5% bullet speed',
       unlocked: achievements?.killer_10 || false
     },
     {
@@ -39,7 +39,7 @@ export default function Achievements({
       description: 'Kill 50 enemies',
       icon: '🏹',
       requirement: stats?.totalKills >= 50,
-      bonus: '+15% bullet damage',
+      bonus: '+10% fire rate',
       unlocked: achievements?.killer_50 || false
     },
     {
@@ -48,7 +48,7 @@ export default function Achievements({
       description: 'Kill 100 enemies',
       icon: '💀',
       requirement: stats?.totalKills >= 100,
-      bonus: '+20% critical hit chance',
+      bonus: '+15% bullet penetration',
       unlocked: achievements?.killer_100 || false
     },
     {
@@ -57,7 +57,7 @@ export default function Achievements({
       description: 'Play 5 games',
       icon: '🛡️',
       requirement: stats?.gamesPlayed >= 5,
-      bonus: '+10% max health',
+      bonus: '+5% invincibility duration',
       unlocked: achievements?.survivor_5 || false
     },
     {
@@ -66,7 +66,7 @@ export default function Achievements({
       description: 'Play 20 games',
       icon: '🏆',
       requirement: stats?.gamesPlayed >= 20,
-      bonus: '+15% max health',
+      bonus: '+10% dodge chance',
       unlocked: achievements?.survivor_20 || false
     },
     {

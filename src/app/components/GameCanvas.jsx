@@ -43,10 +43,48 @@ import soldierSprite from "./../Sprites/soldierSprite.png"; // Temporary sprite 
 import { Link } from "react-router-dom";
 
 
-export default function GameCanvas({showCollision, R_ability, F_ability, T_ability, character, addGold, addExp, addGoldAndExp, exp, level, gold, reloadGameData}) {
+export default function GameCanvas({showCollision, R_ability, F_ability, T_ability, character, addGold, addExp, addGoldAndExp, exp, level, gold, reloadGameData, achievements}) {
 
     // Initialize game loading
     const { isLoading, progress, message, setIsLoading } = useLoading(loadingSteps.game);
+    
+    // Calculate active achievement bonuses
+    const calculateBonuses = () => {
+        const bonuses = {
+            movementSpeed: 1.0,
+            bulletSpeed: 1.0,
+            fireRate: 1.0,
+            bulletPenetration: 0,
+            invincibilityDuration: 1.0,
+            dodgeChance: 0,
+            goldGain: 1.0,
+            expGain: 1.0,
+            abilityCooldown: 1.0
+        };
+        
+        if (!achievements) return bonuses;
+        
+        // Apply achievement bonuses
+        if (achievements.first_kill) bonuses.movementSpeed += 0.05;
+        if (achievements.killer_10) bonuses.bulletSpeed += 0.05;
+        if (achievements.killer_50) bonuses.fireRate += 0.10;
+        if (achievements.killer_100) bonuses.bulletPenetration += 1;
+        if (achievements.survivor_5) bonuses.invincibilityDuration += 0.05;
+        if (achievements.survivor_20) bonuses.dodgeChance += 0.10;
+        if (achievements.score_100) bonuses.goldGain += 0.10;
+        if (achievements.score_500) bonuses.goldGain += 0.20;
+        if (achievements.gold_collector) bonuses.expGain += 0.05;
+        if (achievements.level_5) bonuses.abilityCooldown -= 0.10;
+        if (achievements.level_10) bonuses.abilityCooldown -= 0.15;
+        if (achievements.ability_master) bonuses.abilityCooldown -= 0.25;
+        
+        // Ensure cooldown doesn't go below 0.3 (70% reduction max)
+        bonuses.abilityCooldown = Math.max(0.3, bonuses.abilityCooldown);
+        
+        return bonuses;
+    };
+    
+    const bonuses = calculateBonuses();
     
     // canvas 
         // ability icons 
@@ -630,7 +668,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     
                     setTimeout(() => {
                         abilityOnCooldown.current = false;
-                    }, RELOADTIME_ABILITY_BOOST_COOLDOWN);
+                    }, RELOADTIME_ABILITY_BOOST_COOLDOWN * bonuses.abilityCooldown);
                 } else if (R_ability === 'splash' && !splashAbilityOnCooldown.current) {
                     // Splash ability - spawn 15 bullets in different directions from player position
                     const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
@@ -661,7 +699,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     
                     setTimeout(() => {
                         splashAbilityOnCooldown.current = false;
-                    }, SPLASH_COOLDOWN);
+                    }, SPLASH_COOLDOWN * bonuses.abilityCooldown);
                 } else if (R_ability === 'gravitywell' && !gravityWellAbilityOnCooldown.current) {
                     // Gravity Well ability - creates a black hole at mouse position
                     gravityWellActive.current = true;
@@ -745,7 +783,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     // Reset cooldown
                     setTimeout(() => {
                         gravityWellAbilityOnCooldown.current = false;
-                    }, GRAVITY_COOLDOWN);
+                    }, GRAVITY_COOLDOWN * bonuses.abilityCooldown);
                 } else if (R_ability === 'freeze' && !freezeAbilityOnCooldown.current) {
                     // Freeze ability - freeze all enemies for FREEZE_DURATION
                     freezeAbilityActive.current = true;
@@ -760,7 +798,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     // Reset cooldown
                     setTimeout(() => {
                         freezeAbilityOnCooldown.current = false;
-                    }, FREEZE_COOLDOWN);
+                    }, FREEZE_COOLDOWN * bonuses.abilityCooldown);
                 } else if (R_ability === 'lightningstorm' && !lightningStormAbilityOnCooldown.current) {
                     // Lightning Storm ability - spawn lightning strikes at random positions
                     lightningStormAbilityActive.current = true;
@@ -792,7 +830,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     // Reset cooldown
                     setTimeout(() => {
                         lightningStormAbilityOnCooldown.current = false;
-                    }, LIGHTNING_STORM_COOLDOWN);
+                    }, LIGHTNING_STORM_COOLDOWN * bonuses.abilityCooldown);
                 } else if (R_ability === 'poisoncloud' && !poisonCloudAbilityOnCooldown.current) {
                     // Poison Cloud ability - create poison cloud at mouse position
                     const poisonX = mousemove.current.x;
@@ -811,7 +849,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     // Reset cooldown
                     setTimeout(() => {
                         poisonCloudAbilityOnCooldown.current = false;
-                    }, POISON_CLOUD_COOLDOWN);
+                    }, POISON_CLOUD_COOLDOWN * bonuses.abilityCooldown);
                 } else if (R_ability === 'meteor' && !meteorAbilityOnCooldown.current) {
                     // Meteor ability - delay then spawn meteor at mouse position
                     const meteorTargetX = mousemove.current.x;
@@ -845,7 +883,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     // Reset cooldown
                     setTimeout(() => {
                         meteorAbilityOnCooldown.current = false;
-                    }, METEOR_COOLDOWN);
+                    }, METEOR_COOLDOWN * bonuses.abilityCooldown);
                 }
             }
 
@@ -875,7 +913,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     
                     setTimeout(() => {
                         flashAbilityOnCooldown.current = false;
-                    }, FLASH_COOLDOWN);
+                    }, FLASH_COOLDOWN * bonuses.abilityCooldown);
                 } else if (F_ability === 'speed' && !speedAbilityOnCooldown.current) {
                     // Speed ability - increase player speed and decrease enemy speeds
                     speedAbilityActive.current = true;
@@ -891,7 +929,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     // Reset cooldown
                     setTimeout(() => {
                         speedAbilityOnCooldown.current = false;
-                    }, SPEED_COOLDOWN);
+                    }, SPEED_COOLDOWN * bonuses.abilityCooldown);
                 } else if (F_ability === 'phasewalk' && !phaseWalkAbilityOnCooldown.current) {
                     // Phase Walk ability - player becomes ghost-like and can pass through everything
                     phaseWalkActive.current = true;
@@ -907,7 +945,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     // Reset cooldown
                     setTimeout(() => {
                         phaseWalkAbilityOnCooldown.current = false;
-                    }, PHASEWALK_COOLDOWN);
+                    }, PHASEWALK_COOLDOWN * bonuses.abilityCooldown);
                 } else if (F_ability === 'shield' && !shieldAbilityOnCooldown.current) {
                     // Shield ability - activate protective shield
                     shieldAbilityActive.current = true;
@@ -924,7 +962,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     // Reset cooldown
                     setTimeout(() => {
                         shieldAbilityOnCooldown.current = false;
-                    }, SHIELD_COOLDOWN);
+                    }, SHIELD_COOLDOWN * bonuses.abilityCooldown);
                 } else if (F_ability === 'dash' && !dashAbilityOnCooldown.current) {
                     // Dash ability - quick movement towards mouse
                     const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
@@ -1014,7 +1052,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     // Reset cooldown
                     setTimeout(() => {
                         dashAbilityOnCooldown.current = false;
-                    }, DASH_COOLDOWN);
+                    }, DASH_COOLDOWN * bonuses.abilityCooldown);
                 } else if (F_ability === 'wallcreation' && !wallCreationAbilityOnCooldown.current) {
                     // Wall Creation ability - create large wall at mouse position
                     const wallX = mousemove.current.x;
@@ -1034,7 +1072,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     // Reset cooldown
                     setTimeout(() => {
                         wallCreationAbilityOnCooldown.current = false;
-                    }, WALL_CREATION_COOLDOWN);
+                    }, WALL_CREATION_COOLDOWN * bonuses.abilityCooldown);
                 }
             }
         };
@@ -1839,6 +1877,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
         
         // Reset game state for new game
         rewardsGivenRef.current = false;
+        killCount.current = 0; // Reset kill counter for new game
         
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -2990,8 +3029,8 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 if (berserkerModeAbilityActive.current) {
                     playerSpeedMultiplier *= BERSERKER_MOVE_SPEED_MULTIPLIER;
                 }
-                playerRef.current.speed = PLAYER_SPEED * playerSpeedMultiplier * responsiveMultiplier;
-                bulletSpeed.current = PLAYER_BULLET_SPEED * responsiveMultiplier;
+                playerRef.current.speed = PLAYER_SPEED * playerSpeedMultiplier * responsiveMultiplier * bonuses.movementSpeed;
+                bulletSpeed.current = PLAYER_BULLET_SPEED * responsiveMultiplier * bonuses.bulletSpeed;
                 basicEnemySpeed.current = BASIC_ENEMY_SPEED * SPEED_ENEMY_MULTIPLIER * responsiveMultiplier;
                 enemyBulletSpeed.current = BASIC_ENEMY_BULLET_SPEED * SPEED_ENEMY_MULTIPLIER * responsiveMultiplier;
                 trippleShootEnemySpeed.current = TRIPPLESHOOT_ENEMY_SPEED * SPEED_ENEMY_MULTIPLIER * responsiveMultiplier;
@@ -3001,8 +3040,8 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 teleporterEnemyBulletSpeed.current = TELEPORTER_BULLET_SPEED * SPEED_ENEMY_MULTIPLIER * responsiveMultiplier;
             } else if (phaseWalkActive.current) {
                 // Phase walk is active - increased player speed, normal enemy speeds
-                playerRef.current.speed = PLAYER_SPEED * PHASEWALK_SPEED_MULTIPLIER * responsiveMultiplier;
-                bulletSpeed.current = PLAYER_BULLET_SPEED * responsiveMultiplier;
+                playerRef.current.speed = PLAYER_SPEED * PHASEWALK_SPEED_MULTIPLIER * responsiveMultiplier * bonuses.movementSpeed;
+                bulletSpeed.current = PLAYER_BULLET_SPEED * responsiveMultiplier * bonuses.bulletSpeed;
                 basicEnemySpeed.current = BASIC_ENEMY_SPEED * responsiveMultiplier;
                 enemyBulletSpeed.current = BASIC_ENEMY_BULLET_SPEED * responsiveMultiplier;
                 trippleShootEnemySpeed.current = TRIPPLESHOOT_ENEMY_SPEED * responsiveMultiplier;
@@ -3016,8 +3055,8 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 if (berserkerModeAbilityActive.current) {
                     playerSpeedMultiplier *= BERSERKER_MOVE_SPEED_MULTIPLIER;
                 }
-                playerRef.current.speed = PLAYER_SPEED * playerSpeedMultiplier * responsiveMultiplier;
-                bulletSpeed.current = PLAYER_BULLET_SPEED * responsiveMultiplier;
+                playerRef.current.speed = PLAYER_SPEED * playerSpeedMultiplier * responsiveMultiplier * bonuses.movementSpeed;
+                bulletSpeed.current = PLAYER_BULLET_SPEED * responsiveMultiplier * bonuses.bulletSpeed;
                 basicEnemySpeed.current = BASIC_ENEMY_SPEED * responsiveMultiplier;
                 enemyBulletSpeed.current = BASIC_ENEMY_BULLET_SPEED * responsiveMultiplier;
                 trippleShootEnemySpeed.current = TRIPPLESHOOT_ENEMY_SPEED * responsiveMultiplier;
@@ -3172,7 +3211,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
 
                 setTimeout(() => {
                     teleportAbilityOnCooldown.current = false;
-                }, TELEPORT_COOLDOWN);
+                }, TELEPORT_COOLDOWN * bonuses.abilityCooldown);
                 
                 // Reset key state to prevent repeated triggering
                 keys.current["t"] = false;
@@ -3192,7 +3231,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 // Reset cooldown
                 setTimeout(() => {
                     immortalityAbilityOnCooldown.current = false;
-                }, IMMORTALITY_COOLDOWN);
+                }, IMMORTALITY_COOLDOWN * bonuses.abilityCooldown);
                 
                 // Reset key state to prevent repeated triggering
                 keys.current["t"] = false;
@@ -5812,11 +5851,13 @@ tierNotifications.current = tierNotifications.current.filter(notification => {
         else {
             // Only give rewards once when the game ends
             if (!rewardsGivenRef.current) {
-                const goldToAdd = Math.floor(score.current / 10);
-                const expToAdd = Math.floor(score.current / 30);
+                const baseGold = Math.floor(score.current / 10);
+                const baseExp = Math.floor(score.current / 30);
+                const goldToAdd = Math.floor(baseGold * bonuses.goldGain);
+                const expToAdd = Math.floor(baseExp * bonuses.expGain);
                 console.log('Game ended! Score:', score.current);
-                console.log('Gold to add:', goldToAdd);
-                console.log('Exp to add:', expToAdd);
+                console.log('Base gold:', baseGold, '→ With bonus:', goldToAdd, `(${bonuses.goldGain}x)`);
+                console.log('Base exp:', baseExp, '→ With bonus:', expToAdd, `(${bonuses.expGain}x)`);
                 console.log('Kills:', killCount.current);
                 
                 // Add rewards and reload data for UI update - USING COMBINED OPERATION

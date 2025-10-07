@@ -129,6 +129,12 @@ function AuthenticatedApp() {
     }
   });
 
+  // Ref to keep current gameData (always up-to-date, no closure issues)
+  const gameDataRef = useRef(gameData);
+  useEffect(() => {
+    gameDataRef.current = gameData;
+  }, [gameData]);
+
   // Načtení dat z databáze při startu
   useEffect(() => {
     const loadGameData = async () => {
@@ -238,15 +244,17 @@ function AuthenticatedApp() {
     try {
       console.log('💾 === DATABASE SAVE START ===');
       console.log('💾 saveGameData called with:', newData);
-      console.log('💾 Current gameData before merge:', gameData);
-      const updatedData = { ...gameData, ...newData };
+      
+      // Use ref to get latest state (no closure issues)
+      console.log('💾 Current gameData before merge:', gameDataRef.current);
+      const updatedData = { ...gameDataRef.current, ...newData };
       console.log('💾 Updated data will be:', updatedData);
       
       console.log('💾 Preparing database payload...');
       
       // Create clean, minimal payload to avoid 413 errors
       const cleanSettings = {
-        stats: updatedData.stats || gameData.stats
+        stats: updatedData.stats || gameDataRef.current.stats
       };
       const cleanCharacters = { selected: updatedData.characters?.selected || 'wizard' };
       const cleanAbilities = {
@@ -845,6 +853,7 @@ function AuthenticatedApp() {
           resetXp={resetXp} 
           addLevel={addLevel} 
           reloadGameData={reloadGameData}
+          achievements={gameData.achievements || {}}
         />}
         />
 
