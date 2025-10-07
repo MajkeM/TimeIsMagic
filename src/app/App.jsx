@@ -376,10 +376,10 @@ function AuthenticatedApp() {
       poisoncloud: 250,
       meteor: 300,
       // 💎 MEGA R ABILITIES (expensive!)
-      nuke: 0, // 1000
-      timewarp: 0, // 1200
-      blackhole: 0, // 1500
-      cosmicrain: 0 // 1100
+      nuke: 1000,
+      timewarp: 1200,
+      blackhole:1500,
+      cosmicrain: 1100
     },
     F: {
       flash: 0,
@@ -389,9 +389,9 @@ function AuthenticatedApp() {
       dash: 200,
       wallcreation: 250,
       // 💎 MEGA F ABILITIES (expensive!)
-      divineshield: 0, // 1300
-      dragonfury: 0, //1200
-      tsunami: 0 // 1400
+      divineshield: 1300,
+      dragonfury: 1200,
+      tsunami: 1400
     },
     T: {
       teleport: 0,
@@ -402,10 +402,10 @@ function AuthenticatedApp() {
       mirrorclone: 250,
       berserkermode: 300,
       // 💎 MEGA T ABILITIES (expensive!)
-      chainlightning: 0, // 1000
-      armyofthedead: 0, //1400
-      orbitalstrike: 0, //1300
-      phoenixrebirth: 0  // 2000
+      chainlightning: 1000,
+      armyofthedead: 1400,
+      orbitalstrike: 1300,
+      phoenixrebirth: 2000
     }
   };
 
