@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, use } from "react";
 import "../../responsive.css";
 import LoadingScreen from "./LoadingScreen";
 import { useLoading, loadingSteps } from "../hooks/useLoading";
@@ -39,7 +39,9 @@ import rapunzelSprite from "../Sprites/rapunzelPlayerSprite.png";
 import archerSprite from "../Sprites/archerPlayer.png"; // Change this to your archer sprite
 import mageSprite from "../Sprites/runeMagePlayer.png"; // Change this to your mage sprite
 import kingSprite from "./../Sprites/kingPlayerSprite.png"; // Temporary sprite for King - will be replaced
-import soldierSprite from "./../Sprites/soldierSprite.png"; // Temporary sprite for Soldier - will be replaced
+import soldierSprite from "./../Sprites/soldierSprite.png"; // Temporary sprite for Soldier - will be 
+// replaced
+import sniperSpriteEnemy from "./../Sprites/sniperSprite.png"; // 
 import { Link } from "react-router-dom";
 
 
@@ -319,6 +321,124 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
         const meteors = useRef([]);
         const meteorTargets = useRef([]);
 
+    // 💎💎💎 MEGA ABILITIES - Ultra expensive but extremely powerful! 💎💎💎
+    
+    // Nuclear Bomb ability (R) - Screen-clearing explosion
+    const NUKE_COOLDOWN = 60000; // 60 seconds!
+    const NUKE_DAMAGE_RADIUS = 1500; // Massive radius
+    const NUKE_FLASH_DURATION = 300; // White flash
+    const NUKE_SCORE_BONUS = 500; // Huge score bonus
+    const nukeAbilityOnCooldown = useRef(false);
+    const nukeAbilityCooldownStartTime = useRef(0);
+    const nukeFlashing = useRef(false);
+    const nukeFlashStartTime = useRef(0);
+    const nukeExplosions = useRef([]);
+    
+    // Time Warp ability (R) - Slow-mo Matrix effect
+    const TIMEWARP_COOLDOWN = 45000; // 45 seconds
+    const TIMEWARP_DURATION = 7000; // 7 seconds
+    const TIMEWARP_SLOWDOWN = 0.15; // 15% speed
+    const timeWarpAbilityOnCooldown = useRef(false);
+    const timeWarpAbilityCooldownStartTime = useRef(0);
+    const timeWarpActive = useRef(false);
+    const timeWarpStartTime = useRef(0);
+    
+    // Black Hole ability (R) - Sucks and crushes enemies
+    const BLACKHOLE_COOLDOWN = 50000; // 50 seconds
+    const BLACKHOLE_DURATION = 6000; // 6 seconds
+    const BLACKHOLE_PULL_RADIUS = 800; // Huge pull
+    const BLACKHOLE_PULL_STRENGTH = 25; // Very strong
+    const BLACKHOLE_CRUSH_RADIUS = 150; // Instant kill
+    const blackHoleAbilityOnCooldown = useRef(false);
+    const blackHoleAbilityCooldownStartTime = useRef(0);
+    const blackHoleActive = useRef(false);
+    const blackHoleStartTime = useRef(0);
+    const blackHolePosition = useRef({x: 0, y: 0});
+    
+    // Cosmic Rain ability (R) - Meteor shower
+    const COSMICRAIN_COOLDOWN = 42000; // 42 seconds
+    const COSMICRAIN_DURATION = 8000; // 8 seconds
+    const COSMICRAIN_INTERVAL = 300; // Meteor every 0.3s
+    const COSMICRAIN_RADIUS = 120;
+    const COSMICRAIN_DAMAGE = 80;
+    const cosmicRainAbilityOnCooldown = useRef(false);
+    const cosmicRainAbilityCooldownStartTime = useRef(0);
+    const cosmicRainActive = useRef(false);
+    const cosmicRainStartTime = useRef(0);
+    const cosmicRainMeteors = useRef([]);
+    
+    // Divine Shield ability (F) - Invincible + reflects damage
+    const DIVINESHIELD_COOLDOWN = 40000; // 40 seconds
+    const DIVINESHIELD_DURATION = 5000; // 5 seconds
+    const DIVINESHIELD_REFLECT_RADIUS = 300; // Reflect projectiles
+    const divineShieldAbilityOnCooldown = useRef(false);
+    const divineShieldAbilityCooldownStartTime = useRef(0);
+    const divineShieldActive = useRef(false);
+    const divineShieldStartTime = useRef(0);
+    
+    // Dragon's Fury ability (F) - Fire-breathing dragon
+    const DRAGON_COOLDOWN = 55000; // 55 seconds
+    const DRAGON_DURATION = 8000; // 8 seconds
+    const DRAGON_FIRE_RADIUS = 200;
+    const DRAGON_FIRE_INTERVAL = 500; // Fire every 0.5s
+    const DRAGON_FIRE_DAMAGE = 50;
+    const dragonFuryAbilityOnCooldown = useRef(false);
+    const dragonFuryAbilityCooldownStartTime = useRef(0);
+    const dragonFuryActive = useRef(false);
+    const dragonFuryStartTime = useRef(0);
+    const dragonPosition = useRef({x: 0, y: 0});
+    const dragonFireBreaths = useRef([]);
+    
+    // Tsunami Wave ability (F) - Massive water wave
+    const TSUNAMI_COOLDOWN = 48000; // 48 seconds
+    const TSUNAMI_SPEED = 15; // Very fast
+    const TSUNAMI_WIDTH = 200; // Thick wave
+    const TSUNAMI_DAMAGE = 200; // Instant kill
+    const tsunamiAbilityOnCooldown = useRef(false);
+    const tsunamiAbilityCooldownStartTime = useRef(0);
+    const tsunamiWaves = useRef([]);
+    
+    // Chain Lightning ability (T) - Jumps between enemies
+    const CHAINLIGHTNING_COOLDOWN = 35000; // 35 seconds
+    const CHAINLIGHTNING_BOUNCES = 15; // 15 enemies
+    const CHAINLIGHTNING_DAMAGE = 100;
+    const CHAINLIGHTNING_RANGE = 400;
+    const chainLightningAbilityOnCooldown = useRef(false);
+    const chainLightningAbilityCooldownStartTime = useRef(0);
+    const chainLightningBolts = useRef([]);
+    
+    // Army of the Dead ability (T) - Summon undead warriors
+    const ARMYOFTHEDEAD_COOLDOWN = 45000; // 45 seconds
+    const ARMYOFTHEDEAD_DURATION = 15000; // 15 seconds
+    const ARMYOFTHEDEAD_COUNT = 8; // 8 warriors
+    const ARMYOFTHEDEAD_SPEED = 4;
+    const ARMYOFTHEDEAD_DAMAGE = 50;
+    const armyOfTheDeadAbilityOnCooldown = useRef(false);
+    const armyOfTheDeadAbilityCooldownStartTime = useRef(0);
+    const armyOfTheDeadActive = useRef(false);
+    const armyOfTheDeadWarriors = useRef([]);
+    const armyOfTheDeadStartTime = useRef(0);
+    
+    // Orbital Strike ability (T) - Satellite laser
+    const ORBITALSTRIKE_COOLDOWN = 40000; // 40 seconds
+    const ORBITALSTRIKE_DELAY = 2000; // 2s warning
+    const ORBITALSTRIKE_DURATION = 3000; // 3s beam
+    const ORBITALSTRIKE_WIDTH = 150;
+    const ORBITALSTRIKE_DAMAGE = 10; // Per tick
+    const orbitalStrikeAbilityOnCooldown = useRef(false);
+    const orbitalStrikeAbilityCooldownStartTime = useRef(0);
+    const orbitalStrikeTargets = useRef([]);
+    const orbitalStrikeBeams = useRef([]);
+    
+    // Phoenix Rebirth ability (T) - Auto-revive on death
+    const PHOENIXREBIRTH_COOLDOWN = 90000; // 90 seconds
+    const PHOENIXREBIRTH_EXPLOSION_RADIUS = 500;
+    const PHOENIXREBIRTH_EXPLOSION_DAMAGE = 150;
+    const phoenixRebirthAbilityOnCooldown = useRef(false);
+    const phoenixRebirthAbilityCooldownStartTime = useRef(0);
+    const phoenixRebirthActive = useRef(false); // Ready to revive
+    const phoenixRebirthTriggered = useRef(false); // Used
+
     // Ability configuration helper
     const getAbilityConfig = () => {
         return {
@@ -326,19 +446,24 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 ability: R_ability,
                 key: 'r',
                 available: R_ability === 'reload' || R_ability === 'splash' || R_ability === 'gravitywell' || 
-                          R_ability === 'freeze' || R_ability === 'lightningstorm' || R_ability === 'poisoncloud' || R_ability === 'meteor'
+                          R_ability === 'freeze' || R_ability === 'lightningstorm' || R_ability === 'poisoncloud' || 
+                          R_ability === 'meteor' || R_ability === 'nuke' || R_ability === 'timewarp' || 
+                          R_ability === 'blackhole' || R_ability === 'cosmicrain'
             },
             F: {
                 ability: F_ability,
                 key: 'f', 
                 available: F_ability === 'flash' || F_ability === 'speed' || F_ability === 'phasewalk' || 
-                          F_ability === 'shield' || F_ability === 'dash' || F_ability === 'wallcreation'
+                          F_ability === 'shield' || F_ability === 'dash' || F_ability === 'wallcreation' ||
+                          F_ability === 'divineshield' || F_ability === 'dragonfury' || F_ability === 'tsunami'
             },
             T: {
                 ability: T_ability,
                 key: 't',
-                available: T_ability === 'teleport' || T_ability === 'immortality' || T_ability === 'scoreboost' || T_ability === 'soldierHelp' ||
-                          T_ability === 'magnet' || T_ability === 'mirrorclone' || T_ability === 'berserkermode'
+                available: T_ability === 'teleport' || T_ability === 'immortality' || T_ability === 'scoreboost' || 
+                          T_ability === 'soldierHelp' || T_ability === 'magnet' || T_ability === 'mirrorclone' || 
+                          T_ability === 'berserkermode' || T_ability === 'chainlightning' || T_ability === 'armyofthedead' ||
+                          T_ability === 'orbitalstrike' || T_ability === 'phoenixrebirth'
             }
         };
     };
@@ -590,6 +715,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     const tankImageRef = useRef(null);
     
     // Sniper enemy - Fast bullets, keeps distance, laser sight warning
+    const sniperEnemySpriteRef = useRef(null);
     const sniperEnemyRef = useRef([]);
     const sniperEnemyBulletsRef = useRef([]);
     const sniperEnemySpeed = useRef(SNIPER_ENEMY_SPEED);
@@ -1052,6 +1178,121 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     setTimeout(() => {
                         meteorAbilityOnCooldown.current = false;
                     }, METEOR_COOLDOWN * bonuses.abilityCooldown);
+                } else if (R_ability === 'nuke' && !nukeAbilityOnCooldown.current) {
+                    // 💎 NUKE - Nuclear bomb that clears the screen!
+                    nukeFlashing.current = true;
+                    nukeFlashStartTime.current = currentTime;
+                    nukeAbilityOnCooldown.current = true;
+                    nukeAbilityCooldownStartTime.current = currentTime;
+                    
+                    // White flash effect
+                    setTimeout(() => {
+                        nukeFlashing.current = false;
+                    }, NUKE_FLASH_DURATION);
+                    
+                    // Massive explosion at center of screen
+                    const centerX = window.innerWidth / 2;
+                    const centerY = window.innerHeight / 2;
+                    
+                    nukeExplosions.current.push({
+                        x: centerX,
+                        y: centerY,
+                        timestamp: currentTime,
+                        radius: NUKE_DAMAGE_RADIUS
+                    });
+                    
+                    // Kill ALL enemies on screen
+                    const totalKills = basicEnemyRef.current.length + trippleShootEnemyRef.current.length + 
+                                      bomberEnemyRef.current.length + teleporterEnemyRef.current.length +
+                                      tankEnemyRef.current.length + sniperEnemyRef.current.length;
+                    
+                    basicEnemyRef.current = [];
+                    trippleShootEnemyRef.current = [];
+                    bomberEnemyRef.current = [];
+                    teleporterEnemyRef.current = [];
+                    tankEnemyRef.current = [];
+                    sniperEnemyRef.current = [];
+                    
+                    score.current += totalKills * 15 + NUKE_SCORE_BONUS;
+                    killCount.current += totalKills;
+                    
+                    // Reset cooldown
+                    setTimeout(() => {
+                        nukeAbilityOnCooldown.current = false;
+                    }, NUKE_COOLDOWN * bonuses.abilityCooldown);
+                } else if (R_ability === 'timewarp' && !timeWarpAbilityOnCooldown.current) {
+                    // 💎 TIME WARP - Slow down time Matrix style!
+                    timeWarpActive.current = true;
+                    timeWarpStartTime.current = currentTime;
+                    timeWarpAbilityOnCooldown.current = true;
+                    timeWarpAbilityCooldownStartTime.current = currentTime;
+                    
+                    // Deactivate after duration
+                    setTimeout(() => {
+                        timeWarpActive.current = false;
+                    }, TIMEWARP_DURATION);
+                    
+                    // Reset cooldown
+                    setTimeout(() => {
+                        timeWarpAbilityOnCooldown.current = false;
+                    }, TIMEWARP_COOLDOWN * bonuses.abilityCooldown);
+                } else if (R_ability === 'blackhole' && !blackHoleAbilityOnCooldown.current) {
+                    // 💎 BLACK HOLE - Sucks in and crushes all enemies!
+                    blackHoleActive.current = true;
+                    blackHoleStartTime.current = currentTime;
+                    blackHolePosition.current = {x: mousemove.current.x, y: mousemove.current.y};
+                    blackHoleAbilityOnCooldown.current = true;
+                    blackHoleAbilityCooldownStartTime.current = currentTime;
+                    
+                    // Deactivate after duration
+                    setTimeout(() => {
+                        blackHoleActive.current = false;
+                    }, BLACKHOLE_DURATION);
+                    
+                    // Reset cooldown
+                    setTimeout(() => {
+                        blackHoleAbilityOnCooldown.current = false;
+                    }, BLACKHOLE_COOLDOWN * bonuses.abilityCooldown);
+                } else if (R_ability === 'cosmicrain' && !cosmicRainAbilityOnCooldown.current) {
+                    // 💎 COSMIC RAIN - Meteors rain from the sky!
+                    cosmicRainActive.current = true;
+                    cosmicRainStartTime.current = currentTime;
+                    cosmicRainAbilityOnCooldown.current = true;
+                    cosmicRainAbilityCooldownStartTime.current = currentTime;
+                    
+                    let meteorCount = 0;
+                    const maxMeteors = COSMICRAIN_DURATION / COSMICRAIN_INTERVAL;
+                    
+                    const meteorInterval = setInterval(() => {
+                        if (meteorCount >= maxMeteors || !cosmicRainActive.current) {
+                            clearInterval(meteorInterval);
+                            cosmicRainActive.current = false;
+                            return;
+                        }
+                        
+                        // Random position for meteor
+                        const meteorX = Math.random() * window.innerWidth;
+                        const meteorY = Math.random() * window.innerHeight;
+                        
+                        cosmicRainMeteors.current.push({
+                            x: meteorX,
+                            y: meteorY,
+                            timestamp: performance.now(),
+                            radius: COSMICRAIN_RADIUS
+                        });
+                        
+                        meteorCount++;
+                    }, COSMICRAIN_INTERVAL);
+                    
+                    // Deactivate after duration
+                    setTimeout(() => {
+                        cosmicRainActive.current = false;
+                    }, COSMICRAIN_DURATION);
+                    
+                    // Reset cooldown
+                    setTimeout(() => {
+                        cosmicRainAbilityOnCooldown.current = false;
+                    }, COSMICRAIN_COOLDOWN * bonuses.abilityCooldown);
                 }
             }
 
@@ -1241,6 +1482,93 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     setTimeout(() => {
                         wallCreationAbilityOnCooldown.current = false;
                     }, WALL_CREATION_COOLDOWN * bonuses.abilityCooldown);
+                } else if (F_ability === 'divineshield' && !divineShieldAbilityOnCooldown.current) {
+                    // 💎 DIVINE SHIELD - Invincible + reflects all damage!
+                    divineShieldActive.current = true;
+                    divineShieldStartTime.current = currentTime;
+                    divineShieldAbilityOnCooldown.current = true;
+                    divineShieldAbilityCooldownStartTime.current = currentTime;
+                    
+                    // Deactivate after duration
+                    setTimeout(() => {
+                        divineShieldActive.current = false;
+                    }, DIVINESHIELD_DURATION);
+                    
+                    // Reset cooldown
+                    setTimeout(() => {
+                        divineShieldAbilityOnCooldown.current = false;
+                    }, DIVINESHIELD_COOLDOWN * bonuses.abilityCooldown);
+                } else if (F_ability === 'dragonfury' && !dragonFuryAbilityOnCooldown.current) {
+                    // 💎 DRAGON'S FURY - Summon fire-breathing dragon!
+                    dragonFuryActive.current = true;
+                    dragonFuryStartTime.current = currentTime;
+                    dragonPosition.current = {x: playerRef.current.x, y: playerRef.current.y};
+                    dragonFuryAbilityOnCooldown.current = true;
+                    dragonFuryAbilityCooldownStartTime.current = currentTime;
+                    
+                    let fireCount = 0;
+                    const maxFires = DRAGON_DURATION / DRAGON_FIRE_INTERVAL;
+                    
+                    const fireInterval = setInterval(() => {
+                        if (fireCount >= maxFires || !dragonFuryActive.current) {
+                            clearInterval(fireInterval);
+                            dragonFuryActive.current = false;
+                            return;
+                        }
+                        
+                        // Dragon breathes fire toward mouse
+                        const fireX = mousemove.current.x;
+                        const fireY = mousemove.current.y;
+                        
+                        dragonFireBreaths.current.push({
+                            x: fireX,
+                            y: fireY,
+                            timestamp: performance.now(),
+                            radius: DRAGON_FIRE_RADIUS
+                        });
+                        
+                        fireCount++;
+                    }, DRAGON_FIRE_INTERVAL);
+                    
+                    // Deactivate after duration
+                    setTimeout(() => {
+                        dragonFuryActive.current = false;
+                    }, DRAGON_DURATION);
+                    
+                    // Reset cooldown
+                    setTimeout(() => {
+                        dragonFuryAbilityOnCooldown.current = false;
+                    }, DRAGON_COOLDOWN * bonuses.abilityCooldown);
+                } else if (F_ability === 'tsunami' && !tsunamiAbilityOnCooldown.current) {
+                    // 💎 TSUNAMI - Massive water wave across screen!
+                    const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+                    const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+                    
+                    // Calculate direction toward mouse
+                    const dx = mousemove.current.x - playerCenterX;
+                    const dy = mousemove.current.y - playerCenterY;
+                    const length = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (length > 0) {
+                        const dirX = dx / length;
+                        const dirY = dy / length;
+                        
+                        tsunamiWaves.current.push({
+                            x: playerCenterX,
+                            y: playerCenterY,
+                            dirX: dirX,
+                            dirY: dirY,
+                            timestamp: performance.now()
+                        });
+                    }
+                    
+                    tsunamiAbilityOnCooldown.current = true;
+                    tsunamiAbilityCooldownStartTime.current = currentTime;
+                    
+                    // Reset cooldown
+                    setTimeout(() => {
+                        tsunamiAbilityOnCooldown.current = false;
+                    }, TSUNAMI_COOLDOWN * bonuses.abilityCooldown);
                 }
             }
         };
@@ -1861,6 +2189,19 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
         };
     }, []);
 
+
+    // load sniperEnemySprite image
+    useEffect(() => {
+        const sniperEnemySprite = new Image();
+        sniperEnemySprite.src = sniperSprite; // Use the imported sprite
+        sniperEnemySprite.onload = () => {
+            sniperEnemySpriteRef.current = sniperEnemySprite;
+        };
+        sniperEnemySprite.onerror = () => {
+            console.error('Failed to load sniper enemy sprite');
+        };
+    })
+
     useEffect(() => {
         const bulletImage = new Image();
         bulletImage.src = bulletSprite; // Use the imported sprite
@@ -2201,6 +2542,60 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             color: scoreValue >= 25 ? '#FFD700' : scoreValue >= 15 ? '#FF6464' : '#FFFFFF',
             fontSize: Math.min(20 + scoreValue * 0.5, 35)
         });
+    };
+
+    // 💎 Phoenix Rebirth helper - handles player death with auto-revive
+    const handlePlayerDeath = () => {
+        // Check if Phoenix Rebirth is active and not already triggered
+        if (phoenixRebirthActive.current && !phoenixRebirthTriggered.current) {
+            phoenixRebirthTriggered.current = true;
+            phoenixRebirthActive.current = false;
+            
+            // Explosion effect kills nearby enemies
+            const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+            const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+            
+            // Kill all enemies in radius
+            let killed = 0;
+            [basicEnemyRef, trippleShootEnemyRef, bomberEnemyRef, teleporterEnemyRef, tankEnemyRef, sniperEnemyRef].forEach((enemyRef, idx) => {
+                const points = [10, 30, 25, 35, 50, 40][idx];
+                const before = enemyRef.current.length;
+                enemyRef.current = enemyRef.current.filter(enemy => {
+                    const dx = (enemy.x + enemy.width/2) - playerCenterX;
+                    const dy = (enemy.y + enemy.height/2) - playerCenterY;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < PHOENIXREBIRTH_EXPLOSION_RADIUS) {
+                        score.current += points;
+                        return false;
+                    }
+                    return true;
+                });
+                killed += before - enemyRef.current.length;
+            });
+            
+            killCount.current += killed;
+            
+            // Clear all enemy bullets
+            basicEnemyBulletsRef.current = [];
+            trippleShootEnemyBulletsRef.current = [];
+            teleporterEnemyBulletsRef.current = [];
+            tankEnemyBulletsRef.current = [];
+            sniperEnemyBulletsRef.current = [];
+            
+            // Grant temporary immortality
+            immortalityAbilityActive.current = true;
+            setTimeout(() => {
+                immortalityAbilityActive.current = false;
+            }, 3000); // 3 seconds of immortality after revival
+            
+            // DON'T set loose to true - player survived!
+            return true; // Revived successfully
+        }
+        
+        // No revival - player dies
+        looseRef.current = true;
+        setLoose(true);
+        return false; // Player died
     };
 
     const updateAndDrawEffects = (ctx) => {
@@ -3098,6 +3493,231 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             }
         }
 
+        // 💎 MEGA ABILITIES RENDERING
+        
+        // Nuke flash effect
+        if (nukeFlashing.current) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        // Time Warp visual effect
+        if (timeWarpActive.current) {
+            ctx.save();
+            ctx.globalAlpha = 0.3;
+            ctx.strokeStyle = '#00ffff';
+            ctx.lineWidth = 3;
+            // Concentric circles emanating from player
+            for (let i = 0; i < 5; i++) {
+                const radius = (50 + i * 100 + (currentTime % 2000) / 10);
+                ctx.beginPath();
+                ctx.arc(playerCenterX, playerCenterY, radius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+        
+        // Black Hole visual effect
+        if (blackHoleActive.current && blackHolePosition.current) {
+            const pos = blackHolePosition.current;
+            ctx.save();
+            
+            // Outer pull radius
+            ctx.globalAlpha = 0.2;
+            ctx.fillStyle = '#8b00ff';
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, BLACKHOLE_PULL_RADIUS, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Swirling effect
+            ctx.globalAlpha = 0.5;
+            const spirals = 8;
+            for (let i = 0; i < spirals; i++) {
+                const angle = (i / spirals * Math.PI * 2) + (currentTime / 200);
+                ctx.strokeStyle = '#ff00ff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, BLACKHOLE_PULL_RADIUS * 0.5, angle, angle + Math.PI / spirals);
+                ctx.stroke();
+            }
+            
+            // Core crush radius
+            ctx.globalAlpha = 0.8;
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, BLACKHOLE_CRUSH_RADIUS, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Glowing edge
+            ctx.strokeStyle = '#8b00ff';
+            ctx.lineWidth = 5;
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+        
+        // Cosmic Rain meteors
+        cosmicRainMeteors.current.forEach((meteor) => {
+            ctx.save();
+            ctx.fillStyle = '#ff4500';
+            ctx.shadowColor = '#ff8c00';
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(meteor.x, meteor.y, 15, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Trail
+            ctx.strokeStyle = '#ffa500';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(meteor.x, meteor.y);
+            ctx.lineTo(meteor.x - meteor.vx * 2, meteor.y - meteor.vy * 2);
+            ctx.stroke();
+            ctx.restore();
+        });
+        
+        // Divine Shield visual
+        if (divineShieldActive.current) {
+            ctx.save();
+            ctx.globalAlpha = 0.4;
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 5;
+            ctx.shadowColor = '#ffd700';
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(playerCenterX, playerCenterY, 60, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Inner shield layer
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(playerCenterX, playerCenterY, 50, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+        }
+        
+        // Dragon Fire
+        dragonFireBreaths.current.forEach((fire) => {
+            ctx.save();
+            ctx.globalAlpha = 0.8;
+            ctx.fillStyle = '#ff4500';
+            ctx.shadowColor = '#ff8c00';
+            ctx.shadowBlur = 30;
+            ctx.beginPath();
+            ctx.arc(fire.x, fire.y, 20, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Inner flame
+            ctx.fillStyle = '#ffff00';
+            ctx.beginPath();
+            ctx.arc(fire.x, fire.y, 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        });
+        
+        // Tsunami Wave
+        tsunamiWaves.current.forEach((wave) => {
+            ctx.save();
+            ctx.globalAlpha = 0.6;
+            ctx.fillStyle = '#00bfff';
+            ctx.fillRect(wave.x - 10, wave.y - wave.width / 2, 20, wave.width);
+            
+            // Wave crest
+            ctx.fillStyle = '#ffffff';
+            ctx.globalAlpha = 0.8;
+            ctx.fillRect(wave.x - 5, wave.y - wave.width / 2, 10, wave.width);
+            ctx.restore();
+        });
+        
+        // Chain Lightning bolts
+        chainLightningBolts.current.forEach((bolt) => {
+            ctx.save();
+            ctx.strokeStyle = '#00ffff';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#00ffff';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.moveTo(bolt.from.x, bolt.from.y);
+            ctx.lineTo(bolt.to.x, bolt.to.y);
+            ctx.stroke();
+            ctx.restore();
+        });
+        
+        // Army of the Dead warriors
+        armyOfTheDeadWarriors.current.forEach((warrior) => {
+            ctx.save();
+            ctx.fillStyle = '#8b4513';
+            ctx.fillRect(warrior.x, warrior.y, 30, 40);
+            
+            // Helmet
+            ctx.fillStyle = '#696969';
+            ctx.fillRect(warrior.x + 5, warrior.y, 20, 15);
+            
+            // Sword
+            ctx.fillStyle = '#c0c0c0';
+            ctx.fillRect(warrior.x - 5, warrior.y + 20, 10, 20);
+            ctx.restore();
+        });
+        
+        // Orbital Strike warning
+        orbitalStrikeTargets.current.forEach((warning) => {
+            ctx.save();
+            ctx.globalAlpha = 0.5;
+            ctx.strokeStyle = '#ff0000';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([10, 10]);
+            ctx.beginPath();
+            ctx.arc(warning.x, warning.y, 100, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Crosshair
+            ctx.beginPath();
+            ctx.moveTo(warning.x - 120, warning.y);
+            ctx.lineTo(warning.x + 120, warning.y);
+            ctx.moveTo(warning.x, warning.y - 120);
+            ctx.lineTo(warning.x, warning.y + 120);
+            ctx.stroke();
+            ctx.restore();
+        });
+        
+        // Orbital Strike beams
+        orbitalStrikeBeams.current.forEach((beam) => {
+            ctx.save();
+            ctx.globalAlpha = 0.8;
+            ctx.fillStyle = '#ff0000';
+            ctx.shadowColor = '#ff0000';
+            ctx.shadowBlur = 30;
+            ctx.fillRect(beam.x - 30, 0, 60, canvas.height);
+            
+            // Core beam
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(beam.x - 15, 0, 30, canvas.height);
+            ctx.restore();
+        });
+        
+        // Phoenix Rebirth aura when active
+        if (phoenixRebirthActive.current && !phoenixRebirthTriggered.current) {
+            ctx.save();
+            ctx.globalAlpha = 0.3;
+            ctx.strokeStyle = '#ff4500';
+            ctx.lineWidth = 4;
+            ctx.shadowColor = '#ff8c00';
+            ctx.shadowBlur = 20;
+            const pulseSize = 70 + Math.sin(currentTime / 200) * 10;
+            ctx.beginPath();
+            ctx.arc(playerCenterX, playerCenterY, pulseSize, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Inner phoenix aura
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(playerCenterX, playerCenterY, pulseSize - 15, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
         // TIER-BASED ENEMY SPAWNING SYSTEM
         const currentScore = score.current;
         
@@ -3686,6 +4306,178 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 }, BERSERKER_MODE_COOLDOWN);
                 
                 // Reset key state to prevent repeated triggering
+                keys.current["t"] = false;
+                keys.current["T"] = false;
+            } else if (T_ability === 'chainlightning' && !chainLightningAbilityOnCooldown.current) {
+                // 💎 CHAIN LIGHTNING - Lightning jumps between enemies!
+                chainLightningAbilityOnCooldown.current = true;
+                chainLightningAbilityCooldownStartTime.current = currentTime;
+                
+                // Find all enemies
+                const allEnemies = [
+                    ...basicEnemyRef.current,
+                    ...trippleShootEnemyRef.current,
+                    ...bomberEnemyRef.current,
+                    ...teleporterEnemyRef.current,
+                    ...tankEnemyRef.current,
+                    ...sniperEnemyRef.current
+                ];
+                
+                if (allEnemies.length > 0) {
+                    // Start chain from closest enemy to mouse
+                    let currentTarget = null;
+                    let minDist = Infinity;
+                    
+                    allEnemies.forEach(enemy => {
+                        const dx = enemy.x - mousemove.current.x;
+                        const dy = enemy.y - mousemove.current.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < minDist) {
+                            minDist = dist;
+                            currentTarget = enemy;
+                        }
+                    });
+                    
+                    // Chain lightning through enemies
+                    const hitEnemies = new Set();
+                    const chain = [];
+                    
+                    for (let i = 0; i < CHAINLIGHTNING_BOUNCES && currentTarget; i++) {
+                        hitEnemies.add(currentTarget);
+                        chain.push({x: currentTarget.x + currentTarget.width/2, y: currentTarget.y + currentTarget.height/2});
+                        
+                        // Damage current target
+                        if (currentTarget.hp !== undefined) {
+                            currentTarget.hp -= CHAINLIGHTNING_DAMAGE;
+                        } else {
+                            // Remove enemy
+                            basicEnemyRef.current = basicEnemyRef.current.filter(e => e !== currentTarget);
+                            trippleShootEnemyRef.current = trippleShootEnemyRef.current.filter(e => e !== currentTarget);
+                            bomberEnemyRef.current = bomberEnemyRef.current.filter(e => e !== currentTarget);
+                            teleporterEnemyRef.current = teleporterEnemyRef.current.filter(e => e !== currentTarget);
+                            sniperEnemyRef.current = sniperEnemyRef.current.filter(e => e !== currentTarget);
+                            score.current += 20;
+                            killCount.current++;
+                        }
+                        
+                        // Find next target
+                        let nextTarget = null;
+                        let nextMinDist = Infinity;
+                        
+                        allEnemies.forEach(enemy => {
+                            if (!hitEnemies.has(enemy)) {
+                                const dx = enemy.x - currentTarget.x;
+                                const dy = enemy.y - currentTarget.y;
+                                const dist = Math.sqrt(dx * dx + dy * dy);
+                                if (dist < nextMinDist && dist < CHAINLIGHTNING_RANGE) {
+                                    nextMinDist = dist;
+                                    nextTarget = enemy;
+                                }
+                            }
+                        });
+                        
+                        currentTarget = nextTarget;
+                    }
+                    
+                    chainLightningBolts.current.push({
+                        chain: chain,
+                        timestamp: currentTime
+                    });
+                }
+                
+                // Reset cooldown
+                setTimeout(() => {
+                    chainLightningAbilityOnCooldown.current = false;
+                }, CHAINLIGHTNING_COOLDOWN * bonuses.abilityCooldown);
+                
+                keys.current["t"] = false;
+                keys.current["T"] = false;
+            } else if (T_ability === 'armyofthedead' && !armyOfTheDeadAbilityOnCooldown.current) {
+                // 💎 ARMY OF THE DEAD - Summon undead warriors!
+                armyOfTheDeadActive.current = true;
+                armyOfTheDeadStartTime.current = currentTime;
+                armyOfTheDeadAbilityOnCooldown.current = true;
+                armyOfTheDeadAbilityCooldownStartTime.current = currentTime;
+                
+                // Spawn warriors around player
+                const playerCenterX = playerRef.current.x + playerRef.current.width / 2;
+                const playerCenterY = playerRef.current.y + playerRef.current.height / 2;
+                
+                for (let i = 0; i < ARMYOFTHEDEAD_COUNT; i++) {
+                    const angle = (i / ARMYOFTHEDEAD_COUNT) * Math.PI * 2;
+                    const spawnDist = 150;
+                    
+                    armyOfTheDeadWarriors.current.push({
+                        x: playerCenterX + Math.cos(angle) * spawnDist,
+                        y: playerCenterY + Math.sin(angle) * spawnDist,
+                        width: 80,
+                        height: 80,
+                        spawnTime: currentTime
+                    });
+                }
+                
+                // Remove warriors after duration
+                setTimeout(() => {
+                    armyOfTheDeadActive.current = false;
+                    armyOfTheDeadWarriors.current = [];
+                }, ARMYOFTHEDEAD_DURATION);
+                
+                // Reset cooldown
+                setTimeout(() => {
+                    armyOfTheDeadAbilityOnCooldown.current = false;
+                }, ARMYOFTHEDEAD_COOLDOWN * bonuses.abilityCooldown);
+                
+                keys.current["t"] = false;
+                keys.current["T"] = false;
+            } else if (T_ability === 'orbitalstrike' && !orbitalStrikeAbilityOnCooldown.current) {
+                // 💎 ORBITAL STRIKE - Satellite laser from space!
+                const targetX = mousemove.current.x;
+                const targetY = mousemove.current.y;
+                
+                orbitalStrikeAbilityOnCooldown.current = true;
+                orbitalStrikeAbilityCooldownStartTime.current = currentTime;
+                
+                // Show warning
+                orbitalStrikeTargets.current.push({
+                    x: targetX,
+                    y: targetY,
+                    timestamp: currentTime
+                });
+                
+                // Fire beam after delay
+                setTimeout(() => {
+                    orbitalStrikeBeams.current.push({
+                        x: targetX,
+                        y: targetY,
+                        timestamp: performance.now()
+                    });
+                    
+                    // Remove warning
+                    orbitalStrikeTargets.current = orbitalStrikeTargets.current.filter(t => 
+                        t.x !== targetX || t.y !== targetY
+                    );
+                }, ORBITALSTRIKE_DELAY);
+                
+                // Reset cooldown
+                setTimeout(() => {
+                    orbitalStrikeAbilityOnCooldown.current = false;
+                }, ORBITALSTRIKE_COOLDOWN * bonuses.abilityCooldown);
+                
+                keys.current["t"] = false;
+                keys.current["T"] = false;
+            } else if (T_ability === 'phoenixrebirth' && !phoenixRebirthAbilityOnCooldown.current) {
+                // 💎 PHOENIX REBIRTH - Auto-revive on death!
+                phoenixRebirthActive.current = true;
+                phoenixRebirthAbilityOnCooldown.current = true;
+                phoenixRebirthAbilityCooldownStartTime.current = currentTime;
+                
+                // Reset cooldown
+                setTimeout(() => {
+                    phoenixRebirthAbilityOnCooldown.current = false;
+                    phoenixRebirthActive.current = false;
+                    phoenixRebirthTriggered.current = false;
+                }, PHOENIXREBIRTH_COOLDOWN * bonuses.abilityCooldown);
+                
                 keys.current["t"] = false;
                 keys.current["T"] = false;
             }
@@ -4528,8 +5320,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                             shieldAbilityActive.current = false;
                         }
                     } else {
-                        looseRef.current = true;
-                        setLoose(true);
+                        handlePlayerDeath(); // 💎 Phoenix Rebirth check
                     }
                 }
                 
@@ -5008,9 +5799,9 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             ctx.rotate(sniperRotationAngle);
             
             // Draw sniper (purple tint)
-            if (basicEnemySpriteRef.current) {
+            if (sniperEnemySpriteRef.current) {
                 ctx.filter = 'hue-rotate(270deg) saturate(1.5) brightness(0.9)';
-                ctx.drawImage(basicEnemySpriteRef.current, -enemy.width / 2, -enemy.height / 2, enemy.width, enemy.height);
+                ctx.drawImage(sniperEnemySpriteRef.current, -enemy.width / 2, -enemy.height / 2, enemy.width, enemy.height);
                 ctx.filter = 'none';
             } else {
                 ctx.fillStyle = "purple";
@@ -5222,8 +6013,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                             shieldAbilityActive.current = false;
                         }
                     } else {
-                        looseRef.current = true;
-                        setLoose(true);
+                        handlePlayerDeath(); // 💎 Phoenix Rebirth check
                     }
                 }
             }
@@ -5316,8 +6106,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                             shieldAbilityActive.current = false;
                         }
                     } else {
-                        looseRef.current = true;
-                        setLoose(true);
+                        handlePlayerDeath(); // 💎 Phoenix Rebirth check
                     }
                 }
             }
@@ -5340,8 +6129,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                             shieldAbilityActive.current = false;
                         }
                     } else {
-                        looseRef.current = true;
-                        setLoose(true);
+                        handlePlayerDeath(); // 💎 Phoenix Rebirth check
                     }
                 }
             }
@@ -5364,8 +6152,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                             shieldAbilityActive.current = false;
                         }
                     } else {
-                        looseRef.current = true;
-                        setLoose(true);
+                        handlePlayerDeath(); // 💎 Phoenix Rebirth check
                     }
                 }
             }
@@ -5928,8 +6715,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                             shieldAbilityActive.current = false;
                         }
                     } else {
-                        looseRef.current = true;
-                        setLoose(true);
+                        handlePlayerDeath(); // 💎 Phoenix Rebirth check
                     }
                 }
             }
@@ -5950,8 +6736,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                             shieldAbilityActive.current = false;
                         }
                     } else {
-                        looseRef.current = true;
-                        setLoose(true);
+                        handlePlayerDeath(); // 💎 Phoenix Rebirth check
                     }
                 }
             }
@@ -5972,8 +6757,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                             shieldAbilityActive.current = false;
                         }
                     } else {
-                        looseRef.current = true;
-                        setLoose(true);
+                        handlePlayerDeath(); // 💎 Phoenix Rebirth check
                     }
                 }
             }
@@ -5995,8 +6779,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                             shieldAbilityActive.current = false;
                         }
                     } else {
-                        looseRef.current = true;
-                        setLoose(true);
+                        handlePlayerDeath(); // 💎 Phoenix Rebirth check
                     }
                 }
             }
@@ -6018,8 +6801,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                             shieldAbilityActive.current = false;
                         }
                     } else {
-                        looseRef.current = true;
-                        setLoose(true);
+                        handlePlayerDeath(); // 💎 Phoenix Rebirth check
                     }
                 }
             }
@@ -6044,8 +6826,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                             shieldAbilityActive.current = false;
                         }
                     } else {
-                        looseRef.current = true;
-                        setLoose(true);
+                        handlePlayerDeath(); // 💎 Phoenix Rebirth check
                     }
                 }
             }
@@ -6067,8 +6848,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                             shieldAbilityActive.current = false;
                         }
                     } else {
-                        looseRef.current = true;
-                        setLoose(true);
+                        handlePlayerDeath(); // 💎 Phoenix Rebirth check
                     }
                 }
             }

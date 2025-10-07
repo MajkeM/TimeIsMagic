@@ -54,7 +54,12 @@ function AuthenticatedApp() {
         freeze: false,
         lightningstorm: false,
         poisoncloud: false,
-        meteor: false
+        meteor: false,
+        // 💎 MEGA R ABILITIES
+        nuke: false,
+        timewarp: false,
+        blackhole: false,
+        cosmicrain: false
       },
       F: {
         flash: true, // Always available
@@ -62,7 +67,11 @@ function AuthenticatedApp() {
         phasewalk: false,
         shield: false,
         dash: false,
-        wallcreation: false
+        wallcreation: false,
+        // 💎 MEGA F ABILITIES
+        divineshield: false,
+        dragonfury: false,
+        tsunami: false
       },
       T: {
         teleport: true, // Always available
@@ -71,7 +80,12 @@ function AuthenticatedApp() {
         soldierHelp: false,
         magnet: false,
         mirrorclone: false,
-        berserkermode: false
+        berserkermode: false,
+        // 💎 MEGA T ABILITIES
+        chainlightning: false,
+        armyofthedead: false,
+        orbitalstrike: false,
+        phoenixrebirth: false
       }
     };
 
@@ -360,7 +374,12 @@ function AuthenticatedApp() {
       freeze: 150,
       lightningstorm: 200,
       poisoncloud: 250,
-      meteor: 300
+      meteor: 300,
+      // 💎 MEGA R ABILITIES (expensive!)
+      nuke: 1000,
+      timewarp: 1200,
+      blackhole: 1500,
+      cosmicrain: 1100
     },
     F: {
       flash: 0,
@@ -368,7 +387,11 @@ function AuthenticatedApp() {
       phasewalk: 100,
       shield: 150,
       dash: 200,
-      wallcreation: 250
+      wallcreation: 250,
+      // 💎 MEGA F ABILITIES (expensive!)
+      divineshield: 1300,
+      dragonfury: 1600,
+      tsunami: 1400
     },
     T: {
       teleport: 0,
@@ -377,7 +400,12 @@ function AuthenticatedApp() {
       soldierHelp: 150,
       magnet: 200,
       mirrorclone: 250,
-      berserkermode: 300
+      berserkermode: 300,
+      // 💎 MEGA T ABILITIES (expensive!)
+      chainlightning: 1000,
+      armyofthedead: 1400,
+      orbitalstrike: 1300,
+      phoenixrebirth: 2000  // Nejdražší!
     }
   };
 

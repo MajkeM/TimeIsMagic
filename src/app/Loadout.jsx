@@ -333,6 +333,11 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
                         {renderAbilityCard('R', 'lightningstorm', lightningStormAbility, R_ability)}
                         {renderAbilityCard('R', 'poisoncloud', poisonCloudAbility, R_ability)}
                         {renderAbilityCard('R', 'meteor', meteorAbility, R_ability)}
+                        {/* 💎 MEGA R ABILITIES */}
+                        {renderAbilityCard('R', 'nuke', meteorAbility, R_ability)}
+                        {renderAbilityCard('R', 'timewarp', speedAbility, R_ability)}
+                        {renderAbilityCard('R', 'blackhole', gravitywellAbility, R_ability)}
+                        {renderAbilityCard('R', 'cosmicrain', meteorAbility, R_ability)}
                     </div>
 
                     <div className="scroll-decoration"></div>
@@ -348,7 +353,10 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
                         {renderAbilityCard('F', 'shield', shieldAbility, F_ability)}
                         {renderAbilityCard('F', 'dash', dashAbility, F_ability)}
                         {renderAbilityCard('F', 'wallcreation', wallCreationAbility, F_ability)}
-                       
+                        {/* 💎 MEGA F ABILITIES */}
+                        {renderAbilityCard('F', 'divineshield', shieldAbility, F_ability)}
+                        {renderAbilityCard('F', 'dragonfury', flashAbility, F_ability)}
+                        {renderAbilityCard('F', 'tsunami', splashAbility, F_ability)}
                     </div>
 
                     <div className="scroll-decoration"></div>
@@ -365,6 +373,11 @@ export default function Loadout({handleAbilityChange, R_ability, F_ability, T_ab
                         {renderAbilityCard('T', 'magnet', magnetAbility, T_ability)}
                         {renderAbilityCard('T', 'mirrorclone', mirrorCloneAbility, T_ability)}
                         {renderAbilityCard('T', 'berserkermode', berserkerModeAbility, T_ability)}
+                        {/* 💎 MEGA T ABILITIES */}
+                        {renderAbilityCard('T', 'chainlightning', lightningStormAbility, T_ability)}
+                        {renderAbilityCard('T', 'armyofthedead', soldierAbility, T_ability)}
+                        {renderAbilityCard('T', 'orbitalstrike', meteorAbility, T_ability)}
+                        {renderAbilityCard('T', 'phoenixrebirth', immortalityAbility, T_ability)}
                     </div>
 
                     <div className="scroll-decoration"></div>
