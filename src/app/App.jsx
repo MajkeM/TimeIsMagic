@@ -12,6 +12,7 @@ import LoadingScreen from "./components/LoadingScreen";
 import { useLoading, loadingSteps } from "./hooks/useLoading";
 import { AuthProvider, useAuth } from "../contexts/AuthContext.jsx";
 import Auth from "./components/Auth";
+import AchievementNotification from "./components/AchievementNotification";
 
 // Create wrapper component for authenticated content
 function AuthenticatedApp() {
@@ -128,6 +129,9 @@ function AuthenticatedApp() {
       abilitiesUnlocked: 3 // Default 3 free abilities
     }
   });
+
+  // Achievement notifications
+  const [activeNotifications, setActiveNotifications] = useState([]);
 
   // Ref to keep current gameData (always up-to-date, no closure issues)
   const gameDataRef = useRef(gameData);
@@ -725,6 +729,11 @@ function AuthenticatedApp() {
       newAchievements.ability_master = true;
     }
     
+    // Show notifications for new achievements
+    Object.keys(newAchievements).forEach(achievementId => {
+      setActiveNotifications(prev => [...prev, { id: achievementId, timestamp: Date.now() }]);
+    });
+    
     return newAchievements;
   };
 
@@ -828,6 +837,15 @@ function AuthenticatedApp() {
 
   return (
     <BrowserRouter>
+      {/* Achievement Notifications */}
+      {activeNotifications.map(notification => (
+        <AchievementNotification
+          key={notification.timestamp}
+          achievement={notification.id}
+          onClose={() => setActiveNotifications(prev => prev.filter(n => n.timestamp !== notification.timestamp))}
+        />
+      ))}
+      
       <Routes>
 
         <Route 

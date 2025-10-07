@@ -3,6 +3,7 @@ import Navbar from './components/Navbar';
 import UserGoldLevelBar from './components/UserGoldLevelBar';
 import PageWrapper from './components/PageWrapper';
 import './styles/Achievements.css';
+import './medieval-theme.css';
 
 export default function Achievements({ 
   gold, 
@@ -141,73 +142,111 @@ export default function Achievements({
           addLevel={addLevel} 
         />
         
-        <div className="achievements-content">
-          <div className="achievements-header">
-            <h1>🏆 Achievements</h1>
-            <div className="progress-info">
-              <p>{unlockedCount} / {totalCount} Unlocked</p>
-              <div className="progress-bar">
+        <div className="achievements-content" style={{ maxWidth: '1200px', margin: '2rem auto', padding: '0 1rem' }}>
+          <div className="medieval-container">
+            <h1 className="medieval-heading">⚔️ Book of Achievements ⚔️</h1>
+            <div className="scroll-decoration"></div>
+            
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <p style={{ color: 'var(--ink)', fontSize: '1.2rem', marginBottom: '1rem' }}>
+                Progress: <span className="gold-text">{unlockedCount} / {totalCount}</span> Unlocked
+              </p>
+              <div className="fantasy-progress">
                 <div 
-                  className="progress-fill" 
+                  className="fantasy-progress-fill" 
                   style={{ width: `${progressPercentage}%` }}
                 />
               </div>
             </div>
-          </div>
 
-          <div className="achievements-grid">
-            {achievementDefinitions.map((achievement) => (
-              <div 
-                key={achievement.id}
-                className={`achievement-card ${achievement.unlocked ? 'unlocked' : 'locked'}`}
-              >
-                <div className="achievement-icon">{achievement.icon}</div>
-                <div className="achievement-details">
-                  <h3>{achievement.name}</h3>
-                  <p className="achievement-description">
-                    {achievement.description}
-                  </p>
-                  <div className="achievement-bonus">
-                    <span className="bonus-label">Bonus:</span>
-                    <span className="bonus-value">{achievement.bonus}</span>
+            <div className="achievements-grid" style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+              gap: '1.5rem',
+              marginBottom: '2rem'
+            }}>
+              {achievementDefinitions.map((achievement, index) => (
+                <div 
+                  key={achievement.id}
+                  className={`fantasy-card`}
+                  style={{
+                    opacity: achievement.unlocked ? 1 : 0.6,
+                    filter: achievement.unlocked ? 'none' : 'grayscale(50%)',
+                    animationDelay: `${index * 0.1}s`
+                  }}
+                >
+                  <div style={{ fontSize: '3rem', textAlign: 'center', marginBottom: '1rem' }}>
+                    {achievement.icon}
                   </div>
-                  {!achievement.unlocked && (
-                    <div className="achievement-locked">
-                      <span>🔒 Locked</span>
+                  <div>
+                    <h3 className="gold-text" style={{ fontSize: '1.3rem', marginBottom: '0.5rem', textAlign: 'center' }}>
+                      {achievement.name}
+                    </h3>
+                    <p style={{ color: 'var(--parchment)', textAlign: 'center', marginBottom: '1rem', fontSize: '0.9rem' }}>
+                      {achievement.description}
+                    </p>
+                    <div className="stat-display" style={{ justifyContent: 'center', marginBottom: '0.5rem' }}>
+                      <span style={{ color: 'var(--medieval-gold)' }}>⚡ {achievement.bonus}</span>
                     </div>
-                  )}
-                  {achievement.unlocked && (
-                    <div className="achievement-unlocked">
-                      <span>✅ Unlocked</span>
+                    <div style={{ textAlign: 'center' }}>
+                      {achievement.unlocked ? (
+                        <span style={{ 
+                          color: '#90EE90', 
+                          fontWeight: 'bold',
+                          textShadow: '0 0 10px rgba(144, 238, 144, 0.5)'
+                        }}>
+                          ✅ Unlocked
+                        </span>
+                      ) : (
+                        <span style={{ 
+                          color: '#888', 
+                          fontWeight: 'bold'
+                        }}>
+                          🔒 Locked
+                        </span>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          <div className="stats-panel">
-            <h2>📊 Your Stats</h2>
-            <div className="stats-grid">
-              <div className="stat-item">
-                <span className="stat-label">Total Kills:</span>
-                <span className="stat-value">{stats?.totalKills || 0}</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">Games Played:</span>
-                <span className="stat-value">{stats?.gamesPlayed || 0}</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">Best Score:</span>
-                <span className="stat-value">{stats?.bestScore || 0}</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">Total Gold Earned:</span>
-                <span className="stat-value">{stats?.totalGoldEarned || 0}</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">Abilities Unlocked:</span>
-                <span className="stat-value">{stats?.abilitiesUnlocked || 3}</span>
+            <div className="scroll-decoration"></div>
+
+            <div className="fantasy-card" style={{ marginTop: '2rem' }}>
+              <h2 className="gold-text" style={{ textAlign: 'center', fontSize: '2rem', marginBottom: '1.5rem' }}>
+                📊 Your Legacy 📊
+              </h2>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+                gap: '1rem'
+              }}>
+                <div className="stat-display" style={{ flexDirection: 'column', gap: '0.5rem', padding: '1rem' }}>
+                  <span className="stat-icon" style={{ fontSize: '2.5rem' }}>⚔️</span>
+                  <span style={{ color: 'var(--parchment)' }}>Total Kills</span>
+                  <span className="stat-value" style={{ fontSize: '2rem' }}>{stats?.totalKills || 0}</span>
+                </div>
+                <div className="stat-display" style={{ flexDirection: 'column', gap: '0.5rem', padding: '1rem' }}>
+                  <span className="stat-icon" style={{ fontSize: '2.5rem' }}>🎮</span>
+                  <span style={{ color: 'var(--parchment)' }}>Games Played</span>
+                  <span className="stat-value" style={{ fontSize: '2rem' }}>{stats?.gamesPlayed || 0}</span>
+                </div>
+                <div className="stat-display" style={{ flexDirection: 'column', gap: '0.5rem', padding: '1rem' }}>
+                  <span className="stat-icon" style={{ fontSize: '2.5rem' }}>🏆</span>
+                  <span style={{ color: 'var(--parchment)' }}>Best Score</span>
+                  <span className="stat-value" style={{ fontSize: '2rem' }}>{stats?.bestScore || 0}</span>
+                </div>
+                <div className="stat-display" style={{ flexDirection: 'column', gap: '0.5rem', padding: '1rem' }}>
+                  <span className="stat-icon" style={{ fontSize: '2.5rem' }}>💰</span>
+                  <span style={{ color: 'var(--parchment)' }}>Gold Earned</span>
+                  <span className="stat-value" style={{ fontSize: '2rem' }}>{stats?.totalGoldEarned || 0}</span>
+                </div>
+                <div className="stat-display" style={{ flexDirection: 'column', gap: '0.5rem', padding: '1rem' }}>
+                  <span className="stat-icon" style={{ fontSize: '2.5rem' }}>✨</span>
+                  <span style={{ color: 'var(--parchment)' }}>Abilities</span>
+                  <span className="stat-value" style={{ fontSize: '2rem' }}>{stats?.abilitiesUnlocked || 3}</span>
+                </div>
               </div>
             </div>
           </div>
