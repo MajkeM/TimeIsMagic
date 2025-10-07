@@ -478,7 +478,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     // Helper function for balanced difficulty progression
     const updateDifficulty = () => {
         // More gradual difficulty scaling based on current tier
-        const currentTierBonus = score.current >= TIER_3_THRESHOLD ? 3 : (score.current >= TIER_2_THRESHOLD ? 2 : 1);
+        const currentTierBonus = score.current >= TIER_4_THRESHOLD ? 4 : (score.current >= TIER_3_THRESHOLD ? 3 : (score.current >= TIER_2_THRESHOLD ? 2 : 1));
         const scalingFactor = 200 / currentTierBonus; // Higher tier = faster difficulty increase
         difficulty.current = 1 + Math.floor(score.current / scalingFactor);
     };
@@ -4073,6 +4073,11 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 }
             } else {
                 spell.active = false;
+                
+                // Reset hitByThisSpell flag for all Tank enemies when spell expires
+                tankEnemyRef.current.forEach(enemy => {
+                    delete enemy.hitByThisSpell;
+                });
             }
         });
 
@@ -6225,7 +6230,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                         
                         // Chance to spawn power-up
                         if (Math.random() < 0.15) {
-                            spawnPowerUp(enemyCenterX, enemyCenterY);
+                            spawnPowerup(enemyCenterX, enemyCenterY);
                         }
                         
                         score.current += 50;
@@ -6249,7 +6254,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     
                     // Chance to spawn power-up
                     if (Math.random() < 0.15) {
-                        spawnPowerUp(enemyCenterX, enemyCenterY);
+                        spawnPowerup(enemyCenterX, enemyCenterY);
                     }
                     
                     score.current += 40;
@@ -6353,7 +6358,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                         
                         // Chance to spawn power-up
                         if (Math.random() < 0.15) {
-                            spawnPowerUp(enemyCenterX, enemyCenterY);
+                            spawnPowerup(enemyCenterX, enemyCenterY);
                         }
                         
                         score.current += 50;
@@ -6376,7 +6381,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     
                     // Chance to spawn power-up
                     if (Math.random() < 0.15) {
-                        spawnPowerUp(enemyCenterX, enemyCenterY);
+                        spawnPowerup(enemyCenterX, enemyCenterY);
                     }
                     
                     score.current += 40;
