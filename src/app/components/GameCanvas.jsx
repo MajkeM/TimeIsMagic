@@ -1221,37 +1221,31 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     // Count and score basic enemies
                     totalKills += basicEnemyRef.current.length;
                     totalScore += basicEnemyRef.current.length * 10;
-                    basicEnemyRef.current.forEach(e => createKillEffect(e.x + e.width/2, e.y + e.height/2, 10));
                     basicEnemyRef.current = [];
                     
                     // Count and score triple shoot enemies
                     totalKills += trippleShootEnemyRef.current.length;
                     totalScore += trippleShootEnemyRef.current.length * 15;
-                    trippleShootEnemyRef.current.forEach(e => createKillEffect(e.x + e.width/2, e.y + e.height/2, 15));
                     trippleShootEnemyRef.current = [];
                     
                     // Count and score bomber enemies
                     totalKills += bomberEnemyRef.current.length;
                     totalScore += bomberEnemyRef.current.length * 25;
-                    bomberEnemyRef.current.forEach(e => createKillEffect(e.x + e.width/2, e.y + e.height/2, 25));
                     bomberEnemyRef.current = [];
                     
                     // Count and score teleporter enemies
                     totalKills += teleporterEnemyRef.current.length;
                     totalScore += teleporterEnemyRef.current.length * 35;
-                    teleporterEnemyRef.current.forEach(e => createKillEffect(e.x + e.width/2, e.y + e.height/2, 35));
                     teleporterEnemyRef.current = [];
                     
                     // Count and score tank enemies
                     totalKills += tankEnemyRef.current.length;
                     totalScore += tankEnemyRef.current.length * 50;
-                    tankEnemyRef.current.forEach(e => createKillEffect(e.x + e.width/2, e.y + e.height/2, 50));
                     tankEnemyRef.current = [];
                     
                     // Count and score sniper enemies
                     totalKills += sniperEnemyRef.current.length;
                     totalScore += sniperEnemyRef.current.length * 40;
-                    sniperEnemyRef.current.forEach(e => createKillEffect(e.x + e.width/2, e.y + e.height/2, 40));
                     sniperEnemyRef.current = [];
                     
                     score.current += totalScore;
@@ -1311,13 +1305,15 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                             return;
                         }
                         
-                        // Random position for meteor
+                        // Random position for meteor - spawn from top
                         const meteorX = Math.random() * window.innerWidth;
-                        const meteorY = Math.random() * window.innerHeight;
+                        const meteorY = -50; // Start above screen
                         
                         cosmicRainMeteors.current.push({
                             x: meteorX,
                             y: meteorY,
+                            vx: (Math.random() - 0.5) * 4, // Slight horizontal variance
+                            vy: 15 + Math.random() * 10, // Fall down fast
                             timestamp: performance.now(),
                             radius: COSMICRAIN_RADIUS
                         });
@@ -4118,14 +4114,42 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
         // Tsunami Wave
         tsunamiWaves.current.forEach((wave) => {
             ctx.save();
-            ctx.globalAlpha = 0.6;
-            ctx.fillStyle = '#00bfff';
-            ctx.fillRect(wave.x - 10, wave.y - wave.width / 2, 20, wave.width);
             
-            // Wave crest
-            ctx.fillStyle = '#ffffff';
-            ctx.globalAlpha = 0.8;
-            ctx.fillRect(wave.x - 5, wave.y - wave.width / 2, 10, wave.width);
+            // Calculate wave front perpendicular to direction
+            const perpDirX = -wave.dirY;
+            const perpDirY = wave.dirX;
+            
+            // Draw massive wave
+            ctx.globalAlpha = 0.7;
+            ctx.fillStyle = '#0066cc';
+            ctx.shadowColor = '#00bfff';
+            ctx.shadowBlur = 30;
+            
+            // Draw wave as thick line perpendicular to direction
+            ctx.beginPath();
+            ctx.moveTo(wave.x + perpDirX * TSUNAMI_WIDTH/2, wave.y + perpDirY * TSUNAMI_WIDTH/2);
+            ctx.lineTo(wave.x - perpDirX * TSUNAMI_WIDTH/2, wave.y - perpDirY * TSUNAMI_WIDTH/2);
+            ctx.lineWidth = 40;
+            ctx.strokeStyle = '#0080ff';
+            ctx.stroke();
+            
+            // Wave crest (white foam)
+            ctx.globalAlpha = 0.9;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 20;
+            ctx.stroke();
+            
+            // Particles around wave
+            for (let i = 0; i < 5; i++) {
+                const offset = (i - 2) * TSUNAMI_WIDTH / 6;
+                const px = wave.x + perpDirX * offset;
+                const py = wave.y + perpDirY * offset;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.beginPath();
+                ctx.arc(px, py, 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
             ctx.restore();
         });
         
@@ -5597,9 +5621,10 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 const dirX = length > 0 ? dx / length : 0;
                 const dirY = length > 0 ? dy / length : 0;
 
-                // Apply power-up slow time effect
+                // Apply power-up slow time effect and time warp
                 const powerupEffects = applyPowerupEffects();
-                const effectiveSpeed = basicEnemySpeed.current * powerupEffects.enemySlowdown;
+                const timeWarpMultiplier = timeWarpActive.current ? TIMEWARP_SLOWDOWN : 1.0;
+                const effectiveSpeed = basicEnemySpeed.current * powerupEffects.enemySlowdown * timeWarpMultiplier;
 
                 // Calculate new position
                 const newX = enemy.x + dirX * effectiveSpeed;
@@ -5702,9 +5727,10 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 const dirX = length > 0 ? dx / length : 0;
                 const dirY = length > 0 ? dy / length : 0;
 
-                // Apply power-up slow time effect
+                // Apply power-up slow time effect and time warp
                 const powerupEffects = applyPowerupEffects();
-                const effectiveSpeed = trippleShootEnemySpeed.current * powerupEffects.enemySlowdown;
+                const timeWarpMultiplier = timeWarpActive.current ? TIMEWARP_SLOWDOWN : 1.0;
+                const effectiveSpeed = trippleShootEnemySpeed.current * powerupEffects.enemySlowdown * timeWarpMultiplier;
 
                 // Calculate new position
                 const newX = enemy.x + dirX * effectiveSpeed;
@@ -5809,9 +5835,12 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 const dirX = dx / length;
                 const dirY = dy / length;
 
+                // Apply time warp
+                const timeWarpMultiplier = timeWarpActive.current ? TIMEWARP_SLOWDOWN : 1.0;
+                
                 // Calculate new position
-                const newX = enemy.x + dirX * bomberEnemySpeed.current;
-                const newY = enemy.y + dirY * bomberEnemySpeed.current;
+                const newX = enemy.x + dirX * bomberEnemySpeed.current * timeWarpMultiplier;
+                const newY = enemy.y + dirY * bomberEnemySpeed.current * timeWarpMultiplier;
                 
                 // Check wall collision before moving
                 let canMove = true;
@@ -5847,7 +5876,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 const distanceToPlayer = Math.sqrt((enemyCenterX - playerCenterX) ** 2 + (enemyCenterY - playerCenterY) ** 2);
                 
                 // Check if player is in explosion radius
-                if (distanceToPlayer <= BOMBER_EXPLOSION_RADIUS && !immortalityAbilityActive.current && !phaseWalkActive.current) {
+                if (distanceToPlayer <= BOMBER_EXPLOSION_RADIUS && !immortalityAbilityActive.current && !phaseWalkActive.current && !divineShieldActive.current) {
                     // Check shield protection
                     if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
                         shieldHitsRemaining.current--;
@@ -5992,9 +6021,12 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 const dirX = length > 0 ? dx / length : 0;
                 const dirY = length > 0 ? dy / length : 0;
 
+                // Apply time warp
+                const timeWarpMultiplier = timeWarpActive.current ? TIMEWARP_SLOWDOWN : 1.0;
+                
                 // Calculate new position
-                const newX = enemy.x + dirX * teleporterEnemySpeed.current;
-                const newY = enemy.y + dirY * teleporterEnemySpeed.current;
+                const newX = enemy.x + dirX * teleporterEnemySpeed.current * timeWarpMultiplier;
+                const newY = enemy.y + dirY * teleporterEnemySpeed.current * timeWarpMultiplier;
                 
                 // Check wall collision before moving
                 let canMove = true;
@@ -6174,9 +6206,10 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 const dirX = length > 0 ? dx / length : 0;
                 const dirY = length > 0 ? dy / length : 0;
 
-                // Apply power-up slow time effect
+                // Apply power-up slow time effect and time warp
                 const powerupEffects = applyPowerupEffects();
-                const effectiveSpeed = tankEnemySpeed.current * powerupEffects.enemySlowdown;
+                const timeWarpMultiplier = timeWarpActive.current ? TIMEWARP_SLOWDOWN : 1.0;
+                const effectiveSpeed = tankEnemySpeed.current * powerupEffects.enemySlowdown * timeWarpMultiplier;
 
                 const newX = enemy.x + dirX * effectiveSpeed;
                 const newY = enemy.y + dirY * effectiveSpeed;
@@ -6299,7 +6332,8 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 
                 if (dirX !== 0 || dirY !== 0) {
                     const powerupEffects = applyPowerupEffects();
-                    const effectiveSpeed = sniperEnemySpeed.current * powerupEffects.enemySlowdown;
+                    const timeWarpMultiplier = timeWarpActive.current ? TIMEWARP_SLOWDOWN : 1.0;
+                    const effectiveSpeed = sniperEnemySpeed.current * powerupEffects.enemySlowdown * timeWarpMultiplier;
                     
                     const newX = enemy.x + dirX * effectiveSpeed;
                     const newY = enemy.y + dirY * effectiveSpeed;
@@ -6540,7 +6574,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 // Check power-up invincibility
                 const powerupEffects = applyPowerupEffects();
                 // Only lose if not immortal, phase walking, or has power-up shield
-                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !powerupEffects.invincible) {
+                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !divineShieldActive.current && !powerupEffects.invincible) {
                     // Check shield protection
                     if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
                         shieldHitsRemaining.current--;
@@ -6633,7 +6667,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             
             if (circularCollision(enemyHeadX, enemyHeadY, 50, playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS)) {
                 // Only lose if not immortal or phase walking
-                if (!immortalityAbilityActive.current && !phaseWalkActive.current) {
+                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !divineShieldActive.current) {
                     // Check shield protection
                     if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
                         shieldHitsRemaining.current--;
@@ -6656,7 +6690,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             
             if (circularCollision(playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS, enemyCenterX, enemyCenterY, 15)) {
                 // Only lose if not immortal or phase walking
-                if (!immortalityAbilityActive.current && !phaseWalkActive.current) {
+                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !divineShieldActive.current) {
                     // Check shield protection
                     if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
                         shieldHitsRemaining.current--;
@@ -6679,7 +6713,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                 basicEnemyBulletsRef.current.splice(index, 1);
                 // Only lose if not immortal, phase walking, or power-up invincible
                 const powerupEffects = applyPowerupEffects();
-                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !powerupEffects.invincible) {
+                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !divineShieldActive.current && !powerupEffects.invincible) {
                     // Check shield protection
                     if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
                         shieldHitsRemaining.current--;
@@ -7242,7 +7276,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             
             if (circularCollision(playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS, enemyCenterX, enemyCenterY, 40)) {
                 // Only lose if not immortal
-                if (!immortalityAbilityActive.current) {
+                if (!immortalityAbilityActive.current && !divineShieldActive.current) {
                     // Check shield protection
                     if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
                         shieldHitsRemaining.current--;
@@ -7264,7 +7298,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             if (circularCollision(playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS, bullet.x, bullet.y, 20)) {
                 tankEnemyBulletsRef.current.splice(index, 1);
                 const powerupEffects = applyPowerupEffects();
-                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !powerupEffects.invincible) {
+                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !divineShieldActive.current && !powerupEffects.invincible) {
                     if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
                         shieldHitsRemaining.current--;
                         if (shieldHitsRemaining.current <= 0) {
@@ -7285,7 +7319,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             if (circularCollision(playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS, bullet.x, bullet.y, 15)) {
                 sniperEnemyBulletsRef.current.splice(index, 1);
                 const powerupEffects = applyPowerupEffects();
-                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !powerupEffects.invincible) {
+                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !divineShieldActive.current && !powerupEffects.invincible) {
                     if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
                         shieldHitsRemaining.current--;
                         if (shieldHitsRemaining.current <= 0) {
@@ -7307,7 +7341,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             
             if (circularCollision(playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS, enemyCenterX, enemyCenterY, 100)) {
                 const powerupEffects = applyPowerupEffects();
-                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !powerupEffects.invincible) {
+                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !divineShieldActive.current && !powerupEffects.invincible) {
                     if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
                         shieldHitsRemaining.current--;
                         if (shieldHitsRemaining.current <= 0) {
@@ -7329,7 +7363,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             
             if (circularCollision(playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS, enemyCenterX, enemyCenterY, 40)) {
                 const powerupEffects = applyPowerupEffects();
-                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !powerupEffects.invincible) {
+                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !divineShieldActive.current && !powerupEffects.invincible) {
                     if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
                         shieldHitsRemaining.current--;
                         if (shieldHitsRemaining.current <= 0) {
@@ -7353,7 +7387,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             
             if (circularCollision(playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS, enemyCenterX, enemyCenterY, 35)) {
                 // Only lose if not immortal or phase walking
-                if (!immortalityAbilityActive.current && !phaseWalkActive.current) {
+                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !divineShieldActive.current) {
                     // Check shield protection
                     if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
                         shieldHitsRemaining.current--;
@@ -7375,7 +7409,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             if (circularCollision(playerCenterX, playerCenterY, PLAYER_COLLISION_RADIUS, bullet.x, bullet.y, 15)) {
                 teleporterEnemyBulletsRef.current.splice(index, 1);
                 // Only lose if not immortal or phase walking
-                if (!immortalityAbilityActive.current && !phaseWalkActive.current) {
+                if (!immortalityAbilityActive.current && !phaseWalkActive.current && !divineShieldActive.current) {
                     // Check shield protection
                     if (shieldAbilityActive.current && shieldHitsRemaining.current > 0) {
                         shieldHitsRemaining.current--;
