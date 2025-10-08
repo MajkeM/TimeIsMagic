@@ -439,6 +439,19 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     const phoenixRebirthActive = useRef(false); // Ready to revive
     const phoenixRebirthTriggered = useRef(false); // Used
 
+    // 💎 MEGA ABILITY ICON REFS (use existing sprites as placeholders)
+    const nukeAbilityRef = useRef(null);
+    const timeWarpAbilityRef = useRef(null);
+    const blackHoleAbilityRef = useRef(null);
+    const cosmicRainAbilityRef = useRef(null);
+    const divineShieldAbilityRef = useRef(null);
+    const dragonFuryAbilityRef = useRef(null);
+    const tsunamiAbilityRef = useRef(null);
+    const chainLightningAbilityRef = useRef(null);
+    const armyOfTheDeadAbilityRef = useRef(null);
+    const orbitalStrikeAbilityRef = useRef(null);
+    const phoenixRebirthAbilityRef = useRef(null);
+
     // Ability configuration helper
     const getAbilityConfig = () => {
         return {
@@ -1201,19 +1214,47 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                         radius: NUKE_DAMAGE_RADIUS
                     });
                     
-                    // Kill ALL enemies on screen
-                    const totalKills = basicEnemyRef.current.length + trippleShootEnemyRef.current.length + 
-                                      bomberEnemyRef.current.length + teleporterEnemyRef.current.length +
-                                      tankEnemyRef.current.length + sniperEnemyRef.current.length;
+                    // Kill ALL enemies on screen with proper score calculation
+                    let totalScore = NUKE_SCORE_BONUS; // Start with bonus
+                    let totalKills = 0;
                     
+                    // Count and score basic enemies
+                    totalKills += basicEnemyRef.current.length;
+                    totalScore += basicEnemyRef.current.length * 10;
+                    basicEnemyRef.current.forEach(e => createKillEffect(e.x + e.width/2, e.y + e.height/2, 10));
                     basicEnemyRef.current = [];
+                    
+                    // Count and score triple shoot enemies
+                    totalKills += trippleShootEnemyRef.current.length;
+                    totalScore += trippleShootEnemyRef.current.length * 15;
+                    trippleShootEnemyRef.current.forEach(e => createKillEffect(e.x + e.width/2, e.y + e.height/2, 15));
                     trippleShootEnemyRef.current = [];
+                    
+                    // Count and score bomber enemies
+                    totalKills += bomberEnemyRef.current.length;
+                    totalScore += bomberEnemyRef.current.length * 25;
+                    bomberEnemyRef.current.forEach(e => createKillEffect(e.x + e.width/2, e.y + e.height/2, 25));
                     bomberEnemyRef.current = [];
+                    
+                    // Count and score teleporter enemies
+                    totalKills += teleporterEnemyRef.current.length;
+                    totalScore += teleporterEnemyRef.current.length * 35;
+                    teleporterEnemyRef.current.forEach(e => createKillEffect(e.x + e.width/2, e.y + e.height/2, 35));
                     teleporterEnemyRef.current = [];
+                    
+                    // Count and score tank enemies
+                    totalKills += tankEnemyRef.current.length;
+                    totalScore += tankEnemyRef.current.length * 50;
+                    tankEnemyRef.current.forEach(e => createKillEffect(e.x + e.width/2, e.y + e.height/2, 50));
                     tankEnemyRef.current = [];
+                    
+                    // Count and score sniper enemies
+                    totalKills += sniperEnemyRef.current.length;
+                    totalScore += sniperEnemyRef.current.length * 40;
+                    sniperEnemyRef.current.forEach(e => createKillEffect(e.x + e.width/2, e.y + e.height/2, 40));
                     sniperEnemyRef.current = [];
                     
-                    score.current += totalKills * 15 + NUKE_SCORE_BONUS;
+                    score.current += totalScore;
                     killCount.current += totalKills;
                     
                     // Reset cooldown
@@ -2454,6 +2495,73 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
         };
     }, []);
 
+    // 💎 Load MEGA ABILITY icons (using existing sprites as placeholders - you can replace these paths later)
+    useEffect(() => {
+        const nukeImage = new Image();
+        nukeImage.src = meteorAbility; // Using meteor as placeholder for nuke
+        nukeImage.onload = () => { nukeAbilityRef.current = nukeImage; };
+    }, []);
+
+    useEffect(() => {
+        const timeWarpImage = new Image();
+        timeWarpImage.src = speedAbility; // Using speed as placeholder for time warp
+        timeWarpImage.onload = () => { timeWarpAbilityRef.current = timeWarpImage; };
+    }, []);
+
+    useEffect(() => {
+        const blackHoleImage = new Image();
+        blackHoleImage.src = gravitywellAbility; // Using gravity well as placeholder
+        blackHoleImage.onload = () => { blackHoleAbilityRef.current = blackHoleImage; };
+    }, []);
+
+    useEffect(() => {
+        const cosmicRainImage = new Image();
+        cosmicRainImage.src = meteorAbility; // Using meteor as placeholder
+        cosmicRainImage.onload = () => { cosmicRainAbilityRef.current = cosmicRainImage; };
+    }, []);
+
+    useEffect(() => {
+        const divineShieldImage = new Image();
+        divineShieldImage.src = shieldAbility; // Using shield as placeholder
+        divineShieldImage.onload = () => { divineShieldAbilityRef.current = divineShieldImage; };
+    }, []);
+
+    useEffect(() => {
+        const dragonFuryImage = new Image();
+        dragonFuryImage.src = flashAbility; // Using flash as placeholder
+        dragonFuryImage.onload = () => { dragonFuryAbilityRef.current = dragonFuryImage; };
+    }, []);
+
+    useEffect(() => {
+        const tsunamiImage = new Image();
+        tsunamiImage.src = splashAbility; // Using splash as placeholder
+        tsunamiImage.onload = () => { tsunamiAbilityRef.current = tsunamiImage; };
+    }, []);
+
+    useEffect(() => {
+        const chainLightningImage = new Image();
+        chainLightningImage.src = lightningStormAbility; // Using lightning as placeholder
+        chainLightningImage.onload = () => { chainLightningAbilityRef.current = chainLightningImage; };
+    }, []);
+
+    useEffect(() => {
+        const armyImage = new Image();
+        armyImage.src = soldierAbility; // Using soldier as placeholder
+        armyImage.onload = () => { armyOfTheDeadAbilityRef.current = armyImage; };
+    }, []);
+
+    useEffect(() => {
+        const orbitalImage = new Image();
+        orbitalImage.src = meteorAbility; // Using meteor as placeholder
+        orbitalImage.onload = () => { orbitalStrikeAbilityRef.current = orbitalImage; };
+    }, []);
+
+    useEffect(() => {
+        const phoenixImage = new Image();
+        phoenixImage.src = immortalityAbility; // Using immortality as placeholder
+        phoenixImage.onload = () => { phoenixRebirthAbilityRef.current = phoenixImage; };
+    }, []);
+
     // canvas
     useEffect(() => {
         // Don't start game until loading is complete
@@ -2558,7 +2666,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             // Kill all enemies in radius
             let killed = 0;
             [basicEnemyRef, trippleShootEnemyRef, bomberEnemyRef, teleporterEnemyRef, tankEnemyRef, sniperEnemyRef].forEach((enemyRef, idx) => {
-                const points = [10, 30, 25, 35, 50, 40][idx];
+                const points = [10, 15, 25, 35, 50, 40][idx];
                 const before = enemyRef.current.length;
                 enemyRef.current = enemyRef.current.filter(enemy => {
                     const dx = (enemy.x + enemy.width/2) - playerCenterX;
@@ -2566,6 +2674,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                     const dist = Math.sqrt(dx*dx + dy*dy);
                     if (dist < PHOENIXREBIRTH_EXPLOSION_RADIUS) {
                         score.current += points;
+                        createKillEffect(enemy.x + enemy.width/2, enemy.y + enemy.height/2, points);
                         return false;
                     }
                     return true;
@@ -4749,14 +4858,41 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
                         if (currentTarget.hp !== undefined) {
                             currentTarget.hp -= CHAINLIGHTNING_DAMAGE;
                         } else {
-                            // Remove enemy
-                            basicEnemyRef.current = basicEnemyRef.current.filter(e => e !== currentTarget);
-                            trippleShootEnemyRef.current = trippleShootEnemyRef.current.filter(e => e !== currentTarget);
-                            bomberEnemyRef.current = bomberEnemyRef.current.filter(e => e !== currentTarget);
-                            teleporterEnemyRef.current = teleporterEnemyRef.current.filter(e => e !== currentTarget);
-                            sniperEnemyRef.current = sniperEnemyRef.current.filter(e => e !== currentTarget);
-                            score.current += 20;
-                            killCount.current++;
+                            // Determine enemy type and give proper score
+                            let enemyScore = 10; // default
+                            let removed = false;
+                            
+                            if (basicEnemyRef.current.includes(currentTarget)) {
+                                basicEnemyRef.current = basicEnemyRef.current.filter(e => e !== currentTarget);
+                                enemyScore = 10;
+                                removed = true;
+                            } else if (trippleShootEnemyRef.current.includes(currentTarget)) {
+                                trippleShootEnemyRef.current = trippleShootEnemyRef.current.filter(e => e !== currentTarget);
+                                enemyScore = 15;
+                                removed = true;
+                            } else if (bomberEnemyRef.current.includes(currentTarget)) {
+                                bomberEnemyRef.current = bomberEnemyRef.current.filter(e => e !== currentTarget);
+                                enemyScore = 25;
+                                removed = true;
+                            } else if (teleporterEnemyRef.current.includes(currentTarget)) {
+                                teleporterEnemyRef.current = teleporterEnemyRef.current.filter(e => e !== currentTarget);
+                                enemyScore = 35;
+                                removed = true;
+                            } else if (tankEnemyRef.current.includes(currentTarget)) {
+                                tankEnemyRef.current = tankEnemyRef.current.filter(e => e !== currentTarget);
+                                enemyScore = 50;
+                                removed = true;
+                            } else if (sniperEnemyRef.current.includes(currentTarget)) {
+                                sniperEnemyRef.current = sniperEnemyRef.current.filter(e => e !== currentTarget);
+                                enemyScore = 40;
+                                removed = true;
+                            }
+                            
+                            if (removed) {
+                                score.current += enemyScore;
+                                killCount.current++;
+                                createKillEffect(currentTarget.x + currentTarget.width/2, currentTarget.y + currentTarget.height/2, enemyScore);
+                            }
                         }
                         
                         // Find next target
@@ -8046,6 +8182,86 @@ tierNotifications.current = tierNotifications.current.filter(notification => {
                         cooldownStartTime = berserkerModeAbilityCooldownStartTime.current;
                         cooldownDuration = BERSERKER_MODE_COOLDOWN;
                         abilityName = 'F';
+                        break;
+                    // 💎 MEGA R ABILITIES
+                    case 'nuke':
+                        abilityRef = nukeAbilityRef.current;
+                        isOnCooldown = nukeAbilityOnCooldown.current;
+                        cooldownStartTime = nukeAbilityCooldownStartTime.current;
+                        cooldownDuration = NUKE_COOLDOWN;
+                        abilityName = 'R';
+                        break;
+                    case 'timewarp':
+                        abilityRef = timeWarpAbilityRef.current;
+                        isOnCooldown = timeWarpAbilityOnCooldown.current;
+                        cooldownStartTime = timeWarpAbilityCooldownStartTime.current;
+                        cooldownDuration = TIMEWARP_COOLDOWN;
+                        abilityName = 'R';
+                        break;
+                    case 'blackhole':
+                        abilityRef = blackHoleAbilityRef.current;
+                        isOnCooldown = blackHoleAbilityOnCooldown.current;
+                        cooldownStartTime = blackHoleAbilityCooldownStartTime.current;
+                        cooldownDuration = BLACKHOLE_COOLDOWN;
+                        abilityName = 'R';
+                        break;
+                    case 'cosmicrain':
+                        abilityRef = cosmicRainAbilityRef.current;
+                        isOnCooldown = cosmicRainAbilityOnCooldown.current;
+                        cooldownStartTime = cosmicRainAbilityCooldownStartTime.current;
+                        cooldownDuration = COSMICRAIN_COOLDOWN;
+                        abilityName = 'R';
+                        break;
+                    // 💎 MEGA F ABILITIES
+                    case 'divineshield':
+                        abilityRef = divineShieldAbilityRef.current;
+                        isOnCooldown = divineShieldAbilityOnCooldown.current;
+                        cooldownStartTime = divineShieldAbilityCooldownStartTime.current;
+                        cooldownDuration = DIVINESHIELD_COOLDOWN;
+                        abilityName = 'F';
+                        break;
+                    case 'dragonfury':
+                        abilityRef = dragonFuryAbilityRef.current;
+                        isOnCooldown = dragonFuryAbilityOnCooldown.current;
+                        cooldownStartTime = dragonFuryAbilityCooldownStartTime.current;
+                        cooldownDuration = DRAGON_COOLDOWN;
+                        abilityName = 'F';
+                        break;
+                    case 'tsunami':
+                        abilityRef = tsunamiAbilityRef.current;
+                        isOnCooldown = tsunamiAbilityOnCooldown.current;
+                        cooldownStartTime = tsunamiAbilityCooldownStartTime.current;
+                        cooldownDuration = TSUNAMI_COOLDOWN;
+                        abilityName = 'F';
+                        break;
+                    // 💎 MEGA T ABILITIES
+                    case 'chainlightning':
+                        abilityRef = chainLightningAbilityRef.current;
+                        isOnCooldown = chainLightningAbilityOnCooldown.current;
+                        cooldownStartTime = chainLightningAbilityCooldownStartTime.current;
+                        cooldownDuration = CHAINLIGHTNING_COOLDOWN;
+                        abilityName = 'T';
+                        break;
+                    case 'armyofthedead':
+                        abilityRef = armyOfTheDeadAbilityRef.current;
+                        isOnCooldown = armyOfTheDeadAbilityOnCooldown.current;
+                        cooldownStartTime = armyOfTheDeadAbilityCooldownStartTime.current;
+                        cooldownDuration = ARMYOFTHEDEAD_COOLDOWN;
+                        abilityName = 'T';
+                        break;
+                    case 'orbitalstrike':
+                        abilityRef = orbitalStrikeAbilityRef.current;
+                        isOnCooldown = orbitalStrikeAbilityOnCooldown.current;
+                        cooldownStartTime = orbitalStrikeAbilityCooldownStartTime.current;
+                        cooldownDuration = ORBITALSTRIKE_COOLDOWN;
+                        abilityName = 'T';
+                        break;
+                    case 'phoenixrebirth':
+                        abilityRef = phoenixRebirthAbilityRef.current;
+                        isOnCooldown = phoenixRebirthAbilityOnCooldown.current;
+                        cooldownStartTime = phoenixRebirthAbilityCooldownStartTime.current;
+                        cooldownDuration = PHOENIXREBIRTH_COOLDOWN;
+                        abilityName = 'T';
                         break;
                     default:
                         return; // Skip unknown abilities
