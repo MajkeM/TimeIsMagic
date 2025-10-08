@@ -369,7 +369,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
     
     // Divine Shield ability (F) - Invincible + reflects damage
     const DIVINESHIELD_COOLDOWN = 40000; // 40 seconds
-    const DIVINESHIELD_DURATION = 5000; // 5 seconds
+    const DIVINESHIELD_DURATION = 20000; // 5 seconds
     const DIVINESHIELD_REFLECT_RADIUS = 300; // Reflect projectiles
     const divineShieldAbilityOnCooldown = useRef(false);
     const divineShieldAbilityCooldownStartTime = useRef(0);

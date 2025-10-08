@@ -376,7 +376,7 @@ function AuthenticatedApp() {
       poisoncloud: 250,
       meteor: 300,
       // 💎 MEGA R ABILITIES (expensive!)
-      nuke: 1000,
+      nuke: 3000,
       timewarp: 1200,
       blackhole:1500,
       cosmicrain: 1100
@@ -389,9 +389,9 @@ function AuthenticatedApp() {
       dash: 200,
       wallcreation: 250,
       // 💎 MEGA F ABILITIES (expensive!)
-      divineshield: 1300,
+      divineshield: 1900,
       dragonfury: 1200,
-      tsunami: 1400
+      tsunami: 1200
     },
     T: {
       teleport: 0,
