@@ -2658,6 +2658,358 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             return distance < r1 + r2;
         };
 
+        // ========================================================================
+        // 💎 MEGA ABILITIES UPDATE LOGIC (před rendering!)
+        // ========================================================================
+        
+        // Time Warp - Slow down enemies and bullets
+        const timeWarpSpeedMultiplier = timeWarpActive.current ? TIMEWARP_SLOWDOWN : 1.0;
+        
+        // Black Hole - Pull and kill enemies
+        if (blackHoleActive.current && blackHolePosition.current) {
+            const bhPos = blackHolePosition.current;
+            
+            // Pull all enemies towards black hole
+            [...basicEnemyRef.current, ...trippleShootEnemyRef.current, ...teleporterEnemyRef.current, 
+             ...bomberEnemyRef.current, ...tankEnemyRef.current, ...sniperEnemyRef.current].forEach(enemy => {
+                const dx = bhPos.x - (enemy.x + enemy.width/2);
+                const dy = bhPos.y - (enemy.y + enemy.height/2);
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if (dist < BLACKHOLE_PULL_RADIUS) {
+                    // Pull towards center
+                    const pullStrength = (1 - dist / BLACKHOLE_PULL_RADIUS) * 5;
+                    enemy.x += (dx / dist) * pullStrength;
+                    enemy.y += (dy / dist) * pullStrength;
+                    
+                    // Kill if in crush radius
+                    if (dist < BLACKHOLE_CRUSH_RADIUS) {
+                        enemy.markedForDeath = true;
+                    }
+                }
+            });
+            
+            // Remove marked enemies
+            basicEnemyRef.current = basicEnemyRef.current.filter(e => {
+                if (e.markedForDeath) {
+                    score.current += 10;
+                    killCount.current++;
+                    createKillEffect(e.x + e.width/2, e.y + e.height/2, 10);
+                    return false;
+                }
+                return true;
+            });
+            trippleShootEnemyRef.current = trippleShootEnemyRef.current.filter(e => {
+                if (e.markedForDeath) {
+                    score.current += 15;
+                    killCount.current++;
+                    createKillEffect(e.x + e.width/2, e.y + e.height/2, 15);
+                    return false;
+                }
+                return true;
+            });
+            teleporterEnemyRef.current = teleporterEnemyRef.current.filter(e => {
+                if (e.markedForDeath) {
+                    score.current += 35;
+                    killCount.current++;
+                    createKillEffect(e.x + e.width/2, e.y + e.height/2, 35);
+                    return false;
+                }
+                return true;
+            });
+            bomberEnemyRef.current = bomberEnemyRef.current.filter(e => {
+                if (e.markedForDeath) {
+                    score.current += 25;
+                    killCount.current++;
+                    createKillEffect(e.x + e.width/2, e.y + e.height/2, 25);
+                    return false;
+                }
+                return true;
+            });
+            tankEnemyRef.current = tankEnemyRef.current.filter(e => {
+                if (e.markedForDeath) {
+                    score.current += 50;
+                    killCount.current++;
+                    createKillEffect(e.x + e.width/2, e.y + e.height/2, 50);
+                    return false;
+                }
+                return true;
+            });
+            sniperEnemyRef.current = sniperEnemyRef.current.filter(e => {
+                if (e.markedForDeath) {
+                    score.current += 40;
+                    killCount.current++;
+                    createKillEffect(e.x + e.width/2, e.y + e.height/2, 40);
+                    return false;
+                }
+                return true;
+            });
+        }
+        
+        // Cosmic Rain - Update and check meteor collisions
+        cosmicRainMeteors.current = cosmicRainMeteors.current.filter(meteor => {
+            meteor.x += meteor.vx;
+            meteor.y += meteor.vy;
+            
+            // Check collision with enemies
+            let hit = false;
+            [...basicEnemyRef.current, ...trippleShootEnemyRef.current, ...teleporterEnemyRef.current,
+             ...bomberEnemyRef.current, ...tankEnemyRef.current, ...sniperEnemyRef.current].forEach(enemy => {
+                const ex = enemy.x + enemy.width/2;
+                const ey = enemy.y + enemy.height/2;
+                if (circularCollision(meteor.x, meteor.y, 15, ex, ey, 30)) {
+                    enemy.markedForDeath = true;
+                    hit = true;
+                }
+            });
+            
+            if (hit) {
+                // Remove marked enemies
+                basicEnemyRef.current = basicEnemyRef.current.filter(e => {
+                    if (e.markedForDeath) {
+                        score.current += 10;
+                        killCount.current++;
+                        createKillEffect(e.x + e.width/2, e.y + e.height/2, 10);
+                        return false;
+                    }
+                    return true;
+                });
+                trippleShootEnemyRef.current = trippleShootEnemyRef.current.filter(e => {
+                    if (e.markedForDeath) {
+                        score.current += 15;
+                        killCount.current++;
+                        createKillEffect(e.x + e.width/2, e.y + e.height/2, 15);
+                        return false;
+                    }
+                    return true;
+                });
+                teleporterEnemyRef.current = teleporterEnemyRef.current.filter(e => {
+                    if (e.markedForDeath) {
+                        score.current += 35;
+                        killCount.current++;
+                        createKillEffect(e.x + e.width/2, e.y + e.height/2, 35);
+                        return false;
+                    }
+                    return true;
+                });
+                bomberEnemyRef.current = bomberEnemyRef.current.filter(e => {
+                    if (e.markedForDeath) {
+                        score.current += 25;
+                        killCount.current++;
+                        createKillEffect(e.x + e.width/2, e.y + e.height/2, 25);
+                        return false;
+                    }
+                    return true;
+                });
+                tankEnemyRef.current = tankEnemyRef.current.filter(e => {
+                    if (e.markedForDeath) {
+                        score.current += 50;
+                        killCount.current++;
+                        createKillEffect(e.x + e.width/2, e.y + e.height/2, 50);
+                        return false;
+                    }
+                    return true;
+                });
+                sniperEnemyRef.current = sniperEnemyRef.current.filter(e => {
+                    if (e.markedForDeath) {
+                        score.current += 40;
+                        killCount.current++;
+                        createKillEffect(e.x + e.width/2, e.y + e.height/2, 40);
+                        return false;
+                    }
+                    return true;
+                });
+                return false;
+            }
+            
+            // Remove if off screen
+            return meteor.y < canvas.height + 100;
+        });
+        
+        // Divine Shield - Reflect bullets and kill enemies on contact
+        if (divineShieldActive.current) {
+            const playerCX = playerRef.current.x + playerRef.current.width / 2;
+            const playerCY = playerRef.current.y + playerRef.current.height / 2;
+            
+            // Reflect bullets
+            [...basicEnemyBulletsRef.current, ...trippleShootEnemyBulletsRef.current, 
+             ...teleporterEnemyBulletsRef.current, ...tankEnemyBulletsRef.current, 
+             ...sniperEnemyBulletsRef.current].forEach(bullet => {
+                const dist = Math.sqrt((bullet.x - playerCX)**2 + (bullet.y - playerCY)**2);
+                if (dist < DIVINESHIELD_REFLECT_RADIUS) {
+                    bullet.vx = -bullet.vx;
+                    bullet.vy = -bullet.vy;
+                }
+            });
+            
+            // Kill enemies on contact
+            [...basicEnemyRef.current, ...trippleShootEnemyRef.current, ...teleporterEnemyRef.current,
+             ...bomberEnemyRef.current, ...tankEnemyRef.current, ...sniperEnemyRef.current].forEach(enemy => {
+                const ex = enemy.x + enemy.width/2;
+                const ey = enemy.y + enemy.height/2;
+                const dist = Math.sqrt((ex - playerCX)**2 + (ey - playerCY)**2);
+                if (dist < DIVINESHIELD_REFLECT_RADIUS) {
+                    enemy.markedForDeath = true;
+                }
+            });
+            
+            // Remove marked
+            basicEnemyRef.current = basicEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 10, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 10), false)));
+            trippleShootEnemyRef.current = trippleShootEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 15, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 15), false)));
+            teleporterEnemyRef.current = teleporterEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 35, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 35), false)));
+            bomberEnemyRef.current = bomberEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 25, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 25), false)));
+            tankEnemyRef.current = tankEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 50, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 50), false)));
+            sniperEnemyRef.current = sniperEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 40, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 40), false)));
+        }
+        
+        // Dragon Fire - Update and check collisions
+        dragonFireBreaths.current = dragonFireBreaths.current.filter(fire => {
+            // Check collision with enemies
+            let hit = false;
+            [...basicEnemyRef.current, ...trippleShootEnemyRef.current, ...teleporterEnemyRef.current,
+             ...bomberEnemyRef.current, ...tankEnemyRef.current, ...sniperEnemyRef.current].forEach(enemy => {
+                const ex = enemy.x + enemy.width/2;
+                const ey = enemy.y + enemy.height/2;
+                if (circularCollision(fire.x, fire.y, 20, ex, ey, 30)) {
+                    enemy.markedForDeath = true;
+                    hit = true;
+                }
+            });
+            
+            if (hit) {
+                basicEnemyRef.current = basicEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 10, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 10), false)));
+                trippleShootEnemyRef.current = trippleShootEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 15, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 15), false)));
+                teleporterEnemyRef.current = teleporterEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 35, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 35), false)));
+                bomberEnemyRef.current = bomberEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 25, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 25), false)));
+                tankEnemyRef.current = tankEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 50, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 50), false)));
+                sniperEnemyRef.current = sniperEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 40, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 40), false)));
+                return false;
+            }
+            
+            return currentTime - fire.timestamp < 8000;
+        });
+        
+        // Tsunami Wave - Update and check collisions
+        tsunamiWaves.current = tsunamiWaves.current.filter(wave => {
+            wave.x += wave.dirX * TSUNAMI_SPEED;
+            wave.y += wave.dirY * TSUNAMI_SPEED;
+            
+            // Check collision with enemies
+            [...basicEnemyRef.current, ...trippleShootEnemyRef.current, ...teleporterEnemyRef.current,
+             ...bomberEnemyRef.current, ...tankEnemyRef.current, ...sniperEnemyRef.current].forEach(enemy => {
+                const ex = enemy.x + enemy.width/2;
+                const ey = enemy.y + enemy.height/2;
+                // Check if enemy is in tsunami path
+                const dist = Math.abs((wave.y - ey) * wave.dirX - (wave.x - ex) * wave.dirY) / Math.sqrt(wave.dirX**2 + wave.dirY**2);
+                if (dist < TSUNAMI_WIDTH/2) {
+                    const dotProduct = (ex - wave.x) * wave.dirX + (ey - wave.y) * wave.dirY;
+                    if (dotProduct > 0 && dotProduct < 100) {
+                        enemy.markedForDeath = true;
+                    }
+                }
+            });
+            
+            // Remove marked
+            basicEnemyRef.current = basicEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 10, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 10), false)));
+            trippleShootEnemyRef.current = trippleShootEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 15, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 15), false)));
+            teleporterEnemyRef.current = teleporterEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 35, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 35), false)));
+            bomberEnemyRef.current = bomberEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 25, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 25), false)));
+            tankEnemyRef.current = tankEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 50, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 50), false)));
+            sniperEnemyRef.current = sniperEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 40, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 40), false)));
+            
+            // Remove if off screen
+            return wave.x > -100 && wave.x < canvas.width + 100 && wave.y > -100 && wave.y < canvas.height + 100;
+        });
+        
+        // Chain Lightning - Update bolts (remove old ones)
+        chainLightningBolts.current = chainLightningBolts.current.filter(bolt => currentTime - bolt.timestamp < 200);
+        
+        // Army of the Dead - Update warriors
+        armyOfTheDeadWarriors.current = armyOfTheDeadWarriors.current.filter(warrior => {
+            if (currentTime - warrior.spawnTime > ARMYOFTHEDEAD_DURATION) return false;
+            
+            // Find closest enemy
+            const allEnemies = [...basicEnemyRef.current, ...trippleShootEnemyRef.current, ...teleporterEnemyRef.current,
+                                ...bomberEnemyRef.current, ...tankEnemyRef.current, ...sniperEnemyRef.current];
+            if (allEnemies.length > 0) {
+                let closest = null;
+                let minDist = Infinity;
+                allEnemies.forEach(enemy => {
+                    const dx = enemy.x - warrior.x;
+                    const dy = enemy.y - warrior.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        closest = enemy;
+                    }
+                });
+                
+                if (closest && minDist < 300) {
+                    // Move towards enemy
+                    const dx = closest.x - warrior.x;
+                    const dy = closest.y - warrior.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    warrior.x += (dx / dist) * ARMYOFTHEDEAD_SPEED;
+                    warrior.y += (dy / dist) * ARMYOFTHEDEAD_SPEED;
+                    
+                    // Attack if close
+                    if (dist < 50) {
+                        closest.markedForDeath = true;
+                    }
+                }
+            }
+            return true;
+        });
+        
+        // Remove enemies killed by army
+        basicEnemyRef.current = basicEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 10, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 10), false)));
+        trippleShootEnemyRef.current = trippleShootEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 15, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 15), false)));
+        teleporterEnemyRef.current = teleporterEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 35, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 35), false)));
+        bomberEnemyRef.current = bomberEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 25, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 25), false)));
+        tankEnemyRef.current = tankEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 50, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 50), false)));
+        sniperEnemyRef.current = sniperEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 40, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 40), false)));
+        
+        // Orbital Strike - Update targets and beams
+        orbitalStrikeTargets.current = orbitalStrikeTargets.current.filter(target => {
+            if (currentTime - target.timestamp > ORBITALSTRIKE_DELAY) {
+                // Spawn beam
+                orbitalStrikeBeams.current.push({
+                    x: target.x,
+                    y: target.y,
+                    timestamp: currentTime
+                });
+                return false;
+            }
+            return true;
+        });
+        
+        orbitalStrikeBeams.current = orbitalStrikeBeams.current.filter(beam => {
+            if (currentTime - beam.timestamp > ORBITALSTRIKE_DURATION) return false;
+            
+            // Kill enemies in beam
+            [...basicEnemyRef.current, ...trippleShootEnemyRef.current, ...teleporterEnemyRef.current,
+             ...bomberEnemyRef.current, ...tankEnemyRef.current, ...sniperEnemyRef.current].forEach(enemy => {
+                const ex = enemy.x + enemy.width/2;
+                if (Math.abs(ex - beam.x) < ORBITALSTRIKE_WIDTH/2) {
+                    enemy.markedForDeath = true;
+                }
+            });
+            
+            // Remove marked
+            basicEnemyRef.current = basicEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 10, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 10), false)));
+            trippleShootEnemyRef.current = trippleShootEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 15, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 15), false)));
+            teleporterEnemyRef.current = teleporterEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 35, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 35), false)));
+            bomberEnemyRef.current = bomberEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 25, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 25), false)));
+            tankEnemyRef.current = tankEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 50, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 50), false)));
+            sniperEnemyRef.current = sniperEnemyRef.current.filter(e => !e.markedForDeath || (e.markedForDeath && (score.current += 40, killCount.current++, createKillEffect(e.x + e.width/2, e.y + e.height/2, 40), false)));
+            
+            return true;
+        });
+        
+        // ========================================================================
+        // END OF MEGA ABILITIES UPDATE
+        // ========================================================================
+
         
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
@@ -3459,6 +3811,44 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
             ctx.textAlign = 'left'; // Reset text alignment
         }
 
+        // 💎 Draw Phoenix Rebirth indicator when active
+        if (phoenixRebirthActive.current && !phoenixRebirthTriggered.current) {
+            const barWidth = 120;
+            const barHeight = 8;
+            const barX = playerCenterX - barWidth / 2;
+            const barY = playerRef.current.y - 35; // Above other bars
+            
+            // Pulsing phoenix aura already drawn above
+            
+            // Draw progress bar background
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            ctx.fillRect(barX - 2, barY - 2, barWidth + 4, barHeight + 4);
+            
+            // Draw progress bar border
+            ctx.strokeStyle = 'rgba(255, 69, 0, 0.9)'; // Orange-red border
+            ctx.lineWidth = 2;
+            ctx.strokeRect(barX - 2, barY - 2, barWidth + 4, barHeight + 4);
+            
+            // Draw full bar (Phoenix is ready!)
+            const gradient = ctx.createLinearGradient(barX, barY, barX + barWidth, barY);
+            gradient.addColorStop(0, 'rgba(255, 69, 0, 0.9)'); // Red-Orange
+            gradient.addColorStop(0.5, 'rgba(255, 140, 0, 0.9)'); // Dark Orange
+            gradient.addColorStop(1, 'rgba(255, 215, 0, 0.9)'); // Gold
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(barX, barY, barWidth, barHeight);
+            
+            // Draw text
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = '#ff4500';
+            ctx.shadowBlur = 5;
+            ctx.fillText('🔥 PHOENIX READY 🔥', playerCenterX, barY - 6);
+            ctx.shadowBlur = 0;
+            ctx.textAlign = 'left'; // Reset text alignment
+        }
+
         // Draw score boost +100 text effect when active
         if (scoreBoostEffectActive.current) {
             const elapsed = currentTime - scoreBoostEffectStartTime.current;
@@ -3632,15 +4022,24 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
         
         // Chain Lightning bolts
         chainLightningBolts.current.forEach((bolt) => {
+            if (!bolt.chain || bolt.chain.length < 2) return;
+            
             ctx.save();
             ctx.strokeStyle = '#00ffff';
             ctx.lineWidth = 3;
             ctx.shadowColor = '#00ffff';
             ctx.shadowBlur = 10;
-            ctx.beginPath();
-            ctx.moveTo(bolt.from.x, bolt.from.y);
-            ctx.lineTo(bolt.to.x, bolt.to.y);
-            ctx.stroke();
+            
+            // Draw lightning chain
+            for (let i = 0; i < bolt.chain.length - 1; i++) {
+                const from = bolt.chain[i];
+                const to = bolt.chain[i + 1];
+                ctx.beginPath();
+                ctx.moveTo(from.x, from.y);
+                ctx.lineTo(to.x, to.y);
+                ctx.stroke();
+            }
+            
             ctx.restore();
         });
         
@@ -3753,7 +4152,7 @@ export default function GameCanvas({showCollision, R_ability, F_ability, T_abili
         }
         
         // Get responsive speed multiplier for consistent performance
-        const speedMultiplier = getResponsiveSpeedMultiplier();
+        const speedMultiplier = getResponsiveSpeedMultiplier() * timeWarpSpeedMultiplier;
         
         // TIER 1 ENEMIES (Available from start - Score >= 0)
         const baseSpawnInterval = SPAWN_BASIC_ENEMY_TIME; 
